@@ -1,0 +1,425 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --color-background: #FFFFFF;
+  --color-foreground: #1A1A1A;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-garamond), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1A1A1A;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-muted: rgba(0, 0, 0, 0.04);
+  --color-muted-foreground: rgba(26, 26, 26, 0.52);
+  --color-primary: #1A1A1A;
+  --color-primary-foreground: #FAFAF8;
+  --color-accent: #7C3AED;
+  --color-accent-foreground: #FFFFFF;
+  --color-ring: #7C3AED;
+  --color-input: rgba(0, 0, 0, 0.07);
+  --radius-sm: 0.6rem;
+  --radius-md: 0.8rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.4rem;
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+  --border: rgba(0, 0, 0, 0.08);
+  --muted: rgba(0, 0, 0, 0.04);
+  --muted-foreground: rgba(26, 26, 26, 0.52);
+  --primary: #1A1A1A;
+  --primary-foreground: #FAFAF8;
+  --accent: #7C3AED;
+  --accent-foreground: #FFFFFF;
+  --ring: #7C3AED;
+  --input: rgba(0, 0, 0, 0.07);
+  --radius: 1rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  }
+
+  body {
+    background-color: #FFFFFF;
+    color: #1A1A1A;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::selection {
+    background: #7C3AED;
+    color: #FFFFFF;
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+    font-feature-settings: "kern" 1, "ss01" 1;
+  }
+}
+
+/* ── Typography ── */
+
+.text-display {
+  font-size: clamp(3.2rem, 7vw, 6.8rem);
+  line-height: 0.93;
+  letter-spacing: -0.045em;
+  font-weight: 700;
+}
+
+.text-display-sm {
+  font-size: clamp(2.2rem, 4.5vw, 4.2rem);
+  line-height: 0.96;
+  letter-spacing: -0.038em;
+  font-weight: 700;
+}
+
+/* ── Gradient text (violet in light mode) ── */
+
+.gradient-text {
+  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 50%, #4C1D95 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Editorial link underline ── */
+
+.editorial-link {
+  position: relative;
+  display: inline;
+}
+
+.editorial-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editorial-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ── Premium panel (light glass) ── */
+
+.premium-panel {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* ── Glow card (violet tint on light bg) ── */
+
+.glow-card {
+  position: relative;
+}
+
+.glow-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0) 0%,
+    rgba(124, 58, 237, 0.05) 50%,
+    rgba(124, 58, 237, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-card:hover::before {
+  opacity: 1;
+}
+
+/* ── Shimmer button ── */
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Pulse glow (violet) ── */
+
+@keyframes subtle-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.12); }
+  50%       { box-shadow: 0 0 24px 6px rgba(124, 58, 237, 0.10); }
+}
+
+.pulse-glow {
+  animation: subtle-pulse 3s ease-in-out infinite;
+}
+
+/* ── Animated gradient border (violet) ── */
+
+@keyframes border-rotate {
+  0%   { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.animated-border {
+  position: relative;
+}
+
+.animated-border::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 60%,
+    rgba(124, 58, 237, 0.28) 80%,
+    transparent 100%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  animation: border-rotate 6s linear infinite;
+  pointer-events: none;
+}
+
+/* ── Staggered menu overlay ── */
+
+.menu-overlay-link {
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  color: #1A1A1A;
+  font-family: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+}
+
+.menu-overlay-link:hover {
+  color: #7C3AED;
+}
+
+/* ── Subtle noise texture (reduced on light bg) ── */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ── 3D press button ── */
+
+.btn-3d {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  transform: translateY(0);
+  box-shadow:
+    0 6px 0 #000000,
+    0 8px 16px rgba(0, 0, 0, 0.28);
+  transition:
+    transform 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-3d:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 0 #000000,
+    0 12px 24px rgba(0, 0, 0, 0.32);
+}
+
+.btn-3d:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 2px 0 #000000,
+    0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Download card (hero right panel) ── */
+
+.download-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.04),
+    0 20px 60px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(124, 58, 237, 0.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Theme: light mode overrides for the Tailwind stone + amber palette ──────
+   In dark mode (default) stone-950 is near-black.
+   In light mode we flip backgrounds to warm whites and text to dark tones.
+   We leave stone-950 intentionally unchanged here and instead fix all
+   amber-button text to use a hardcoded dark hex (see components).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Backgrounds: dark stones → warm whites */
+  --color-stone-950: oklch(0.987 0.003 75);    /* #f9f7f5 — main bg */
+  --color-stone-900: oklch(0.972 0.005 68);    /* #f2ede9 — panel bg */
+  --color-stone-800: oklch(0.907 0.008 62);    /* #ddd8d2 — elevated surface / border */
+  --color-stone-700: oklch(0.858 0.011 58);    /* #ccc6bf — hover / interactive */
+  --color-stone-600: oklch(0.547 0.012 58);    /* keep mid-grey for muted text */
+
+  /* Text: light stones → dark tones */
+  --color-stone-100: oklch(0.147 0.004 49);    /* #150f0b — primary text */
+  --color-stone-200: oklch(0.218 0.006 56);    /* #231d1a */
+  --color-stone-300: oklch(0.281 0.008 58);    /* #312a26 — secondary text */
+  --color-stone-400: oklch(0.375 0.010 60);    /* #4a403b — muted text */
+  --color-stone-500: oklch(0.480 0.012 58);    /* #665c56 — extra muted */
+
+  /* Amber: make active indicators readable on light backgrounds */
+  --color-amber-400: oklch(0.629 0.163 68);    /* → amber-600 equivalent */
+  --color-amber-500: oklch(0.577 0.173 60);    /* → amber-700 equivalent */
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 6px; height: 6px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: var(--color-stone-700, #44403c); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--color-stone-600, #57534e); }
+
+/* ── Zen Editor Typography ──────────────────────────────────── */
+.zen-editor-root {
+  min-height: 100%;
+  outline: none;
+}
+
+.zen-paragraph {
+  margin: 0 0 1em;
+  line-height: 1.8;
+}
+
+.zen-h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 1.5em 0 0.5em;
+  color: var(--color-stone-100, #f5f5f4);
+}
+
+.zen-h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.25em 0 0.5em;
+  color: var(--color-stone-200, #e7e5e4);
+}
+
+.zen-h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1em 0 0.4em;
+  color: var(--color-stone-300, #d6d3d1);
+}
+
+.zen-bold        { font-weight: 700; }
+.zen-italic      { font-style: italic; }
+.zen-underline   { text-decoration: underline; }
+.zen-strikethrough { text-decoration: line-through; }
+.zen-code {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.875em;
+  background: var(--color-stone-800, #1c1917);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  color: #d97706; /* amber-600 — visible in both themes */
+}
+
+.zen-blockquote {
+  border-left: 3px solid var(--color-stone-500, #78716c);
+  margin: 1em 0;
+  padding: 0.25em 1em;
+  color: var(--color-stone-400, #a8a29e);
+  font-style: italic;
+}
+
+.zen-ul, .zen-ol { padding-left: 1.5em; margin: 0.5em 0; }
+.zen-listitem     { margin: 0.25em 0; }
+
+/* ── Smooth theme transitions ───────────────────────────────── */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.12s;
+  transition-timing-function: ease;
+}
+
+/* Don't animate transforms / layout properties */
+button, a, input, textarea, select {
+  transition-property: background-color, border-color, color, opacity, box-shadow;
+  transition-duration: 0.12s;
+}

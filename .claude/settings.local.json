@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(cd \"/c/Users/bhask/OneDrive/Desktop/Xvault-Studio-Web\" && npx tsc --noEmit 2>&1)",
+      "Bash(head:*)",
+      "Bash(cd \"C:/Users/bhask/OneDrive/Desktop/Xvault-Studio-Web\" && npx tsc --noEmit 2>&1)",
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:developers.lottiefiles.com)",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(cd:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(echo exit:$?:*)",
+      "WebFetch(domain:xvault.dev)",
+      "Bash(cat:*)",
+      "Bash(cd /c/Users/bhask/OneDrive/Desktop/Xvault-Studio-Web && npx tsc --noEmit 2>&1)",
+      "Bash(node:*)",
+      "Bash(wc:*)",
+      "WebFetch(domain:claude.ai)",
+      "Bash(cd '/c/Users/bhask/OneDrive/Desktop/Xvault-Studio-Web' && npm run build 2>&1)",
+      "Bash(gh repo:*)",
+      "Bash(cd C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web:*)"
+    ]
+  }
+}
