@@ -16,6 +16,10 @@ export interface Profile {
   onboarding_step: number;
   onboarding_done: boolean;
   updated_at: string;
+  referral_code: string;
+  referred_by: string | null;
+  bonus_credits: number;
+  referral_count: number;
 }
 
 /** Monthly credit limits per plan (post-trial). */
@@ -54,12 +58,20 @@ export function trialDaysLeft(profile: Profile): number {
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 }
 
-/** Credits remaining. For trial users: 100 - ai_requests_total. For others: plan limit - this_month. */
+/** Credits remaining. For trial users: (100 + bonus) - ai_requests_total. For others: (plan limit + bonus) - this_month. */
 export function creditsRemaining(profile: Profile): number {
+  const bonus = profile.bonus_credits ?? 0;
   if (isInTrial(profile)) {
-    return Math.max(0, TRIAL_CREDITS - profile.ai_requests_total);
+    return Math.max(0, TRIAL_CREDITS + bonus - profile.ai_requests_total);
   }
-  return Math.max(0, PLAN_LIMITS[profile.plan] - profile.ai_requests_this_month);
+  return Math.max(0, PLAN_LIMITS[profile.plan] + bonus - profile.ai_requests_this_month);
+}
+
+/** Total credit cap for display. */
+export function creditsCap(profile: Profile): number {
+  const bonus = profile.bonus_credits ?? 0;
+  if (isInTrial(profile)) return TRIAL_CREDITS + bonus;
+  return PLAN_LIMITS[profile.plan] + bonus;
 }
 
 /**

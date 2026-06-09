@@ -24,6 +24,13 @@ function AuthForm() {
   const params  = useSearchParams();
   const nextPath = params.get("next") ?? "/dashboard";
 
+  const refCode = params.get("ref");
+
+  // Persist the referral code in localStorage so it survives the OTP redirect
+  useEffect(() => {
+    if (refCode) localStorage.setItem("xv_ref", refCode.toUpperCase());
+  }, [refCode]);
+
   const [step,    setStep]    = useState<Step>("email");
   const [email,   setEmail]   = useState("");
   const [otp,     setOtp]     = useState("");

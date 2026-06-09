@@ -2,10 +2,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FileText, BookOpen, Zap, ArrowRight, Clock } from "lucide-react";
 import { getUser, getProfile, createServerSupabaseClient } from "@/lib/auth";
-import { isInTrial, PLAN_LIMITS, creditsRemaining, TRIAL_CREDITS } from "@/lib/supabase";
+import { isInTrial, PLAN_LIMITS, creditsRemaining, creditsCap, TRIAL_CREDITS } from "@/lib/supabase";
 import type { DbProject } from "@/types/database";
 import DashboardClient from "./_components/dashboard-client";
 import ProjectCardActions from "./_components/project-card-actions";
+import ReferralCard from "./_components/referral-card";
+import ReferralLinker from "./_components/referral-linker";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -82,8 +84,9 @@ export default async function DashboardPage() {
   const totalWords    = projects.reduce((s, p) => s + p.total_words, 0);
   const inTrial       = profile ? isInTrial(profile as Parameters<typeof isInTrial>[0]) : false;
   const credits       = profile ? creditsRemaining(profile as Parameters<typeof creditsRemaining>[0]) : 0;
+  const cap           = profile ? creditsCap(profile as Parameters<typeof creditsCap>[0]) : TRIAL_CREDITS;
   const aiUsed        = profile?.ai_requests_this_month ?? 0;
-  const aiLimit       = profile ? (inTrial ? null : PLAN_LIMITS[profile.plan]) : null;
+  const aiLimit       = profile ? (inTrial ? null : PLAN_LIMITS[profile.plan] + (profile.bonus_credits ?? 0)) : null;
 
   // First-login: show genre picker when onboarding hasn't started
   const needsOnboarding = profile
@@ -98,6 +101,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-8 py-10 space-y-10">
+      {/* Links referral code from localStorage after signup — renders nothing */}
+      <ReferralLinker />
+
       {/* Header row */}
       <div className="flex items-start justify-between">
         <div>
@@ -122,7 +128,7 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-2.5">
             <Zap size={15} className={credits <= 20 ? "text-amber-600" : "text-violet-600"} fill="currentColor" />
             <span className={`text-sm font-medium ${credits <= 20 ? "text-amber-800" : "text-violet-800"}`}>
-              {credits} of {TRIAL_CREDITS} trial credits remaining ·{" "}
+              {credits} of {cap} trial credits remaining ·{" "}
               {Math.max(
                 0,
                 Math.ceil(
@@ -161,6 +167,15 @@ export default async function DashboardPage() {
           sub={inTrial ? `of ${TRIAL_CREDITS} trial credits` : aiLimit !== null ? `${Math.round((aiUsed / aiLimit) * 100)}% used` : "No active plan"}
         />
       </div>
+
+      {/* Referral card */}
+      {profile && (
+        <ReferralCard
+          referralCode={profile.referral_code}
+          referralCount={profile.referral_count ?? 0}
+          bonusCredits={profile.bonus_credits ?? 0}
+        />
+      )}
 
       {/* Projects grid */}
       <section>

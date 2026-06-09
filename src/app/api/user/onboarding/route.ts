@@ -5,7 +5,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { createServerSupabaseClient } from "@/lib/auth";
+import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 
 export async function PATCH(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -33,5 +33,18 @@ export async function PATCH(request: NextRequest) {
     .eq("id", user.id);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // When the user completes the tutorial, complete any pending referral.
+  // This is the "first real action" gate — prevents fake-signup abuse.
+  if (body.done === true) {
+    try {
+      const service = createServiceClient();
+      await service.rpc("complete_referral", { p_referred_id: user.id });
+    } catch (e) {
+      // Non-fatal — log but don't fail the request
+      console.error("[onboarding] complete_referral failed:", e);
+    }
+  }
+
   return Response.json({ ok: true });
 }
