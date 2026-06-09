@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import {
@@ -288,16 +288,62 @@ export default function StudioSidebar({
           <Plus size={14} />
           {addingChapter ? "Adding…" : "New chapter"}
         </button>
-        <a
-          href={`/api/studio/export?projectId=${projectId}`}
-          download
-          className="w-full flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#1A1A1A]/40 hover:text-[#1A1A1A]/70 hover:bg-black/[0.05] transition-colors"
-        >
-          <Download size={14} />
-          Export .txt
-        </a>
+        <ExportMenu projectId={projectId} />
         <FeedbackButton />
       </div>
     </aside>
+  );
+}
+
+// ── Export format picker ──────────────────────────────────────────────────────
+
+const FORMATS = [
+  { label: "Word Document",  ext: "docx", mime: "docx" },
+  { label: "EPUB",           ext: "epub", mime: "epub" },
+  { label: "PDF",            ext: "pdf",  mime: "pdf"  },
+  { label: "Plain Text",     ext: "txt",  mime: "txt"  },
+] as const;
+
+function ExportMenu({ projectId }: { projectId: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#1A1A1A]/40 hover:text-[#1A1A1A]/70 hover:bg-black/[0.05] transition-colors"
+      >
+        <Download size={14} />
+        Export
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-0 mb-1 w-48 rounded-xl border border-black/[0.08] bg-white shadow-lg py-1 z-50">
+          {FORMATS.map((fmt) => (
+            <a
+              key={fmt.mime}
+              href={`/api/studio/export?projectId=${projectId}&format=${fmt.mime}`}
+              download
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between px-3 py-2 text-sm text-[#1A1A1A]/60 hover:bg-black/[0.04] hover:text-[#1A1A1A] transition-colors"
+            >
+              <span>{fmt.label}</span>
+              <span className="text-[11px] font-mono text-[#1A1A1A]/25">.{fmt.ext}</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

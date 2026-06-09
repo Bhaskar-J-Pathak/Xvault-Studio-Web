@@ -28,6 +28,39 @@ export function lexicalToText(content: unknown): string {
 }
 
 /**
+ * Extract paragraphs as an array of strings from a Lexical editor state.
+ * Preserves paragraph boundaries — used by rich-format exporters (DOCX, EPUB, PDF).
+ */
+export function lexicalToParagraphs(content: unknown): string[] {
+  if (!content || typeof content !== "object") return [];
+  const state = content as Record<string, unknown>;
+  const root = (typeof state.root === "object" && state.root !== null ? state.root : content) as Record<string, unknown>;
+  const paragraphs: string[] = [];
+
+  function collectText(node: unknown): string {
+    if (!node || typeof node !== "object") return "";
+    const n = node as Record<string, unknown>;
+    if (n.type === "text" && typeof n.text === "string") return n.text;
+    if (Array.isArray(n.children)) return (n.children as unknown[]).map(collectText).join("");
+    return "";
+  }
+
+  function walkRoot(node: unknown) {
+    if (!node || typeof node !== "object") return;
+    const n = node as Record<string, unknown>;
+    if (n.type === "paragraph" || n.type === "heading") {
+      const text = collectText(n).trim();
+      if (text) paragraphs.push(text);
+      return;
+    }
+    if (Array.isArray(n.children)) (n.children as unknown[]).forEach(walkRoot);
+  }
+
+  if (Array.isArray(root.children)) (root.children as unknown[]).forEach(walkRoot);
+  return paragraphs;
+}
+
+/**
  * Split plain text into overlapping word-chunks for embedding.
  * Default: 200 words per chunk, 40-word overlap to preserve context at boundaries.
  */

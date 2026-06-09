@@ -8,7 +8,11 @@ const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const FAQS = [
   {
     q: "Is Xvault Studio free to start?",
-    a: "Yes. Sign up in 10 seconds — no credit card needed. You get 100 AI credits and 14 days of full access. After your trial, upgrade anytime for more credits and advanced features.",
+    a: "Yes. Sign up in 10 seconds — no credit card needed. You get 100 AI credits and 14 days of full access. After your trial, the free plan gives you continued access with a smaller monthly credit allowance. Paid plans with higher limits are coming at full launch.",
+  },
+  {
+    q: "Is this the full product?",
+    a: "Xvault Studio is currently in public beta. The core writing experience — Alex, Ghost Writing, World Board, Story Bible, and Global Replace — is fully functional. We're actively building toward a full launch with expanded features, export formats (DOCX, EPUB, PDF), and subscription plans. Beta users get early access and shape what we build next.",
   },
   {
     q: "What exactly is Alex?",
@@ -17,6 +21,10 @@ const FAQS = [
   {
     q: "How does Ghost Writing preserve my voice?",
     a: "Press Ctrl+K anywhere in the editor. Alex generates suggestions trained on your existing chapters — not generic AI output. The more you've written, the better it understands your rhythm, vocabulary, and style. Every suggestion is optional and editable.",
+  },
+  {
+    q: "Can I export my manuscript?",
+    a: "Yes. You can export your full manuscript as a Word document (.docx), EPUB, PDF, or plain text (.txt) — from the studio sidebar at any time. Your work is always yours to take.",
   },
   {
     q: "Is my manuscript safe in the cloud?",
