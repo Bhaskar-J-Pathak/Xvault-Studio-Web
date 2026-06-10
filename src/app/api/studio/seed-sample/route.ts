@@ -8,7 +8,6 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiEmbed } from "@/lib/ai";
 import { chunkText } from "@/lib/chunking";
-import { sendWelcomeEmail } from "@/lib/email";
 
 // ── Lexical JSON helpers ──────────────────────────────────────────────────────
 
@@ -599,12 +598,6 @@ export async function POST(request: NextRequest) {
       message_type: "observation",
     });
   }
-
-  // ── 7. Send welcome email ─────────────────────────────────────────────────
-  // Fires once — seed-sample is idempotent so this only runs on first setup.
-  sendWelcomeEmail(user.email!).catch((e) =>
-    console.error("[seed-sample] Welcome email failed:", e)
-  );
 
   // ── 9. Embed chapters for Story Bible ────────────────────────────────────
   // Fire-and-forget style: failures don't block the user from getting in.
