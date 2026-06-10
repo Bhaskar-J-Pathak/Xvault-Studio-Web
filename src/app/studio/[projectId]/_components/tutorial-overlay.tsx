@@ -23,7 +23,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { X, ArrowRight, GripHorizontal } from "lucide-react";
+import { ArrowRight, GripHorizontal } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ export default function TutorialOverlay({
 }: Props) {
   const router   = useRouter();
   const pathname = usePathname();
+  const ph       = usePostHog();
 
   // ALL hooks first
   const [step, setStep]             = useState(initialStep);
@@ -196,6 +198,7 @@ export default function TutorialOverlay({
   async function advance(nextStep: number) {
     if (advanceInProgress.current) return;
     advanceInProgress.current = true;
+    ph?.capture("tutorial_step_reached", { step: nextStep, from_step: step });
     setStep(nextStep);
     await syncStep(nextStep);
     advanceInProgress.current = false;
@@ -204,10 +207,14 @@ export default function TutorialOverlay({
   async function dismiss() { setDone(true); await syncStep(9, true); }
 
   async function handleStartOwnStory() {
+    ph?.capture("tutorial_completed", { action: "start_own_story" });
     setDone(true); await syncStep(9, true); router.push("/dashboard");
   }
 
-  async function handleKeepExploring() { setDone(true); await syncStep(9, true); }
+  async function handleKeepExploring() {
+    ph?.capture("tutorial_completed", { action: "keep_exploring" });
+    setDone(true); await syncStep(9, true);
+  }
 
   // ── Early exit — AFTER all hooks ──────────────────────────────────────────
   if (done || step === 0 || step >= 9) return null;
@@ -262,19 +269,7 @@ export default function TutorialOverlay({
             <span className="text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30">
               Step {step} of 8
             </span>
-            <div className="flex items-center gap-2">
-              <GripHorizontal size={12} className="text-[#1A1A1A]/20" />
-              {step < 8 && (
-                <button
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={dismiss}
-                  className="flex items-center gap-1 text-[10px] text-[#1A1A1A]/30 hover:text-[#1A1A1A]/60 transition-colors"
-                >
-                  <X size={10} />
-                  Skip tour
-                </button>
-              )}
-            </div>
+            <GripHorizontal size={12} className="text-[#1A1A1A]/20" />
           </div>
 
           <div className="p-4 pt-2">
@@ -369,7 +364,7 @@ function getStepContent(
         body: "Everything auto-saves as you write. Word count is bottom-left. Click anywhere in the story text to continue.",
         hint: "← Click anywhere in the story",
         waiting: "Waiting for you to click in the editor…",
-        ctaLabel: "Skip",
+        ctaLabel: "Next →",
         nextStep: 3,
       };
 
@@ -379,7 +374,7 @@ function getStepContent(
         body: "Alex has read Chapter 1 and left you a note. Type a message in the chat and hit Enter — see what comes back.",
         hint: "Try: \"What do you think of the opening?\"",
         waiting: "Waiting for Alex's reply…",
-        ctaLabel: "Skip",
+        ctaLabel: "Next →",
         nextStep: 4,
       };
 
@@ -389,7 +384,7 @@ function getStepContent(
         body: "Click anywhere in the text, press Ctrl+K, and give Alex an instruction. Press Tab to accept, Esc to dismiss.",
         hint: "Try: \"What does Nadia find in the diner?\"",
         waiting: "Waiting for you to try it and check the result…",
-        ctaLabel: "Skip",
+        ctaLabel: "Next →",
         nextStep: 5,
       };
 
@@ -418,7 +413,7 @@ function getStepContent(
         body: "Click Story Bible in the sidebar. Every section feeds Alex before every reply: braindump, genre, style notes, AI chapter summaries, character profiles, and tracked plot threads. The more you fill it in, the better Alex writes in your voice.",
         hint: "← Click Story Bible in the sidebar",
         waiting: "Waiting for you to open the Story Bible…",
-        ctaLabel: "Skip",
+        ctaLabel: "Next →",
         nextStep: 7,
       };
 

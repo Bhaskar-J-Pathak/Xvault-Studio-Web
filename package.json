@@ -36,6 +36,7 @@
     "lucide-react": "^0.577.0",
     "mammoth": "^1.12.0",
     "next": "16.1.7",
+    "posthog-js": "^1.384.3",
     "pptxgenjs": "^4.0.1",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",

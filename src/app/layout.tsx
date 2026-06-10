@@ -3,6 +3,8 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { EB_Garamond } from "next/font/google";
 import Script from "next/script";
+import { Suspense } from "react";
+import PostHogProvider from "@/components/posthog-provider";
 import "./globals.css";
 
 const garamond = EB_Garamond({
@@ -60,7 +62,11 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} ${garamond.variable} antialiased`}
       >
-        {children}
+        <Suspense>
+          <PostHogProvider>
+            {children}
+          </PostHogProvider>
+        </Suspense>
         <Script
           id="schema-org"
           type="application/ld+json"

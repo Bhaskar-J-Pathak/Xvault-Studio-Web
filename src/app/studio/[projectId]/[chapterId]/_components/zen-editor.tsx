@@ -22,6 +22,7 @@ interface CursorContext {
 }
 import { createClient } from "@/lib/supabase";
 import { Loader2, Wand2 } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
 import CoauthorSetup from "@/app/studio/[projectId]/_components/coauthor-setup";
 import TutorialOverlay from "@/app/studio/[projectId]/_components/tutorial-overlay";
@@ -585,6 +586,9 @@ export default function ZenEditor({
   onboardingStep = 9,
   onboardingDone = true,
 }: Props) {
+  const ph = usePostHog();
+  const ctrlkTracked = useRef(false);
+
   const [wordCount,        setWordCount]        = useState(initialWordCount);
   const [saveStatus,       setSaveStatus]       = useState<SaveStatus>("idle");
   const [extractionStatus, setExtractionStatus] = useState<"idle" | "extracting">("idle");
@@ -637,9 +641,13 @@ export default function ZenEditor({
 
   const handleCtrlK = useCallback((context: CursorContext) => {
     if (ghostLoading) return;
+    if (!ctrlkTracked.current) {
+      ctrlkTracked.current = true;
+      ph?.capture("feature_used", { feature: "ctrlk_first_use" });
+    }
     setCursorContext(context);
     setCommandBarOpen(true);
-  }, [ghostLoading]);
+  }, [ghostLoading, ph]);
 
   const handleGhostRequest = useCallback(async (instruction: string, context: CursorContext) => {
     const mode: GhostMode = context.selectedText ? "rewrite" : instruction ? "write" : "continue";

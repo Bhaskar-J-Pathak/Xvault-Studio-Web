@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Send, ChevronRight, Settings, Loader2, Trash2, X } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import type { DbCoauthor, DbCoauthorMessage, CoauthorMessageType } from "@/types/database";
 import GlobalChangePreview from "./global-change-preview";
 import type { ChangePlan } from "@/app/api/ai/coauthor/global-change/route";
@@ -67,12 +68,15 @@ export default function CoauthorPanel({
   onResponseReceived,
   id,
 }: Props) {
+  const ph = usePostHog();
+
   const [messages, setMessages] = useState<CoauthorMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const firstMessageSent = useRef(false);
 
   // Global change state
   const [globalChangePlan, setGlobalChangePlan] = useState<ChangePlan | null>(null);
@@ -150,6 +154,10 @@ export default function CoauthorPanel({
       setInput("");
       setLoading(true);
       onMessageSent?.();
+      if (!firstMessageSent.current) {
+        firstMessageSent.current = true;
+        ph?.capture("feature_used", { feature: "coauthor_chat_first_message" });
+      }
 
       try {
         const res = await fetch("/api/ai/coauthor/chat", {
@@ -189,6 +197,7 @@ export default function CoauthorPanel({
 
         // If Alex detected a global change request, trigger the analysis
         if (data.messageType === "global_change" && data.instruction) {
+          ph?.capture("feature_used", { feature: "global_change_triggered" });
           setGlobalChangeLoading(true);
           try {
             const gcRes = await fetch("/api/ai/coauthor/global-change", {

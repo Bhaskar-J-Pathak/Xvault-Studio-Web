@@ -20,7 +20,17 @@
       "WebFetch(domain:claude.ai)",
       "Bash(cd '/c/Users/bhask/OneDrive/Desktop/Xvault-Studio-Web' && npm run build 2>&1)",
       "Bash(gh repo:*)",
-      "Bash(cd C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web:*)"
+      "Bash(cd C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web:*)",
+      "Bash(cd \"C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web\" && npx tsc --noEmit 2>&1)",
+      "WebFetch(domain:polyz.ai)",
+      "WebFetch(domain:novelmint.ai)",
+      "Bash(find:*)",
+      "Bash(basename $\\(dirname \"$file\"\\):*)",
+      "Bash(cd \"C:/Users/bhask/OneDrive/Desktop/Xvault-Studio-Web\" && npm run build 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web\" && npm run build 2>&1)",
+      "WebFetch(domain:openrouter.ai)",
+      "Bash(cd \"C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web\" && rm -rf .next && npm run build 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web\" && npm install posthog-js 2>&1)"
     ]
   }
 }
