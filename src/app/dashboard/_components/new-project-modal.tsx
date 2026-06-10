@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { X, Plus } from "lucide-react";
-import { createClient } from "@/lib/supabase";
 
 const GENRES = [
   { value: "",          label: "No genre selected" },
@@ -57,21 +56,13 @@ export default function NewProjectModal({ open, onClose }: Props) {
       setLoading(true);
 
       try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Not signed in.");
-
-        const { data, error: dbError } = await supabase
-          .from("projects")
-          .insert({
-            user_id: user.id,
-            title:   title.trim(),
-            genre:   genre || null,
-          })
-          .select("id")
-          .single();
-
-        if (dbError || !data) throw new Error(dbError?.message ?? "Could not create project.");
+        const res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: title.trim(), genre: genre || null }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Could not create project.");
 
         onClose();
         // Refresh server component data so the new card appears immediately

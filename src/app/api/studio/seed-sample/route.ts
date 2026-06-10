@@ -362,6 +362,23 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
+  // ── 0. Ensure profile exists (guard against trigger failure on new accounts) ──
+  // The handle_new_user trigger creates profiles automatically, but if it fails
+  // (e.g. schema mismatch in production), projects inserts will throw FK errors.
+  const service = createServiceClient();
+  await service.from("profiles").upsert(
+    {
+      id: user.id,
+      email: user.email ?? "",
+      plan: "free",
+      trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      referral_code: Array.from({ length: 8 }, () =>
+        Math.floor(Math.random() * 36).toString(36)
+      ).join("").toUpperCase(),
+    },
+    { onConflict: "id", ignoreDuplicates: true }
+  );
+
   // Only seed once per user
   const { data: existing } = await supabase
     .from("projects")
