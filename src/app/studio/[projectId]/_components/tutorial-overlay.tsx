@@ -8,6 +8,7 @@
  *  2 — Editor (auto-advance: click)
  *  3 — Ask Alex (auto-advance: response received)
  *  4 — Ctrl+K ghostwriter (auto-advance: suggestion accepted/dismissed)
+ *  5 — Global Change (manual advance — explain the flagship feature)
  *  6 — Full Story Bible page (content-aware: editor vs. bible page)
  *  7 — World Board
  *  8 — Done / CTA
@@ -15,7 +16,7 @@
  * Design principles:
  * - NEVER blocks interaction. No dark backdrop with pointer-events.
  * - Guide card is draggable by the header grip.
- * - Steps 2-5 auto-advance when the user performs the real action.
+ * - Steps 2-4 auto-advance when the user performs the real action.
  * - Every step has a manual Skip so users are never stuck.
  * - All hooks run before any conditional returns (React rules compliance).
  */
@@ -50,6 +51,7 @@ const STEP_TARGET_ID: Record<number, string | null> = {
   2: "tutorial-editor",
   3: "tutorial-coauthor",
   4: "tutorial-editor",
+  5: "tutorial-coauthor",
   6: "tutorial-bible-link",
   7: "tutorial-worldboard-link",
   8: null,
@@ -161,11 +163,7 @@ export default function TutorialOverlay({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ghostSuggestion, step]);
 
-  // Step 5 no longer exists — skip anyone who has it stored in DB
-  useEffect(() => {
-    if (step === 5) advance(6);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  // (Step 5 is Global Change — no auto-advance, user clicks Next manually)
 
   // ── Drag handling ─────────────────────────────────────────────────────────
 
@@ -392,6 +390,15 @@ function getStepContent(
         hint: "Try: \"What does Nadia find in the diner?\"",
         waiting: "Waiting for you to try it and check the result…",
         ctaLabel: "Skip",
+        nextStep: 5,
+      };
+
+    case 5:
+      return {
+        title: "Global Change — rewrite across every chapter.",
+        body: "This is the big one. Tell Alex to rename a character, shift a plot detail, or change something about the writing — and it scans every chapter at once, shows you a diff of every planned edit, and waits for your approval before touching anything.",
+        hint: "Try in the chat: \"Rename Marcus to Viktor everywhere\"",
+        ctaLabel: "Next →",
         nextStep: 6,
       };
 
