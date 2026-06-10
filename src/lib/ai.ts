@@ -4,80 +4,46 @@
  */
 
 // ---------------------------------------------------------------------------
-// Gemini key priority
-// ---------------------------------------------------------------------------
-
-/**
- * Returns Gemini API keys in priority order: free key first, paid fallback.
- * Filters out any undefined/empty values so callers always get a clean list.
- */
-function getGeminiKeys(): string[] {
-  return [
-    process.env.GEMINI_API_KEY_FREE,
-    process.env.GEMINI_API_KEY,
-  ].filter((k): k is string => Boolean(k));
-}
-
-/**
- * HTTP status codes from Gemini that mean "this key is out of quota / rate
- * limited" — safe to retry with the next key rather than giving up.
- */
-const RATE_LIMIT_STATUSES = new Set([429, 503]);
-
-// ---------------------------------------------------------------------------
 // Gemini
 // ---------------------------------------------------------------------------
+
+const GEMINI_KEY = process.env.GEMINI_API_KEY!;
 
 /**
  * Embed a text string using gemini-embedding-001 (768-dim).
  * Used for Story Bible semantic search.
- * Tries the free key first; falls back to the paid key on any error.
  */
 export async function geminiEmbed(text: string): Promise<number[]> {
-  const keys = getGeminiKeys();
-  let lastError = "";
-
-  for (const key of keys) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "models/gemini-embedding-001",
-          content: { parts: [{ text }] },
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      lastError = `embed (${res.status}): ${body.slice(0, 200)}`;
-      // Always try the next key — covers rate limits, bad keys, and model access issues
-      console.warn(`[gemini] Embed key failed (${res.status}), trying next key…`);
-      continue;
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${GEMINI_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "models/gemini-embedding-001",
+        content: { parts: [{ text }] },
+      }),
     }
+  );
 
-    const data = await res.json();
-    return data.embedding.values as number[];
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Gemini embed failed (${res.status}): ${body.slice(0, 200)}`);
   }
 
-  throw new Error(`Gemini embed failed on all keys — ${lastError}`);
+  const data = await res.json();
+  return data.embedding.values as number[];
 }
 
 /**
  * Stream a Gemini response (gemini-2.5-flash).
  * Returns the raw SSE ReadableStream — pipe it directly to the client.
- * Tries the free key first; falls back to the paid key on rate-limit errors.
  */
 export async function geminiStream(
   prompt: string,
   systemPrompt?: string,
   maxTokens = 512
 ): Promise<ReadableStream<Uint8Array>> {
-  const keys = getGeminiKeys();
-  let lastError = "";
-
   const body: Record<string, unknown> = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: {
@@ -90,35 +56,25 @@ export async function geminiStream(
     body.system_instruction = { parts: [{ text: systemPrompt }] };
   }
 
-  for (const key of keys) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?key=${key}&alt=sse`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }
-    );
-
-    if (!res.ok || !res.body) {
-      const text = await res.text().catch(() => "");
-      lastError = `stream (${res.status}): ${text.slice(0, 200)}`;
-      if (RATE_LIMIT_STATUSES.has(res.status)) {
-        console.warn(`[gemini] Free key rate-limited (${res.status}), trying paid key…`);
-        continue;
-      }
-      throw new Error(`Gemini stream failed — ${lastError}`);
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?key=${GEMINI_KEY}&alt=sse`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     }
+  );
 
-    return res.body;
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Gemini stream failed (${res.status}): ${text.slice(0, 200)}`);
   }
 
-  throw new Error(`Gemini stream failed on all keys — ${lastError}`);
+  return res.body;
 }
 
 /**
  * Single-shot (non-streaming) Gemini call.
- * Tries the free key first; falls back to the paid key on rate-limit errors.
  */
 export async function geminiGenerate(
   prompt: string,
@@ -127,17 +83,12 @@ export async function geminiGenerate(
   jsonMode = false,
   model = "gemini-2.5-flash"
 ): Promise<string> {
-  const keys = getGeminiKeys();
-  let lastError = "";
-
   const generationConfig: Record<string, unknown> = {
     maxOutputTokens: maxTokens,
     temperature: 0.7,
   };
 
-  // In the v1beta REST API, thinking tokens count against maxOutputTokens.
-  // Flash: always disable thinking — it adds latency/cost with no benefit for
-  // the short, structured tasks we use it for (summaries, JSON extraction, etc.).
+  // Flash: disable thinking — adds latency/cost with no benefit for short structured tasks.
   // Pro: cap thinking at 1024 in jsonMode so the budget goes to JSON output.
   if (model.includes("flash")) {
     generationConfig.thinkingConfig = { thinkingBudget: 0 };
@@ -158,31 +109,22 @@ export async function geminiGenerate(
     body.system_instruction = { parts: [{ text: systemPrompt }] };
   }
 
-  for (const key of keys) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      lastError = `generate [${model}] (${res.status}): ${text.slice(0, 200)}`;
-      if (RATE_LIMIT_STATUSES.has(res.status)) {
-        console.warn(`[gemini] Free key rate-limited (${res.status}), trying paid key…`);
-        continue;
-      }
-      throw new Error(`Gemini generate failed — ${lastError}`);
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     }
+  );
 
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Gemini generate [${model}] failed (${res.status}): ${text.slice(0, 200)}`);
   }
 
-  throw new Error(`Gemini generate failed on all keys — ${lastError}`);
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
 
 // ---------------------------------------------------------------------------

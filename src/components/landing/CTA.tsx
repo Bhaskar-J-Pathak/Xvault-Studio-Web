@@ -103,12 +103,6 @@ export default function CTA() {
                   <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </Link>
-              <Link
-                href="/pricing"
-                className="text-[0.875rem] font-medium text-white/30 underline-offset-2 transition-colors hover:text-white/60 hover:underline"
-              >
-                View pricing &rarr;
-              </Link>
             </motion.div>
           </div>
 

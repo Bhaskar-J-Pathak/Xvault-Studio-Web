@@ -117,7 +117,10 @@ export default async function DashboardPage() {
           </p>
         </div>
         {/* New project button — client component handles modal + genre picker */}
-        <DashboardClient needsOnboarding={needsOnboarding} />
+        <DashboardClient
+          needsOnboarding={needsOnboarding}
+          isBeta={process.env.BETA_MODE === "true"}
+        />
       </div>
 
       {/* Trial banner */}
@@ -139,12 +142,6 @@ export default async function DashboardPage() {
               days left
             </span>
           </div>
-          <Link
-            href="/pricing"
-            className="text-xs font-semibold text-violet-700 hover:text-violet-900 transition-colors"
-          >
-            View plans →
-          </Link>
         </div>
       )}
 

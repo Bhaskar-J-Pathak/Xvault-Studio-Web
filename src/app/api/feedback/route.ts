@@ -9,6 +9,7 @@
 
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
+import { sendFeedbackNotification } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   let body: { mood: string; text?: string; page?: string };
@@ -68,6 +69,23 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error("[feedback] Insert failed:", error.message);
     return Response.json({ error: "Failed to save feedback" }, { status: 500 });
+  }
+
+  // Email notification only when there's written text — skip bare mood clicks.
+  if (text?.trim()) {
+    let userEmail: string | null = null;
+    if (userId) {
+      const { data: profile } = await serviceClient
+        .from("profiles")
+        .select("email")
+        .eq("id", userId)
+        .single();
+      userEmail = profile?.email ?? null;
+    }
+
+    sendFeedbackNotification({ mood, text: text.trim(), page: page ?? null, userEmail }).catch(
+      (e) => console.error("[feedback] Email notification failed:", e),
+    );
   }
 
   return Response.json({ ok: true });

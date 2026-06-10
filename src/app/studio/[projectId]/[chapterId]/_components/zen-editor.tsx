@@ -864,25 +864,17 @@ export default function ZenEditor({
             <div className="bg-white rounded-2xl shadow-2xl w-[min(400px,92%)] p-8 text-center">
               <div className="text-3xl mb-3">✦</div>
               <h2 className="text-lg font-semibold text-[#1A1A1A] mb-2">
-                {isTrial ? "You've used all 100 trial credits" : "Monthly credits used up"}
+                You&apos;ve used all your beta credits
               </h2>
               <p className="text-sm text-[#1A1A1A]/55 mb-6">
-                {isTrial
-                  ? "Upgrade to keep writing with AI. Your work stays saved."
-                  : "Upgrade your plan for more AI credits. Your work stays saved."}
+                Thanks for exploring — you&apos;ve hit the limit for this beta. Paid plans are coming soon. Your work stays saved.
               </p>
               <div className="flex flex-col gap-2">
-                <a
-                  href="/pricing"
-                  className="w-full py-2.5 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold hover:bg-[#1A1A1A]/80 transition-colors"
-                >
-                  View plans →
-                </a>
                 <button
                   onClick={() => setShowUpgradeModal(false)}
-                  className="w-full py-2.5 rounded-xl text-sm text-[#1A1A1A]/50 hover:text-[#1A1A1A]/80 transition-colors"
+                  className="w-full py-2.5 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold hover:bg-[#1A1A1A]/80 transition-colors"
                 >
-                  Keep writing (AI paused)
+                  Got it
                 </button>
               </div>
             </div>

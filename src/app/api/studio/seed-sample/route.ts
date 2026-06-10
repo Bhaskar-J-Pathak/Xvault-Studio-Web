@@ -8,6 +8,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiEmbed } from "@/lib/ai";
 import { chunkText } from "@/lib/chunking";
+import { sendWelcomeEmail } from "@/lib/email";
 
 // ── Lexical JSON helpers ──────────────────────────────────────────────────────
 
@@ -582,7 +583,13 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // ── 7. Embed chapters for Story Bible ────────────────────────────────────
+  // ── 7. Send welcome email ─────────────────────────────────────────────────
+  // Fires once — seed-sample is idempotent so this only runs on first setup.
+  sendWelcomeEmail(user.email!).catch((e) =>
+    console.error("[seed-sample] Welcome email failed:", e)
+  );
+
+  // ── 9. Embed chapters for Story Bible ────────────────────────────────────
   // Fire-and-forget style: failures don't block the user from getting in.
   embedChaptersInBackground(
     supabase,
@@ -590,7 +597,7 @@ export async function POST(request: NextRequest) {
     sortedChapters.map((c, i) => ({ id: c.id, text: chapters[i].content }))
   ).catch((e) => console.error("[seed-sample] Embedding failed:", e));
 
-  // ── 8. Advance onboarding ─────────────────────────────────────────────────
+  // ── 10. Advance onboarding ────────────────────────────────────────────────
   await supabase
     .from("profiles")
     .update({ onboarding_step: 1 })
