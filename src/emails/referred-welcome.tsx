@@ -7,29 +7,30 @@ import {
   Head,
   Hr,
   Html,
-  Link,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
 
-// ── Design tokens ─────────────────────────────────────────────────────────
+// ── Design tokens ──────────────────────────────────────────────────────────
 
 const garamond = "EB Garamond, Georgia, 'Times New Roman', serif";
 const sans =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 const violet = "#7c3aed";
-const violetLight = "#f5f3ff";
-const violetBorder = "#ddd6fe";
 const dark = "#1a1a1a";
 const muted = "#6b7280";
 const bg = "#f6f4f0";
 const card = "#ffffff";
 const border = "#e8e4df";
 
-// ─────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────
 
-export default function ReferredWelcomeEmail() {
+interface ReferredWelcomeEmailProps {
+  name?: string;
+}
+
+export default function ReferredWelcomeEmail({ name = "there" }: ReferredWelcomeEmailProps) {
   return (
     <Html lang="en">
       <Head>
@@ -45,7 +46,7 @@ export default function ReferredWelcomeEmail() {
         />
       </Head>
 
-      <Preview>15 bonus credits added — your studio is ready.</Preview>
+      <Preview>A friend brought you here — and they added 15 credits to your account.</Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 20px" }}>
@@ -75,166 +76,134 @@ export default function ReferredWelcomeEmail() {
               overflow: "hidden",
             }}
           >
-            {/* Top accent bar */}
             <div style={{ height: "4px", background: violet }} />
 
             <div style={{ padding: "40px 44px 36px" }}>
 
-              {/* Label */}
-              <div
-                style={{
-                  display: "inline-block",
-                  background: violetLight,
-                  border: `1px solid ${violetBorder}`,
-                  borderRadius: "100px",
-                  padding: "4px 12px",
-                  marginBottom: "20px",
-                }}
-              >
-                <Text
-                  style={{
-                    margin: 0,
-                    fontFamily: sans,
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    color: violet,
-                    letterSpacing: "0.07em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Referral Bonus
-                </Text>
-              </div>
-
-              {/* Headline */}
               <Text
                 style={{
-                  margin: "0 0 6px 0",
-                  fontFamily: garamond,
-                  fontSize: "36px",
-                  fontWeight: 700,
+                  margin: "0 0 20px 0",
+                  fontFamily: sans,
+                  fontSize: "15px",
                   color: dark,
-                  lineHeight: "1.1",
-                  letterSpacing: "-0.8px",
+                  lineHeight: "1.7",
                 }}
               >
-                15 bonus credits,
-                <br />
-                just for showing up.
+                Hi {name},
               </Text>
 
               <Text
                 style={{
-                  margin: "16px 0 0 0",
+                  margin: "0 0 16px 0",
                   fontFamily: sans,
                   fontSize: "15px",
                   color: muted,
                   lineHeight: "1.7",
                 }}
               >
-                A friend referred you to Xvault Studio. As a thank you, your account
-                starts with extra credits — already applied, no code needed.
+                A friend referred you to Xvault Studio — which tells me you're probably
+                a writer who takes the craft seriously. That's exactly who this is built for.
               </Text>
 
-              {/* Credits breakdown */}
+              <Text
+                style={{
+                  margin: "0 0 16px 0",
+                  fontFamily: sans,
+                  fontSize: "15px",
+                  color: muted,
+                  lineHeight: "1.7",
+                }}
+              >
+                As a thank you for coming in through a referral, I've added{" "}
+                <span style={{ color: dark, fontWeight: 600 }}>15 bonus credits</span>{" "}
+                to your account on top of the standard 100. They're already there —
+                no code, nothing to activate.
+              </Text>
+
+              <Text
+                style={{
+                  margin: "0 0 32px 0",
+                  fontFamily: sans,
+                  fontSize: "15px",
+                  color: muted,
+                  lineHeight: "1.7",
+                }}
+              >
+                Xvault is built to feel like having a real co-author who has read your
+                entire story. It tracks characters, locations, plot threads, and
+                continuity — and speaks up when something doesn't add up, in your voice.
+              </Text>
+
+              {/* Quick start */}
+              <Text
+                style={{
+                  margin: "0 0 14px 0",
+                  fontFamily: sans,
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: muted,
+                  letterSpacing: "0.09em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Quick start — takes ~5 minutes
+              </Text>
+
               <div
                 style={{
-                  margin: "28px 0 0 0",
                   background: bg,
                   borderRadius: "10px",
                   border: `1px solid ${border}`,
                   padding: "20px 24px",
+                  marginBottom: "28px",
                 }}
               >
-                <table width="100%" cellPadding={0} cellSpacing={0} border={0}>
-                  <tbody>
-                    <tr>
-                      <td
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "13px",
-                          color: muted,
-                          paddingBottom: "10px",
-                        }}
-                      >
-                        Referral bonus
-                      </td>
-                      <td
-                        align="right"
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: violet,
-                          paddingBottom: "10px",
-                        }}
-                      >
-                        +15 credits
-                      </td>
-                    </tr>
-                    <tr>
-                      <td
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "13px",
-                          color: muted,
-                          paddingBottom: "14px",
-                        }}
-                      >
-                        Trial credits included
-                      </td>
-                      <td
-                        align="right"
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: dark,
-                          paddingBottom: "14px",
-                        }}
-                      >
-                        100 credits
-                      </td>
-                    </tr>
-                    <tr>
-                      <td
-                        colSpan={2}
-                        style={{
-                          borderTop: `1px solid ${border}`,
-                          paddingTop: "14px",
-                        }}
-                      />
-                    </tr>
-                    <tr>
-                      <td
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          color: dark,
-                          paddingTop: "0",
-                        }}
-                      >
-                        Total to start
-                      </td>
-                      <td
-                        align="right"
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          color: dark,
-                        }}
-                      >
-                        115 credits
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {[
+                  [
+                    "1. Open your studio",
+                    "The guided tour sets up a pre-loaded thriller project with your AI co-author Alex already briefed on every chapter.",
+                  ],
+                  [
+                    "2. Try the co-author",
+                    "Ask Alex anything about your story. Then press Ctrl+K anywhere in the text to get an inline AI suggestion.",
+                  ],
+                  [
+                    "3. Explore the Story Bible & World Board",
+                    "Every character, location, and plot thread is extracted from your manuscript automatically — no tagging needed.",
+                  ],
+                ].map(([step, desc], i, arr) => (
+                  <div
+                    key={step}
+                    style={{ marginBottom: i < arr.length - 1 ? "16px" : 0 }}
+                  >
+                    <Text
+                      style={{
+                        margin: "0 0 3px 0",
+                        fontFamily: sans,
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: dark,
+                      }}
+                    >
+                      {step}
+                    </Text>
+                    <Text
+                      style={{
+                        margin: 0,
+                        fontFamily: sans,
+                        fontSize: "13px",
+                        color: muted,
+                        lineHeight: "1.6",
+                      }}
+                    >
+                      {desc}
+                    </Text>
+                  </div>
+                ))}
               </div>
 
               {/* CTA */}
-              <div style={{ marginTop: "32px" }}>
+              <div style={{ marginBottom: "32px" }}>
                 <Button
                   href="https://xvault.studio/dashboard"
                   style={{
@@ -250,7 +219,7 @@ export default function ReferredWelcomeEmail() {
                     letterSpacing: "0.01em",
                   }}
                 >
-                  Start Creating
+                  Open Your Studio
                 </Button>
               </div>
 
@@ -258,27 +227,69 @@ export default function ReferredWelcomeEmail() {
                 style={{
                   border: "none",
                   borderTop: `1px solid ${border}`,
-                  margin: "36px 0 28px 0",
+                  margin: "0 0 28px 0",
                 }}
               />
 
-              {/* Own referral nudge */}
+              {/* Feedback ask */}
               <Text
                 style={{
-                  margin: 0,
+                  margin: "0 0 12px 0",
                   fontFamily: sans,
-                  fontSize: "13px",
+                  fontSize: "14px",
+                  color: dark,
+                  lineHeight: "1.7",
+                  fontWeight: 600,
+                }}
+              >
+                Since it's still early, I'd love your honest feedback:
+              </Text>
+
+              <Text
+                style={{
+                  margin: "0 0 16px 0",
+                  fontFamily: sans,
+                  fontSize: "14px",
+                  color: muted,
+                  lineHeight: "1.9",
+                }}
+              >
+                · How well the co-author understands your story
+                {"\n"}· Whether the suggestions feel helpful or intrusive
+                {"\n"}· Any bugs or confusing parts
+                {"\n"}· Features that would genuinely help your writing
+              </Text>
+
+              <Text
+                style={{
+                  margin: "0 0 28px 0",
+                  fontFamily: sans,
+                  fontSize: "14px",
                   color: muted,
                   lineHeight: "1.7",
                 }}
               >
-                Your own referral link is waiting in the dashboard. Share it and
-                earn{" "}
-                <strong style={{ color: dark, fontWeight: 600 }}>
-                  +30 credits
-                </strong>{" "}
-                for each friend who gets started — up to three.
+                Reply to this email or use the in-app feedback button. I read everything.
               </Text>
+
+              {/* Sign-off */}
+              <Text
+                style={{
+                  margin: 0,
+                  fontFamily: sans,
+                  fontSize: "14px",
+                  color: muted,
+                  lineHeight: "1.7",
+                }}
+              >
+                Looking forward to seeing what you create.
+                {"\n\n"}Best,
+                {"\n"}
+                <span style={{ color: dark, fontWeight: 600 }}>Bhaskar</span>
+                {"\n"}
+                <span style={{ fontSize: "12px" }}>Founder, Xvault Studio</span>
+              </Text>
+
             </div>
           </Section>
 
@@ -293,14 +304,7 @@ export default function ReferredWelcomeEmail() {
                 lineHeight: "1.6",
               }}
             >
-              You're receiving this because you created an account on{" "}
-              <Link
-                href="https://xvault.studio"
-                style={{ color: "#9ca3af", textDecoration: "underline" }}
-              >
-                xvault.studio
-              </Link>
-              .
+              You're receiving this because you created an account on xvault.studio.
             </Text>
           </Section>
 

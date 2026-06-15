@@ -72,7 +72,8 @@ export async function GET(request: NextRequest) {
             .select("id");
 
           if (updated && updated.length > 0) {
-            sendWelcomeEmail(user.email).catch((e) =>
+            const firstName = user.email.split("@")[0];
+            sendWelcomeEmail(user.email, firstName).catch((e) =>
               console.error("[callback] welcome email failed:", e)
             );
           }

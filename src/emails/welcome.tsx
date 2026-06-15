@@ -7,13 +7,12 @@ import {
   Head,
   Hr,
   Html,
-  Link,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
 
-// ── Design tokens ─────────────────────────────────────────────────────────
+// ── Design tokens ──────────────────────────────────────────────────────────
 
 const garamond = "EB Garamond, Georgia, 'Times New Roman', serif";
 const sans =
@@ -25,9 +24,13 @@ const bg = "#f6f4f0";
 const card = "#ffffff";
 const border = "#e8e4df";
 
-// ─────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────
 
-export default function WelcomeEmail() {
+interface WelcomeEmailProps {
+  name?: string;
+}
+
+export default function WelcomeEmail({ name = "there" }: WelcomeEmailProps) {
   return (
     <Html lang="en">
       <Head>
@@ -43,7 +46,7 @@ export default function WelcomeEmail() {
         />
       </Head>
 
-      <Preview>Your studio is ready. Start writing with AI.</Preview>
+      <Preview>Welcome to Xvault Studio — here's how to get started.</Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 20px" }}>
@@ -78,123 +81,131 @@ export default function WelcomeEmail() {
 
             <div style={{ padding: "40px 44px 36px" }}>
 
-              {/* Headline */}
+              {/* Greeting */}
               <Text
                 style={{
-                  margin: "0 0 6px 0",
-                  fontFamily: garamond,
-                  fontSize: "36px",
-                  fontWeight: 700,
+                  margin: "0 0 20px 0",
+                  fontFamily: sans,
+                  fontSize: "15px",
                   color: dark,
-                  lineHeight: "1.1",
-                  letterSpacing: "-0.8px",
+                  lineHeight: "1.7",
                 }}
               >
-                Your studio is ready.
+                Hi {name},
               </Text>
 
+              {/* Intro */}
               <Text
                 style={{
-                  margin: "16px 0 0 0",
+                  margin: "0 0 16px 0",
                   fontFamily: sans,
                   fontSize: "15px",
                   color: muted,
                   lineHeight: "1.7",
                 }}
               >
-                Welcome to Xvault Studio. You've completed setup and your account
-                is live. Everything you need to write, research, and develop your
-                story with AI is waiting.
+                Thank you for signing up for the Xvault Studio beta. I really
+                appreciate you taking the time to try it out while it's still early.
               </Text>
 
-              {/* Stats box */}
+              <Text
+                style={{
+                  margin: "0 0 32px 0",
+                  fontFamily: sans,
+                  fontSize: "15px",
+                  color: muted,
+                  lineHeight: "1.7",
+                }}
+              >
+                Xvault is built to feel like having a real co-author who has read your
+                entire story. It automatically builds a living knowledge graph of your
+                manuscript — and can proactively point out continuity issues, dead
+                branches, and inconsistencies as you write, while staying in your voice.
+              </Text>
+
+              {/* Quick start */}
+              <Text
+                style={{
+                  margin: "0 0 14px 0",
+                  fontFamily: sans,
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: muted,
+                  letterSpacing: "0.09em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Quick start — takes ~5 minutes
+              </Text>
+
               <div
                 style={{
-                  margin: "28px 0 0 0",
                   background: bg,
                   borderRadius: "10px",
                   border: `1px solid ${border}`,
                   padding: "20px 24px",
+                  marginBottom: "28px",
                 }}
               >
-                <table width="100%" cellPadding={0} cellSpacing={0} border={0}>
-                  <tbody>
-                    <tr>
-                      <td
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "13px",
-                          color: muted,
-                          paddingBottom: "10px",
-                        }}
-                      >
-                        AI credits included
-                      </td>
-                      <td
-                        align="right"
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: dark,
-                          paddingBottom: "10px",
-                        }}
-                      >
-                        100 credits
-                      </td>
-                    </tr>
-                    <tr>
-                      <td
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "13px",
-                          color: muted,
-                          paddingBottom: "10px",
-                        }}
-                      >
-                        Trial period
-                      </td>
-                      <td
-                        align="right"
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: dark,
-                          paddingBottom: "10px",
-                        }}
-                      >
-                        14 days
-                      </td>
-                    </tr>
-                    <tr>
-                      <td
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "13px",
-                          color: muted,
-                        }}
-                      >
-                        Co-author, Story Bible, Worldboard
-                      </td>
-                      <td
-                        align="right"
-                        style={{
-                          fontFamily: sans,
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: dark,
-                        }}
-                      >
-                        All unlocked
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {[
+                  [
+                    "1. Open your studio",
+                    "The guided tour sets up a pre-loaded thriller project with your AI co-author Alex already briefed on every chapter.",
+                  ],
+                  [
+                    "2. Try the co-author",
+                    "Ask Alex anything about your story. Then press Ctrl+K anywhere in the text to get an inline AI suggestion.",
+                  ],
+                  [
+                    "3. Explore the Story Bible & World Board",
+                    "Every character, location, and plot thread is extracted from your manuscript automatically — no tagging needed.",
+                  ],
+                ].map(([step, desc], i, arr) => (
+                  <div
+                    key={step}
+                    style={{ marginBottom: i < arr.length - 1 ? "16px" : 0 }}
+                  >
+                    <Text
+                      style={{
+                        margin: "0 0 3px 0",
+                        fontFamily: sans,
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: dark,
+                      }}
+                    >
+                      {step}
+                    </Text>
+                    <Text
+                      style={{
+                        margin: 0,
+                        fontFamily: sans,
+                        fontSize: "13px",
+                        color: muted,
+                        lineHeight: "1.6",
+                      }}
+                    >
+                      {desc}
+                    </Text>
+                  </div>
+                ))}
               </div>
 
+              <Text
+                style={{
+                  margin: "0 0 32px 0",
+                  fontFamily: sans,
+                  fontSize: "14px",
+                  color: muted,
+                  lineHeight: "1.7",
+                  fontStyle: "italic",
+                }}
+              >
+                The more you write in it, the smarter it gets.
+              </Text>
+
               {/* CTA */}
-              <div style={{ marginTop: "32px" }}>
+              <div style={{ marginBottom: "32px" }}>
                 <Button
                   href="https://xvault.studio/dashboard"
                   style={{
@@ -218,25 +229,70 @@ export default function WelcomeEmail() {
                 style={{
                   border: "none",
                   borderTop: `1px solid ${border}`,
-                  margin: "36px 0 28px 0",
+                  margin: "0 0 28px 0",
                 }}
               />
 
-              {/* Referral nudge */}
+              {/* Feedback ask */}
               <Text
                 style={{
-                  margin: 0,
+                  margin: "0 0 12px 0",
                   fontFamily: sans,
-                  fontSize: "13px",
+                  fontSize: "14px",
+                  color: dark,
+                  lineHeight: "1.7",
+                  fontWeight: 600,
+                }}
+              >
+                Since it's still early, I'd love your honest feedback — especially around:
+              </Text>
+
+              <Text
+                style={{
+                  margin: "0 0 16px 0",
+                  fontFamily: sans,
+                  fontSize: "14px",
+                  color: muted,
+                  lineHeight: "1.9",
+                }}
+              >
+                · How well the co-author understands your story
+                {"\n"}· Whether the suggestions feel helpful or intrusive
+                {"\n"}· Any bugs or confusing parts
+                {"\n"}· Features that would genuinely help your writing
+              </Text>
+
+              <Text
+                style={{
+                  margin: "0 0 28px 0",
+                  fontFamily: sans,
+                  fontSize: "14px",
                   color: muted,
                   lineHeight: "1.7",
                 }}
               >
-                <strong style={{ color: dark, fontWeight: 600 }}>Know a writer?</strong>{" "}
-                Share your referral link from the dashboard and earn up to{" "}
-                <strong style={{ color: dark, fontWeight: 600 }}>+90 bonus credits</strong> —
-                30 for each person who gets started.
+                You can reply directly to this email or use the in-app feedback button.
+                I read every message.
               </Text>
+
+              {/* Sign-off */}
+              <Text
+                style={{
+                  margin: 0,
+                  fontFamily: sans,
+                  fontSize: "14px",
+                  color: muted,
+                  lineHeight: "1.7",
+                }}
+              >
+                Looking forward to seeing what you create.
+                {"\n\n"}Best,
+                {"\n"}
+                <span style={{ color: dark, fontWeight: 600 }}>Bhaskar</span>
+                {"\n"}
+                <span style={{ fontSize: "12px" }}>Founder, Xvault Studio</span>
+              </Text>
+
             </div>
           </Section>
 
@@ -251,14 +307,7 @@ export default function WelcomeEmail() {
                 lineHeight: "1.6",
               }}
             >
-              You're receiving this because you created an account on{" "}
-              <Link
-                href="https://xvault.studio"
-                style={{ color: "#9ca3af", textDecoration: "underline" }}
-              >
-                xvault.studio
-              </Link>
-              .
+              You're receiving this because you created an account on xvault.studio.
             </Text>
           </Section>
 

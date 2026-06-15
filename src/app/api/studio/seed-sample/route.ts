@@ -389,7 +389,8 @@ export async function POST(request: NextRequest) {
       .eq("welcome_email_sent", false)
       .select("id");
     if (emailUpdated && emailUpdated.length > 0) {
-      sendWelcomeEmail(user.email).catch((e) =>
+      const firstName = (user.email ?? "").split("@")[0];
+      sendWelcomeEmail(user.email, firstName).catch((e) =>
         console.error("[seed-sample] welcome email failed:", e)
       );
     }

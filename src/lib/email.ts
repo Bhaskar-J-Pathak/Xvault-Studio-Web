@@ -12,12 +12,13 @@ const FROM = "arthur@xvault.dev";
 
 // ── 1. Normal onboarding welcome ──────────────────────────────────────────
 
-export async function sendWelcomeEmail(to: string): Promise<void> {
-  const html = await render(React.createElement(WelcomeEmail));
+export async function sendWelcomeEmail(to: string, name?: string): Promise<void> {
+  const html = await render(React.createElement(WelcomeEmail, { name }));
   await resend.emails.send({
     from: FROM,
     to,
-    subject: "Your studio is ready",
+    subject: "Welcome to Xvault Studio",
+    replyTo: FROM,
     html,
   });
 }
@@ -36,12 +37,13 @@ export async function sendRetroTourEmail(to: string): Promise<void> {
 
 // ── 3. Welcome for a user who was referred (+15 bonus credits) ────────────
 
-export async function sendReferredWelcomeEmail(to: string): Promise<void> {
-  const html = await render(React.createElement(ReferredWelcomeEmail));
+export async function sendReferredWelcomeEmail(to: string, name?: string): Promise<void> {
+  const html = await render(React.createElement(ReferredWelcomeEmail, { name }));
   await resend.emails.send({
     from: FROM,
     to,
-    subject: "15 bonus credits added to your account",
+    subject: "Welcome to Xvault Studio — and a little bonus",
+    replyTo: FROM,
     html,
   });
 }
@@ -52,14 +54,16 @@ export async function sendReferralCompleteEmail(
   to: string,
   referralCount: number,
   totalBonusCredits: number,
+  name?: string,
 ): Promise<void> {
   const html = await render(
-    React.createElement(ReferralCompleteEmail, { referralCount, totalBonusCredits }),
+    React.createElement(ReferralCompleteEmail, { name, referralCount, totalBonusCredits }),
   );
   await resend.emails.send({
     from: FROM,
     to,
-    subject: "+30 credits — your referral came through",
+    subject: "+30 credits — your referral just got started",
+    replyTo: FROM,
     html,
   });
 }

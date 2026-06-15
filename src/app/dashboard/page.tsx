@@ -100,7 +100,8 @@ export default async function DashboardPage() {
       .eq("welcome_email_sent", false)
       .select("id");
     if (emailUpdated && emailUpdated.length > 0) {
-      sendWelcomeEmail(user.email).catch((e) =>
+      const firstName = user.email.split("@")[0];
+      sendWelcomeEmail(user.email, firstName).catch((e) =>
         console.error("[dashboard] welcome email failed:", e)
       );
     }

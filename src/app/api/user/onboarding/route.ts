@@ -47,7 +47,8 @@ export async function PATCH(request: NextRequest) {
 
       if (rpcResult?.ok === true) {
         // Referral completed — notify referred user of their bonus credits.
-        sendReferredWelcomeEmail(user.email!).catch((e) =>
+        const referredName = (user.email ?? "").split("@")[0];
+        sendReferredWelcomeEmail(user.email!, referredName).catch((e) =>
           console.error("[email] referred welcome failed:", e),
         );
 
@@ -59,10 +60,12 @@ export async function PATCH(request: NextRequest) {
           .single();
 
         if (referrer) {
+          const referrerName = (referrer.email ?? "").split("@")[0];
           sendReferralCompleteEmail(
             referrer.email,
             referrer.referral_count,
             referrer.bonus_credits,
+            referrerName,
           ).catch((e) => console.error("[email] referral complete failed:", e));
         }
       }
