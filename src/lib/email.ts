@@ -5,6 +5,7 @@ import * as React from "react";
 import WelcomeEmail from "@/emails/welcome";
 import ReferredWelcomeEmail from "@/emails/referred-welcome";
 import ReferralCompleteEmail from "@/emails/referral-complete";
+import RetroTourEmail from "@/emails/retro-tour";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = "arthur@xvault.dev";
@@ -21,7 +22,19 @@ export async function sendWelcomeEmail(to: string): Promise<void> {
   });
 }
 
-// ── 2. Welcome for a user who was referred (+15 bonus credits) ────────────
+// ── 2. Retro tour blast — sent once to users who missed the onboarding bug ──
+
+export async function sendRetroTourEmail(to: string): Promise<void> {
+  const html = await render(React.createElement(RetroTourEmail));
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "We owe you a tour — it's ready now",
+    html,
+  });
+}
+
+// ── 3. Welcome for a user who was referred (+15 bonus credits) ────────────
 
 export async function sendReferredWelcomeEmail(to: string): Promise<void> {
   const html = await render(React.createElement(ReferredWelcomeEmail));

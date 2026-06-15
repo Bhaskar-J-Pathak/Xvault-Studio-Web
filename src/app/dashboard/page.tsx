@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FileText, BookOpen, Zap, ArrowRight, Clock } from "lucide-react";
-import { getUser, getProfile, createServerSupabaseClient } from "@/lib/auth";
+import { getUser, getProfile, createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { isInTrial, PLAN_LIMITS, creditsRemaining, creditsCap, TRIAL_CREDITS } from "@/lib/supabase";
+import { sendWelcomeEmail } from "@/lib/email";
 import type { DbProject } from "@/types/database";
 import DashboardClient from "./_components/dashboard-client";
 import ProjectCardActions from "./_components/project-card-actions";
@@ -88,10 +89,29 @@ export default async function DashboardPage() {
   const aiUsed        = profile?.ai_requests_this_month ?? 0;
   const aiLimit       = profile ? (inTrial ? null : PLAN_LIMITS[profile.plan] + (profile.bonus_credits ?? 0)) : null;
 
-  // First-login: show genre picker when onboarding hasn't started
-  const needsOnboarding = profile
-    ? (profile.onboarding_step === 0 && !profile.onboarding_done)
-    : false;
+  // Welcome email — fires once for OTP users (who never pass through /auth/callback).
+  // Atomic: only the first render that flips welcome_email_sent from false → true sends it.
+  if (profile && !profile.welcome_email_sent && user.email) {
+    const service = createServiceClient();
+    const { data: emailUpdated } = await service
+      .from("profiles")
+      .update({ welcome_email_sent: true })
+      .eq("id", user.id)
+      .eq("welcome_email_sent", false)
+      .select("id");
+    if (emailUpdated && emailUpdated.length > 0) {
+      sendWelcomeEmail(user.email).catch((e) =>
+        console.error("[dashboard] welcome email failed:", e)
+      );
+    }
+  }
+
+  // First-login: show genre picker when onboarding hasn't started.
+  // Also covers the case where profile is null (trigger failure) — new users
+  // with no profile row should always see the genre picker; seed-sample will
+  // create the profile via its service-client guard.
+  const needsOnboarding = !profile
+    || (profile.onboarding_step === 0 && !profile.onboarding_done);
 
   // Greeting
   const hour = new Date().getHours();

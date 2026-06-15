@@ -284,9 +284,9 @@ function AuthForm() {
         {/* Footer */}
         <p className="text-center text-xs text-[#1A1A1A]/35">
           By continuing you agree to our{" "}
-          <span className="underline underline-offset-2 cursor-pointer">Terms</span>{" "}
+          <Link href="/terms" className="underline underline-offset-2 hover:text-[#1A1A1A]/60 transition-colors">Terms</Link>{" "}
           and{" "}
-          <span className="underline underline-offset-2 cursor-pointer">Privacy Policy</span>.
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-[#1A1A1A]/60 transition-colors">Privacy Policy</Link>.
         </p>
       </div>
     </div>

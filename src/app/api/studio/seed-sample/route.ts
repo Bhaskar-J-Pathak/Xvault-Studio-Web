@@ -8,6 +8,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiEmbed } from "@/lib/ai";
 import { chunkText } from "@/lib/chunking";
+import { sendWelcomeEmail } from "@/lib/email";
 
 // ── Lexical JSON helpers ──────────────────────────────────────────────────────
 
@@ -378,6 +379,22 @@ export async function POST(request: NextRequest) {
     { onConflict: "id", ignoreDuplicates: true }
   );
 
+  // Welcome email fallback — covers users whose profile was created by the guard
+  // above (trigger-failure path). Atomic: flips welcome_email_sent false → true once.
+  if (user.email) {
+    const { data: emailUpdated } = await service
+      .from("profiles")
+      .update({ welcome_email_sent: true })
+      .eq("id", user.id)
+      .eq("welcome_email_sent", false)
+      .select("id");
+    if (emailUpdated && emailUpdated.length > 0) {
+      sendWelcomeEmail(user.email).catch((e) =>
+        console.error("[seed-sample] welcome email failed:", e)
+      );
+    }
+  }
+
   // Only seed once per user
   const { data: existing } = await supabase
     .from("projects")
@@ -388,6 +405,13 @@ export async function POST(request: NextRequest) {
 
   if (existing) {
     const chapterId = (existing.chapters as { id: string }[])?.[0]?.id;
+    // Ensure onboarding_step advances even if the previous call crashed between
+    // project creation and the profile update (only moves forward, never back).
+    await supabase
+      .from("profiles")
+      .update({ onboarding_step: 1 })
+      .eq("id", user.id)
+      .eq("onboarding_step", 0);
     return Response.json({ projectId: existing.id, chapterId });
   }
 

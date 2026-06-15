@@ -20,6 +20,7 @@ export interface Profile {
   referred_by: string | null;
   bonus_credits: number;
   referral_count: number;
+  welcome_email_sent: boolean;
 }
 
 /** Monthly credit limits per plan (post-trial). */
