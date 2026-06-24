@@ -142,7 +142,7 @@ If nothing needs changing, return empty arrays and explain in summary.`;
     raw = await geminiGenerate(
       prompt,
       "You analyze manuscripts and return precise, structured change plans as valid JSON. Never hallucinate text — only quote verbatim passages.",
-      4096,
+      16384,
       true,
       "gemini-2.5-flash"
     );
@@ -172,7 +172,12 @@ If nothing needs changing, return empty arrays and explain in summary.`;
       console.error("[global-change] Parse failed:", raw.slice(0, 300));
       return Response.json({ error: "AI returned invalid JSON" }, { status: 500 });
     }
-    plan = JSON.parse(match[0]);
+    try {
+      plan = JSON.parse(match[0]);
+    } catch {
+      console.error("[global-change] Fallback parse failed:", raw.slice(0, 300));
+      return Response.json({ error: "AI returned invalid JSON" }, { status: 500 });
+    }
   }
 
   // Build a lookup map for fast chapter content access

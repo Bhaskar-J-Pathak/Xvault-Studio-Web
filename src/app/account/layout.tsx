@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUser, getProfile } from "@/lib/auth";
 import AppSidebar from "@/app/dashboard/_components/app-sidebar";
+
+export const metadata: Metadata = {
+  title: "Account",
+  robots: { index: false, follow: false },
+};
 
 export default async function AccountLayout({
   children,

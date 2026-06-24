@@ -29,7 +29,7 @@ const STEPS = [
     borderColor: "border-rose-200/70",
     label:       "Explore",
     title:       "A sample story loads instantly",
-    body:        "\"The Glass Meridian\" — a thriller with 4 chapters, pre-seeded characters, and Alex already reading. The tutorial walks you through every feature in about 2 minutes.",
+    body:        "\"The Glass Meridian\" — a thriller with 3 chapters, pre-seeded characters, and Alex already reading. The tutorial walks you through every feature in about 2 minutes.",
     detail:      "No setup · Just open and go",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">

@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-const HEADLINE_LINES = ["Your story", "deserves a", "smarter OS."];
+const HEADLINE_LINES = ["Stop explaining", "your story.", "Alex already knows it."];
 
 export default function CTA() {
   const ref = useRef<HTMLDivElement>(null);

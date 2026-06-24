@@ -542,7 +542,7 @@ export default function Features() {
                 className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-stone-900"
                 style={{ fontSize: "clamp(2.4rem,4.8vw,4.2rem)" }}
               >
-                The tools serious
+                Built for
               </motion.h2>
             </div>
             <div className="overflow-hidden">
@@ -553,7 +553,7 @@ export default function Features() {
                 className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-stone-400"
                 style={{ fontSize: "clamp(2.4rem,4.8vw,4.2rem)" }}
               >
-                novelists reach for.
+                long-form fiction.
               </motion.h2>
             </div>
           </div>

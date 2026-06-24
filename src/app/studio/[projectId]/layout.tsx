@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getUser, createServerSupabaseClient } from "@/lib/auth";
 import StudioSidebar from "./_components/studio-sidebar";
+
+export const metadata: Metadata = {
+  title: "Studio",
+  robots: { index: false, follow: false },
+};
 
 export default async function StudioLayout({
   children,

@@ -55,9 +55,9 @@ export default function Hero() {
           transition={{ delay: 0.05, duration: 0.75, ease }}
         >
           <h1 className="font-display text-display text-stone-900">
-            The AI Story OS
+            An AI co-author that
             <br />
-            <em className="gradient-text not-italic">for Novelists.</em>
+            <em className="gradient-text not-italic">reads your novel first.</em>
           </h1>
         </motion.div>
 
@@ -69,8 +69,8 @@ export default function Hero() {
           className="flex flex-col items-start gap-8 lg:items-start"
         >
           <p className="max-w-[34ch] text-[1.0625rem] leading-[1.8] text-stone-500">
-            Alex has already read your manuscript. Your world is mapped. Ghost
-            suggestions are one keystroke away.
+            For fiction writers tired of re-explaining their story to the AI.
+            Alex reads your entire manuscript before it says a word.
           </p>
 
           <div className="flex flex-col gap-4">
@@ -86,6 +86,10 @@ export default function Hero() {
             <p className="text-xs text-stone-400">
               No credit card&nbsp;&middot;&nbsp;14-day trial&nbsp;&middot;&nbsp;100 AI credits
             </p>
+            <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-violet-200/70 bg-violet-50 px-3 py-1 text-[0.68rem] font-medium text-violet-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+              Public beta · Free to join
+            </span>
           </div>
         </motion.div>
 

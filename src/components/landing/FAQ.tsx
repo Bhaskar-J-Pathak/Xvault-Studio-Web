@@ -12,7 +12,7 @@ const FAQS = [
   },
   {
     q: "Is this the full product?",
-    a: "Xvault Studio is currently in public beta. The core writing experience — Alex, Ghost Writing, World Board, Story Bible, and Global Replace — is fully functional. We're actively building toward a full launch with expanded features, export formats (DOCX, EPUB, PDF), and subscription plans. Beta users get early access and shape what we build next.",
+    a: "Xvault Studio is currently in public beta. The core writing experience — Alex, Ghost Writing, World Board, Story Bible, and Global Replace — is fully functional. We're actively building toward a full launch with expanded features and subscription plans. Beta users get full access and directly shape what we build next.",
   },
   {
     q: "What exactly is Alex?",
@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "Can I export my manuscript?",
-    a: "Yes. You can export your full manuscript as a Word document (.docx), EPUB, PDF, or plain text (.txt) — from the studio sidebar at any time. Your work is always yours to take.",
+    a: "Yes. You can export your manuscript as a Word document (.docx) from the studio sidebar at any time. EPUB and PDF export are in development and coming at full launch. Your work is always yours to take.",
   },
   {
     q: "Is my manuscript safe in the cloud?",
