@@ -7,8 +7,6 @@ import { sendWelcomeEmail } from "@/lib/email";
 import type { DbProject } from "@/types/database";
 import DashboardClient from "./_components/dashboard-client";
 import ProjectCardActions from "./_components/project-card-actions";
-import ReferralCard from "./_components/referral-card";
-import ReferralLinker from "./_components/referral-linker";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -122,9 +120,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-8 py-10 space-y-10">
-      {/* Links referral code from localStorage after signup — renders nothing */}
-      <ReferralLinker />
-
       {/* Header row */}
       <div className="flex items-start justify-between">
         <div>
@@ -185,15 +180,6 @@ export default async function DashboardPage() {
           sub={inTrial ? `of ${TRIAL_CREDITS} trial credits` : aiLimit !== null ? `${Math.round((aiUsed / aiLimit) * 100)}% used` : "No active plan"}
         />
       </div>
-
-      {/* Referral card */}
-      {profile && (
-        <ReferralCard
-          referralCode={profile.referral_code}
-          referralCount={profile.referral_count ?? 0}
-          bonusCredits={profile.bonus_credits ?? 0}
-        />
-      )}
 
       {/* Projects grid */}
       <section>

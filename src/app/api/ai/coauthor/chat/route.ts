@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
   if (isLikelyGlobalChange(message.trim())) {
     const ackReply = `On it — scanning the manuscript for every instance. Give me a moment, I'll show you exactly what I'll change before touching anything.`;
 
-    saveCoauthorMessages(supabase, projectId, message.trim(), ackReply, "chat").catch(
+    await saveCoauthorMessages(supabase, projectId, message.trim(), ackReply, "chat").catch(
       (e) => console.error("[coauthor/chat] Save failed:", e)
     );
 
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       ? "nudge"
       : "chat";
 
-  saveCoauthorMessages(supabase, projectId, message.trim(), reply, messageType).catch(
+  await saveCoauthorMessages(supabase, projectId, message.trim(), reply, messageType).catch(
     (e) => console.error("[coauthor/chat] Save failed:", e)
   );
 
