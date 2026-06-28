@@ -140,10 +140,6 @@ async function parseDocx(buffer: Buffer): Promise<string> {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  if (process.env.BETA_MODE === "true") {
-    return Response.json({ error: "Import is not available during the beta." }, { status: 403 });
-  }
-
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });

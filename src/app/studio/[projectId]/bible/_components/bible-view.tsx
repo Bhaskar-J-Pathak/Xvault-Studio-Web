@@ -162,8 +162,10 @@ export default function BibleView({
   const [synopsis,    setSynopsis]    = useState(bible?.synopsis ?? "");
 
   const [intentSaving,  setIntentSaving]  = useState(false);
+  const [intentError,   setIntentError]   = useState(false);
   const [genreSaving,   setGenreSaving]   = useState(false);
   const [styleSaving,   setStyleSaving]   = useState(false);
+  const [styleError,    setStyleError]    = useState(false);
 
   const [synopsisGenerating, setSynopsisGenerating] = useState(false);
   const [synopsisError,      setSynopsisError]      = useState("");
@@ -195,22 +197,26 @@ export default function BibleView({
   const styleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Upsert helper ─────────────────────────────────────────────────────────
-  const upsertBible = useCallback(async (patch: Record<string, unknown>) => {
+  const upsertBible = useCallback(async (patch: Record<string, unknown>): Promise<boolean> => {
     const supabase = createClient();
-    await supabase.from("story_bibles").upsert(
+    const { error } = await supabase.from("story_bibles").upsert(
       { project_id: projectId, ...patch, updated_at: new Date().toISOString() },
       { onConflict: "project_id" }
     );
+    if (error) console.error("[bible] upsert failed:", error);
+    return !error;
   }, [projectId]);
 
   // ── Intent ────────────────────────────────────────────────────────────────
   const handleIntentChange = (value: string) => {
     setIntent(value);
+    setIntentError(false);
     if (intentTimerRef.current) clearTimeout(intentTimerRef.current);
     intentTimerRef.current = setTimeout(async () => {
       setIntentSaving(true);
-      await upsertBible({ project_intent: value });
+      const ok = await upsertBible({ project_intent: value });
       setIntentSaving(false);
+      if (!ok) setIntentError(true);
     }, 1500);
   };
 
@@ -229,11 +235,13 @@ export default function BibleView({
   // ── Style & Voice ─────────────────────────────────────────────────────────
   const handleStyleChange = (value: string) => {
     setStyleNotes(value);
+    setStyleError(false);
     if (styleTimerRef.current) clearTimeout(styleTimerRef.current);
     styleTimerRef.current = setTimeout(async () => {
       setStyleSaving(true);
-      await upsertBible({ style_notes: value });
+      const ok = await upsertBible({ style_notes: value });
       setStyleSaving(false);
+      if (!ok) setStyleError(true);
     }, 1500);
   };
 
@@ -362,6 +370,7 @@ export default function BibleView({
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-[13px] font-semibold text-[#1A1A1A]">Braindump</h2>
             {intentSaving && <span className="text-[11px] text-[#1A1A1A]/30">Saving…</span>}
+            {intentError && <span className="text-[11px] text-red-400">Save failed — check your connection</span>}
           </div>
           <p className="text-[11px] text-[#1A1A1A]/40 mb-3">
             The raw seed of this story. Why does it exist? What feeling are you chasing? Write freely — this feeds your co-author.
@@ -397,6 +406,7 @@ export default function BibleView({
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-[13px] font-semibold text-[#1A1A1A]">Style & Voice</h2>
             {styleSaving && <span className="text-[11px] text-[#1A1A1A]/30">Saving…</span>}
+            {styleError && <span className="text-[11px] text-red-400">Save failed — check your connection</span>}
           </div>
           <p className="text-[11px] text-[#1A1A1A]/40 mb-3">
             How this story is written. POV, tense, sentence rhythm, tone, what you avoid. Your co-author reads this before every suggestion.

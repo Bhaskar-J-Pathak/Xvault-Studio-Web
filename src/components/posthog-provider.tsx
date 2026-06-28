@@ -9,9 +9,11 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 if (typeof window !== "undefined") {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
+    api_host: "/ingest",
+    ui_host: "https://us.posthog.com",
     capture_pageview: false,      // we fire manually so we get the right URL
     capture_pageleave: true,      // track when users close/navigate away
+    capture_dead_clicks: false,   // disable — avoids "failed to load script" error
     session_recording: { maskAllInputs: false }, // enable session recordings
     loaded: (ph) => {
       if (process.env.NODE_ENV === "development") ph.debug();
