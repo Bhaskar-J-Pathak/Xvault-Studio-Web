@@ -344,7 +344,7 @@ const FEATURES = [
     category: "Co-Author",
     title: "Alex — Your Co-Author",
     description:
-      "Alex reads your entire manuscript before it says a word. Ask anything — who Nadia is, what's in Chapter 3, which threads are unresolved. Every answer is grounded in your actual story.",
+      "Alex lives in a panel next to your writing canvas. Before you type a word, it reads your entire manuscript. Ask it anything — who Nadia is, what happened in Chapter 3, which plot threads are still open. Every answer grounded in what you've actually written.",
     demo: (live: boolean) => <AlexChatDemo live={live} />,
   },
   {
@@ -563,7 +563,7 @@ export default function Features() {
             transition={{ delay: 0.28, duration: 0.72, ease }}
             className="text-balance text-[0.9375rem] leading-[1.82] text-stone-500 lg:text-right"
           >
-            No GPT wrapper. No prompt box. Real tools built for long-form fiction.
+            Not just a chat window. A full writing studio built specifically for novelists.
           </motion.p>
         </div>
 

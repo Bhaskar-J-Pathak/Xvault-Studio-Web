@@ -188,7 +188,7 @@ export default function Navbar() {
             </motion.nav>
 
             <div className="absolute bottom-8 left-6 text-sm text-stone-400">
-              The AI Story OS for Novelists
+              AI writing studio for novelists
             </div>
           </motion.div>
         )}
