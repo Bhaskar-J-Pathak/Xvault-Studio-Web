@@ -52,7 +52,7 @@ export default function GiftCreditsEmail({
         />
       </Head>
 
-      <Preview>You've been gifted {credits} credits — thank you for your feedback.</Preview>
+      <Preview>{`You've been gifted ${credits} credits — thank you for your feedback.`}</Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 20px" }}>
