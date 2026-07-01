@@ -44,9 +44,9 @@ const STEPS = [
     bgColor:     "bg-amber-50",
     borderColor: "border-amber-200/70",
     label:       "Write",
-    title:       "Open the studio",
-    body:        "Import your chapters or start fresh. Alex adapts to whatever you're writing. Ghost suggestions on demand. World Board building in the background. Story Bible always up to date.",
-    detail:      "Alex knows your characters · Always in context",
+    title:       "Canvas on the left. Alex on the right.",
+    body:        "The studio is a clean writing canvas — no distractions. Alex lives in a panel alongside it, loaded with your entire manuscript. Press Ctrl+K anywhere in your text for an inline suggestion. No switching tabs, no copy-pasting context. Everything in one place.",
+    detail:      "Ctrl+K anywhere · Alex always in context",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
         <path d="M4 17L8 6l4 8 3-5 3 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />

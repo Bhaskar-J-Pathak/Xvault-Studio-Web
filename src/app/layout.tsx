@@ -17,11 +17,11 @@ const garamond = EB_Garamond({
 
 export const metadata: Metadata = {
   title: {
-    default: "Xvault Studio — AI Co-Author for Fiction Writers",
+    default: "Xvault Studio — AI Writing Studio for Novelists",
     template: "%s | Xvault Studio",
   },
   description:
-    "Alex reads your entire manuscript before it says a word. AI co-author, world board, plot thread tracking, and ghost writing in your voice — for fiction writers. Free 14-day trial, no credit card.",
+    "A browser-based writing studio for novelists. Your AI co-author lives alongside your canvas — loaded with your entire manuscript, so it always knows your characters, your world, and where the story is going. Free 14-day trial, no credit card.",
   keywords: [
     "AI writing tool for novels",
     "AI co-author for fiction",
@@ -40,19 +40,28 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://xvault.dev"),
   alternates: { canonical: "https://xvault.dev" },
   openGraph: {
-    title: "Xvault Studio — AI Co-Author for Fiction Writers",
+    title: "Xvault Studio — AI Writing Studio for Novelists",
     description:
-      "Alex reads your entire manuscript before it says a word. AI co-author, world board, and ghost writing in your voice. Free 14-day trial.",
+      "Write your novel with AI that actually knows your story. Your AI co-author lives alongside your canvas, loaded with your entire manuscript. Free 14-day trial.",
     url: "https://xvault.dev",
     siteName: "Xvault Studio",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/OG.png",
+        width: 1200,
+        height: 630,
+        alt: "Xvault Studio — AI Writing Studio for Novelists",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Xvault Studio — AI Co-Author for Fiction Writers",
+    title: "Xvault Studio — AI Writing Studio for Novelists",
     description:
-      "Alex reads your entire manuscript before it says a word. AI co-author, world board, and ghost writing in your voice. Free 14-day trial.",
+      "Write your novel with AI that actually knows your story. Your AI co-author lives alongside your canvas, loaded with your entire manuscript. Free 14-day trial.",
+    images: ["/OG.png"],
   },
   robots: { index: true, follow: true },
   icons: {

@@ -8,6 +8,10 @@ const Antigravity = dynamic(() => import("./Antigravity"), {
   ssr: false,
   loading: () => null,
 });
+const StudioMockup = dynamic(() => import("./StudioMockup"), {
+  ssr: false,
+  loading: () => null,
+});
 
 const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -35,48 +39,40 @@ export default function Hero() {
         />
       </div>
 
-      {/* Left white fade — keeps headline readable */}
+      {/* White fade — keeps left content readable */}
       <div
         className="pointer-events-none absolute inset-0 z-[1]"
         aria-hidden="true"
         style={{
           background:
-            "linear-gradient(105deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.82) 38%, rgba(255,255,255,0.18) 62%, transparent 100%)",
+            "linear-gradient(105deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.88) 42%, rgba(255,255,255,0.30) 65%, transparent 100%)",
         }}
       />
 
       {/* Content */}
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1380px] items-center gap-12 px-6 pb-16 pt-24 lg:grid-cols-2 lg:gap-24 lg:px-10">
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1380px] items-center gap-12 px-6 pb-16 pt-24 lg:grid-cols-2 lg:gap-16 lg:px-10">
 
-        {/* Left — headline */}
+        {/* Left — all text content */}
         <motion.div
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.75, ease }}
+          className="flex flex-col gap-8"
         >
           <h1 className="font-display text-display text-stone-900">
-            An AI co-author that
+            Write your novel with AI
             <br />
-            <em className="gradient-text not-italic">reads your novel first.</em>
+            <em className="gradient-text not-italic">that knows your story.</em>
           </h1>
-        </motion.div>
 
-        {/* Right — value prop + CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.8, ease }}
-          className="flex flex-col items-start gap-8 lg:items-start"
-        >
-          <p className="max-w-[34ch] text-[1.0625rem] leading-[1.8] text-stone-500">
-            For fiction writers tired of re-explaining their story to the AI.
-            Alex reads your entire manuscript before it says a word.
+          <p className="max-w-[36ch] text-[1.0625rem] leading-[1.8] text-stone-500">
+            Xvault is a browser-based writing studio — you draft your chapters here. Alex, your AI co-author, lives in a panel alongside your canvas and has read your entire manuscript, so it always knows your characters, your world, and where the story is going.
           </p>
 
           <div className="flex flex-col gap-4">
             <Link
               href="/auth?mode=signup"
-              className="btn-shimmer inline-flex items-center gap-2.5 rounded-2xl bg-stone-950 px-8 py-4 text-[0.9375rem] font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
+              className="btn-shimmer inline-flex w-fit items-center gap-2.5 rounded-2xl bg-stone-950 px-8 py-4 text-[0.9375rem] font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
             >
               Start writing — it&apos;s free
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -91,6 +87,16 @@ export default function Hero() {
               Public beta · Free to join
             </span>
           </div>
+        </motion.div>
+
+        {/* Right — animated studio mockup */}
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.85, ease }}
+          className="w-full"
+        >
+          <StudioMockup />
         </motion.div>
 
       </div>
