@@ -37,8 +37,8 @@ const PLANS: Plan[] = [
     originalMonthly: 19.99,
     originalAnnually: 239,
     credits: 300,
-    buttonText: "Start for free",
-    buttonHref: "/auth?mode=signup&plan=hobbyist",
+    buttonText: "Join free beta",
+    buttonHref: "/auth?mode=signup",
     highlighted: false,
     features: [
       { text: "300 AI credits / month" },
@@ -60,8 +60,8 @@ const PLANS: Plan[] = [
     originalMonthly: 39.99,
     originalAnnually: 479,
     credits: 600,
-    buttonText: "Start writing for free",
-    buttonHref: "/auth?mode=signup&plan=pro",
+    buttonText: "Join free beta",
+    buttonHref: "/auth?mode=signup",
     badge: "Most popular",
     highlighted: true,
     features: [
@@ -128,8 +128,13 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: BillingPlan }) {
           {plan.title}
         </p>
 
+        {/* Projected label */}
+        <p className={cn("mt-2 text-[0.62rem] font-semibold uppercase tracking-widest", plan.highlighted ? "text-violet-400/50" : "text-violet-400/60")}>
+          Projected
+        </p>
+
         {/* Price with slashed original */}
-        <div className="mt-2 flex items-end gap-2">
+        <div className="mt-1 flex items-end gap-2">
           <span className={cn("font-display text-[2.6rem] font-light leading-none tracking-tight", plan.highlighted ? "text-white" : "text-[#1A0A3C]")}>
             <NumberFlow
               value={price}
@@ -254,7 +259,7 @@ export default function Pricing() {
                 transition={{ duration: 2, repeat: Infinity }}
                 className="h-1.5 w-1.5 rounded-full bg-violet-500"
               />
-              Launch offer — prices go up at full release
+              Public Beta · Free for all users right now
             </span>
           </div>
 
@@ -262,10 +267,10 @@ export default function Pricing() {
             className="font-display text-[#1A0A3C]"
             style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)", lineHeight: 1.1, letterSpacing: "-0.025em", fontWeight: 300 }}
           >
-            Simple pricing. No surprises.
+            Where pricing is headed.
           </h2>
           <p className="mt-4 text-[0.9375rem] text-violet-900/45">
-            Pay for what you use. Cancel anytime.
+            Everything is free while we&apos;re in beta. These are projected prices for when we launch.
           </p>
           <p className="mt-2 text-[0.78rem] text-violet-600/60">
             1 AI credit = 1 chat message or writing suggestion · resets monthly
@@ -320,10 +325,10 @@ export default function Pricing() {
         {/* Trial note */}
         <div className="mt-8 flex flex-col items-center gap-1.5 text-center">
           <p className="text-[0.78rem] font-medium text-violet-700/70">
-            All plans start with a 14-day free trial · 50 AI credits included · No credit card required
+            Free during public beta · No credit card required · We&apos;ll announce before anything changes
           </p>
           <p className="text-[0.68rem] text-violet-900/28">
-            Credits reset on your monthly billing date. Unused credits do not carry over.
+            Pricing above is projected. Early beta users will receive a discount when paid plans launch.
           </p>
         </div>
       </div>
