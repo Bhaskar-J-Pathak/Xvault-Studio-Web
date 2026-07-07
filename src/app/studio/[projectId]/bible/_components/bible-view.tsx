@@ -228,19 +228,20 @@ export default function BibleView({
       // All bible text fields in one upsert
       upsertBible({ project_intent: intent, style_notes: styleNotes, synopsis }),
       // Genre lives on the projects table
-      supabase.from("projects").update({ genre }).eq("id", projectId)
+      Promise.resolve(supabase.from("projects").update({ genre }).eq("id", projectId))
         .then(({ error }) => !error),
       // Chapter summaries
       ...chapters.map((ch) =>
-        supabase.from("chapters").update({ summary: summaries[ch.id] ?? "" }).eq("id", ch.id)
+        Promise.resolve(supabase.from("chapters").update({ summary: summaries[ch.id] ?? "" }).eq("id", ch.id))
           .then(({ error }) => !error)
       ),
       // Character attributes
       ...entities.filter((e) => e.type === "character").map((entity) =>
-        supabase.from("entities")
-          .update({ attributes: { ...(entity.attributes ?? {}), ...entityAttrs[entity.id] } })
-          .eq("id", entity.id)
-          .then(({ error }) => !error)
+        Promise.resolve(
+          supabase.from("entities")
+            .update({ attributes: { ...(entity.attributes ?? {}), ...entityAttrs[entity.id] } })
+            .eq("id", entity.id)
+        ).then(({ error }) => !error)
       ),
     ];
 
