@@ -76,11 +76,11 @@ function Step({ step, index, inView }: { step: typeof STEPS[number]; index: numb
       initial={{ opacity: 0, y: 28 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ delay: 0.08 + index * 0.18, duration: 0.75, ease }}
-      className="relative grid grid-cols-[1fr_auto] items-start gap-8 border-t border-black/[0.07] py-14 lg:py-20"
+      className="relative grid grid-cols-[1fr_auto] items-start gap-8 border-t border-violet-200/50 py-14 lg:py-20"
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute right-0 top-8 select-none font-display font-bold leading-none tracking-tight text-stone-100"
+        className="pointer-events-none absolute right-0 top-8 select-none font-display font-bold leading-none tracking-tight text-violet-200/35"
         style={{ fontSize: "clamp(5rem, 14vw, 11rem)" }}
       >
         {step.num}
@@ -91,13 +91,13 @@ function Step({ step, index, inView }: { step: typeof STEPS[number]; index: numb
           {step.num}&nbsp;&nbsp;&middot;&nbsp;&nbsp;{step.label}
         </div>
         <h3
-          className="mb-4 font-display font-bold leading-[1.08] tracking-[-0.035em] text-stone-900"
+          className="mb-4 font-display font-bold leading-[1.08] tracking-[-0.035em] text-[#1A0A3C]"
           style={{ fontSize: "clamp(1.6rem,3vw,2.6rem)" }}
         >
           {step.title}
         </h3>
-        <p className="text-[0.9375rem] leading-[1.85] text-stone-500">{step.body}</p>
-        <div className="mt-6 text-[0.7rem] font-medium text-stone-400">{step.detail}</div>
+        <p className="text-[0.9375rem] leading-[1.85] text-violet-900/50">{step.body}</p>
+        <div className="mt-6 text-[0.7rem] font-medium text-violet-900/40">{step.detail}</div>
       </div>
 
       <div className={`relative z-10 mt-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border ${step.borderColor} ${step.bgColor} ${step.textColor}`}>
@@ -114,9 +114,7 @@ export default function HowItWorks() {
   const bodyInView = useInView(bodyRef, { once: true, margin: "-80px" });
 
   return (
-    <section id="how-it-works" className="relative bg-white px-6 py-24 lg:px-10 lg:py-32">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-black/[0.07] to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-black/[0.07] to-transparent" />
+    <section id="how-it-works" className="relative bg-[#EDE8FF] px-6 py-24 lg:px-10 lg:py-32">
 
       <div className="mx-auto max-w-[1380px]">
 
@@ -128,8 +126,8 @@ export default function HowItWorks() {
             transition={{ duration: 0.55 }}
             className="mb-6 flex items-center gap-3"
           >
-            <div className="h-px w-8 bg-stone-300" />
-            <span className="text-[0.63rem] font-semibold uppercase tracking-[0.28em] text-stone-400">
+            <div className="h-px w-8 bg-violet-300/60" />
+            <span className="text-[0.63rem] font-semibold uppercase tracking-[0.28em] text-violet-600/50">
               Getting Started
             </span>
           </motion.div>
@@ -139,7 +137,7 @@ export default function HowItWorks() {
               initial={{ y: "100%" }}
               animate={hInView ? { y: "0%" } : {}}
               transition={{ delay: 0.06, duration: 0.85, ease }}
-              className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-stone-900"
+              className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-[#1A0A3C]"
               style={{ fontSize: "clamp(2.4rem,4.8vw,4.2rem)" }}
             >
               From blank page
@@ -150,7 +148,7 @@ export default function HowItWorks() {
               initial={{ y: "100%" }}
               animate={hInView ? { y: "0%" } : {}}
               transition={{ delay: 0.13, duration: 0.85, ease }}
-              className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-stone-400"
+              className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-violet-900/35"
               style={{ fontSize: "clamp(2.4rem,4.8vw,4.2rem)" }}
             >
               to finished draft.
@@ -161,7 +159,7 @@ export default function HowItWorks() {
             initial={{ opacity: 0, y: 14 }}
             animate={hInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.3, duration: 0.75, ease }}
-            className="mt-5 text-[0.9375rem] leading-[1.82] text-stone-500"
+            className="mt-5 text-[0.9375rem] leading-[1.82] text-violet-900/50"
           >
             No download. No configuration. Sign up, open the studio, and write.
           </motion.p>
@@ -183,7 +181,7 @@ export default function HowItWorks() {
         >
           <Link
             href="/auth?mode=signup"
-            className="btn-shimmer inline-flex items-center gap-2.5 rounded-full bg-stone-950 px-7 py-3.5 text-[0.875rem] font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
+            className="btn-shimmer inline-flex items-center gap-2.5 rounded-full bg-violet-700 px-7 py-3.5 text-[0.875rem] font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
           >
             Start for free
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">

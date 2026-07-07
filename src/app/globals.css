@@ -3,22 +3,22 @@
 @import "shadcn/tailwind.css";
 
 @theme inline {
-  --color-background: #FFFFFF;
-  --color-foreground: #1A1A1A;
+  --color-background: #0C0A09;
+  --color-foreground: #F0EBE3;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-garamond), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --color-card: #FFFFFF;
-  --color-card-foreground: #1A1A1A;
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-muted: rgba(0, 0, 0, 0.04);
-  --color-muted-foreground: rgba(26, 26, 26, 0.52);
-  --color-primary: #1A1A1A;
-  --color-primary-foreground: #FAFAF8;
+  --color-card: #141210;
+  --color-card-foreground: #F0EBE3;
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-muted: rgba(255, 255, 255, 0.04);
+  --color-muted-foreground: rgba(240, 235, 227, 0.45);
+  --color-primary: #F0EBE3;
+  --color-primary-foreground: #0C0A09;
   --color-accent: #7C3AED;
   --color-accent-foreground: #FFFFFF;
   --color-ring: #7C3AED;
-  --color-input: rgba(0, 0, 0, 0.07);
+  --color-input: rgba(255, 255, 255, 0.06);
   --radius-sm: 0.6rem;
   --radius-md: 0.8rem;
   --radius-lg: 1rem;
@@ -26,19 +26,19 @@
 }
 
 :root {
-  --background: #FFFFFF;
-  --foreground: #1A1A1A;
-  --card: #FFFFFF;
-  --card-foreground: #1A1A1A;
-  --border: rgba(0, 0, 0, 0.08);
-  --muted: rgba(0, 0, 0, 0.04);
-  --muted-foreground: rgba(26, 26, 26, 0.52);
-  --primary: #1A1A1A;
-  --primary-foreground: #FAFAF8;
+  --background: #0C0A09;
+  --foreground: #F0EBE3;
+  --card: #141210;
+  --card-foreground: #F0EBE3;
+  --border: rgba(255, 255, 255, 0.07);
+  --muted: rgba(255, 255, 255, 0.04);
+  --muted-foreground: rgba(240, 235, 227, 0.45);
+  --primary: #F0EBE3;
+  --primary-foreground: #0C0A09;
   --accent: #7C3AED;
   --accent-foreground: #FFFFFF;
   --ring: #7C3AED;
-  --input: rgba(0, 0, 0, 0.07);
+  --input: rgba(255, 255, 255, 0.06);
   --radius: 1rem;
 }
 
@@ -56,8 +56,8 @@
   }
 
   body {
-    background-color: #FFFFFF;
-    color: #1A1A1A;
+    background-color: #0C0A09;
+    color: #F0EBE3;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -82,23 +82,39 @@
 /* ── Typography ── */
 
 .text-display {
-  font-size: clamp(3.2rem, 7vw, 6.8rem);
-  line-height: 0.93;
-  letter-spacing: -0.045em;
-  font-weight: 700;
+  font-size: clamp(3.2rem, 7vw, 6.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  font-weight: 300;
+  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
 }
 
 .text-display-sm {
-  font-size: clamp(2.2rem, 4.5vw, 4.2rem);
-  line-height: 0.96;
-  letter-spacing: -0.038em;
-  font-weight: 700;
+  font-size: clamp(2.4rem, 5vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  font-weight: 300;
+  font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 0;
 }
 
-/* ── Gradient text (violet in light mode) ── */
+.text-display-xs {
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 300;
+  font-variation-settings: "opsz" 48, "SOFT" 0, "WONK" 0;
+}
+
+/* ── Display font default weight ── */
+
+.font-display {
+  font-weight: 300;
+}
+
+/* ── Gradient text ── */
 
 .gradient-text {
-  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 50%, #4C1D95 100%);
+  background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 50%, #6D28D9 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

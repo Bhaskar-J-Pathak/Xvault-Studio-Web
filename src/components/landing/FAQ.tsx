@@ -60,7 +60,7 @@ function AccordionItem({
       initial={{ opacity: 0, y: 14 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ delay, duration: 0.65, ease }}
-      className="border-b border-black/[0.07]"
+      className="border-b border-violet-200/50"
     >
       <button
         onClick={onToggle}
@@ -70,14 +70,14 @@ function AccordionItem({
         <div className="flex items-start gap-4">
           <span
             className={`mt-0.5 shrink-0 font-mono text-[0.6rem] font-bold tracking-[0.2em] transition-colors duration-300 ${
-              isOpen ? "text-violet-600" : "text-stone-300"
+              isOpen ? "text-violet-600" : "text-violet-400/40"
             }`}
           >
             0{index + 1}
           </span>
           <span
             className={`text-[0.9rem] font-medium leading-snug tracking-tight transition-colors duration-300 ${
-              isOpen ? "text-stone-900" : "text-stone-600"
+              isOpen ? "text-[#1A0A3C]" : "text-violet-900/55"
             }`}
           >
             {faq.q}
@@ -89,7 +89,7 @@ function AccordionItem({
           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
             isOpen
               ? "border-violet-200 bg-violet-50 text-violet-600"
-              : "border-stone-200 text-stone-400"
+              : "border-violet-200/60 text-violet-900/40"
           }`}
         >
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true">
@@ -109,7 +109,7 @@ function AccordionItem({
           >
             <div className="mb-5 ml-9 flex gap-3">
               <div className="w-[2px] shrink-0 rounded-full bg-violet-500/30" />
-              <p className="text-[0.875rem] leading-[1.85] text-stone-500">{faq.a}</p>
+              <p className="text-[0.875rem] leading-[1.85] text-violet-900/50">{faq.a}</p>
             </div>
           </motion.div>
         )}
@@ -129,7 +129,7 @@ export default function FAQ() {
   const listInView = useInView(listRef, { once: true, margin: "-40px" });
 
   return (
-    <section id="faq" className="bg-white px-6 py-24 lg:px-10 lg:py-32">
+    <section id="faq" className="bg-[#EDE8FF] px-6 py-24 lg:px-10 lg:py-32">
       <div className="mx-auto max-w-[1380px]">
 
         {/* Header */}
@@ -140,8 +140,8 @@ export default function FAQ() {
             transition={{ duration: 0.55 }}
             className="mb-6 flex items-center gap-3"
           >
-            <div className="h-px w-8 bg-stone-300" />
-            <span className="text-[0.63rem] font-semibold uppercase tracking-[0.28em] text-stone-400">
+            <div className="h-px w-8 bg-violet-300/60" />
+            <span className="text-[0.63rem] font-semibold uppercase tracking-[0.28em] text-violet-600/50">
               FAQ
             </span>
           </motion.div>
@@ -152,7 +152,7 @@ export default function FAQ() {
                 initial={{ y: "100%" }}
                 animate={hInView ? { y: "0%" } : {}}
                 transition={{ delay: 0.06, duration: 0.85, ease }}
-                className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-stone-900"
+                className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-[#1A0A3C]"
                 style={{ fontSize: "clamp(2.4rem,4vw,3.6rem)" }}
               >
                 Questions &amp; answers.
@@ -162,7 +162,7 @@ export default function FAQ() {
               initial={{ opacity: 0, y: 10 }}
               animate={hInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.3, duration: 0.6, ease }}
-              className="text-[0.875rem] text-stone-500"
+              className="text-[0.875rem] text-violet-900/50"
             >
               Something else?{" "}
               <a
@@ -179,7 +179,7 @@ export default function FAQ() {
         <div ref={listRef} className="hidden lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-20 xl:gap-28">
 
           {/* Left — question list */}
-          <div className="border-t border-black/[0.07]">
+          <div className="border-t border-violet-200/50">
             {FAQS.map((faq, i) => (
               <motion.button
                 key={faq.q}
@@ -187,8 +187,8 @@ export default function FAQ() {
                 animate={listInView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: i * 0.07, duration: 0.6, ease }}
                 onClick={() => setActive(i)}
-                className={`group flex w-full items-start gap-4 border-b border-black/[0.07] py-6 text-left transition-all duration-200 ${
-                  active === i ? "" : "hover:bg-stone-50/60"
+                className={`group flex w-full items-start gap-4 border-b border-violet-200/50 py-6 text-left transition-all duration-200 ${
+                  active === i ? "" : "hover:bg-white/50"
                 }`}
               >
                 {/* Active indicator */}
@@ -203,7 +203,7 @@ export default function FAQ() {
                 <div className="flex flex-1 items-start gap-3">
                   <span
                     className={`mt-0.5 shrink-0 font-mono text-[0.58rem] font-bold tracking-[0.2em] transition-colors duration-200 ${
-                      active === i ? "text-violet-600" : "text-stone-300"
+                      active === i ? "text-violet-600" : "text-violet-400/40"
                     }`}
                   >
                     0{i + 1}
@@ -211,8 +211,8 @@ export default function FAQ() {
                   <span
                     className={`text-[0.9rem] font-medium leading-snug tracking-tight transition-colors duration-200 ${
                       active === i
-                        ? "text-stone-900"
-                        : "text-stone-500 group-hover:text-stone-800"
+                        ? "text-[#1A0A3C]"
+                        : "text-violet-900/50 group-hover:text-violet-900/90"
                     }`}
                   >
                     {faq.q}
@@ -236,12 +236,12 @@ export default function FAQ() {
                 <div className="mb-1 font-mono text-[0.6rem] font-bold uppercase tracking-[0.22em] text-violet-600">
                   0{active + 1}
                 </div>
-                <h3 className="mb-6 font-display text-[1.25rem] font-bold leading-snug tracking-[-0.025em] text-stone-900">
+                <h3 className="mb-6 font-display text-[1.25rem] font-bold leading-snug tracking-[-0.025em] text-[#1A0A3C]">
                   {FAQS[active].q}
                 </h3>
                 <div className="flex gap-4">
                   <div className="w-[2px] shrink-0 rounded-full bg-violet-500/25" />
-                  <p className="text-[0.9375rem] leading-[1.88] text-stone-500">
+                  <p className="text-[0.9375rem] leading-[1.88] text-violet-900/50">
                     {FAQS[active].a}
                   </p>
                 </div>
@@ -252,7 +252,7 @@ export default function FAQ() {
         </div>
 
         {/* ── Mobile: accordion ── */}
-        <div className="border-t border-black/[0.07] lg:hidden">
+        <div className="border-t border-violet-200/50 lg:hidden">
           {FAQS.map((faq, i) => (
             <AccordionItem
               key={faq.q}

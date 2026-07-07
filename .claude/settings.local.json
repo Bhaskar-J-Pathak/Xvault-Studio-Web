@@ -32,7 +32,12 @@
       "Bash(cd \"C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web\" && rm -rf .next && npm run build 2>&1)",
       "Bash(cd \"C:\\\\Users\\\\bhask\\\\OneDrive\\\\Desktop\\\\Xvault-Studio-Web\" && npm install posthog-js 2>&1)",
       "WebSearch",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:sudowrite.com)",
+      "WebFetch(domain:saaspo.com)",
+      "WebFetch(domain:craftwork.design)",
+      "WebFetch(domain:docs.sudowrite.com)",
+      "WebFetch(domain:checkthat.ai)"
     ]
   }
 }
