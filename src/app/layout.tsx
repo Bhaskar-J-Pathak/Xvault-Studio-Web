@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { EB_Garamond } from "next/font/google";
+import { Fraunces } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 import PostHogProvider from "@/components/posthog-provider";
 import "./globals.css";
 
-const garamond = EB_Garamond({
-  variable: "--font-garamond",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["400", "500", "700", "800"],
+  axes: ["SOFT", "WONK", "opsz"],
   style: ["normal", "italic"],
   display: "swap",
 });
@@ -132,7 +132,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} ${garamond.variable} antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} ${fraunces.variable} antialiased`}
       >
         <Suspense>
           <PostHogProvider>

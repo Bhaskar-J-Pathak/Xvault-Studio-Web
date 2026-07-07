@@ -4,8 +4,7 @@
  * Runs a delta extraction pass over new manuscript text.
  * Populates entities, relationships, plot threads, and flags inconsistencies.
  *
- * Cost: ~$0.01 per 80k-word novel — uses Gemini Flash (not counted against quota).
- * Does NOT count against the user's AI request quota.
+ * Cost: 4 credits per extraction pass. Uses Gemini 2.5 Pro for extraction quality.
  */
 
 import { NextRequest } from "next/server";
@@ -84,8 +83,7 @@ export async function POST(request: NextRequest) {
   const summary = buildEntitySummary(existingEntities ?? [], openThreads ?? []);
   const prompt  = buildExtractionPrompt(deltaText, summary);
 
-  // ── Call Gemini Flash for extraction ──────────────────────────────────────
-  // ~$0.01 per 80k-word novel. Does not count against the user's AI quota.
+  // ── Call Gemini 2.5 Pro for extraction ────────────────────────────────────
   let rawResponse: string;
   try {
     rawResponse = await geminiGenerate(

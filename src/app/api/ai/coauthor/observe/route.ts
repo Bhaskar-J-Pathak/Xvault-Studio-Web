@@ -86,6 +86,11 @@ export async function POST(request: NextRequest) {
   const coauthorName = coauthor?.name ?? "Alex";
   const coauthorPersonality = coauthor?.personality ?? null;
 
+  // Intentionally no credit deduction here.
+  // Proactive observations are passive — the user never triggered this action.
+  // Charging for uninvited AI commentary would be bad UX. The 30-minute server-side
+  // cooldown (enforced above) caps maximum monthly exposure to an acceptable cost.
+
   const { systemPrompt } = await assembleCoauthorContext(
     supabase,
     projectId,

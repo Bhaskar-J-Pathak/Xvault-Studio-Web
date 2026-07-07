@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import type { EntityType } from "@/types/database";
 
@@ -196,6 +196,11 @@ export default function BibleView({
   const genreTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const styleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Global save state
+  type SaveStatus = "idle" | "saving" | "saved" | "error";
+  const [saveStatus, setSaveStatus]   = useState<SaveStatus>("idle");
+  const savedResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── Upsert helper ─────────────────────────────────────────────────────────
   const upsertBible = useCallback(async (patch: Record<string, unknown>): Promise<boolean> => {
     const supabase = createClient();
@@ -206,6 +211,57 @@ export default function BibleView({
     if (error) console.error("[bible] upsert failed:", error);
     return !error;
   }, [projectId]);
+
+  // ── Save All ──────────────────────────────────────────────────────────────
+  const handleSaveAll = useCallback(async () => {
+    // Flush any pending debounce timers so we don't double-save
+    if (intentTimerRef.current) { clearTimeout(intentTimerRef.current); intentTimerRef.current = null; }
+    if (genreTimerRef.current)  { clearTimeout(genreTimerRef.current);  genreTimerRef.current  = null; }
+    if (styleTimerRef.current)  { clearTimeout(styleTimerRef.current);  styleTimerRef.current  = null; }
+    if (savedResetRef.current)  { clearTimeout(savedResetRef.current);  savedResetRef.current  = null; }
+
+    setSaveStatus("saving");
+
+    const supabase = createClient();
+
+    const ops: Promise<boolean>[] = [
+      // All bible text fields in one upsert
+      upsertBible({ project_intent: intent, style_notes: styleNotes, synopsis }),
+      // Genre lives on the projects table
+      supabase.from("projects").update({ genre }).eq("id", projectId)
+        .then(({ error }) => !error),
+      // Chapter summaries
+      ...chapters.map((ch) =>
+        supabase.from("chapters").update({ summary: summaries[ch.id] ?? "" }).eq("id", ch.id)
+          .then(({ error }) => !error)
+      ),
+      // Character attributes
+      ...entities.filter((e) => e.type === "character").map((entity) =>
+        supabase.from("entities")
+          .update({ attributes: { ...(entity.attributes ?? {}), ...entityAttrs[entity.id] } })
+          .eq("id", entity.id)
+          .then(({ error }) => !error)
+      ),
+    ];
+
+    const results = await Promise.all(ops);
+    const allOk   = results.every(Boolean);
+
+    setSaveStatus(allOk ? "saved" : "error");
+    savedResetRef.current = setTimeout(() => setSaveStatus("idle"), 2500);
+  }, [intent, genre, styleNotes, synopsis, chapters, summaries, entities, entityAttrs, projectId, upsertBible]);
+
+  // Ctrl+S / Cmd+S keyboard shortcut
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        handleSaveAll();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleSaveAll]);
 
   // ── Intent ────────────────────────────────────────────────────────────────
   const handleIntentChange = (value: string) => {
@@ -358,11 +414,35 @@ export default function BibleView({
       <div className="max-w-[740px] mx-auto px-8 py-12">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="mb-10">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30 mb-1">
-            Story Bible
-          </p>
-          <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">{projectTitle}</h1>
+        <div className="mb-10 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30 mb-1">
+              Story Bible
+            </p>
+            <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">{projectTitle}</h1>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 mt-1">
+            {saveStatus === "saved" && (
+              <span className="flex items-center gap-1 text-[11px] text-emerald-600">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Saved
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="text-[11px] text-red-400">Save failed</span>
+            )}
+            <button
+              onClick={handleSaveAll}
+              disabled={saveStatus === "saving"}
+              title="Save all (Ctrl+S)"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-violet-50 text-violet-600 hover:bg-violet-100 disabled:opacity-50 transition-colors"
+            >
+              {saveStatus === "saving" ? <><Spinner size={10} /> Saving…</> : "Save"}
+            </button>
+          </div>
         </div>
 
         {/* ── Braindump / Intent ──────────────────────────────────────────── */}

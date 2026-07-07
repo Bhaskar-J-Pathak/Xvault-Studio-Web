@@ -14,7 +14,8 @@ const FROM = "arthur@xvault.dev";
 // ── 1. Normal onboarding welcome ──────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, name?: string): Promise<void> {
-  const html = await render(React.createElement(WelcomeEmail, { name }));
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xvault.studio";
+  const html = await render(React.createElement(WelcomeEmail, { name, dashboardUrl: `${appUrl}/dashboard` }));
   await resend.emails.send({
     from: FROM,
     to,

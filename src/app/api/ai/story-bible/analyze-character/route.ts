@@ -9,9 +9,10 @@
  */
 
 import { NextRequest } from "next/server";
-import { createServerSupabaseClient } from "@/lib/auth";
+import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalToText } from "@/lib/chunking";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -38,6 +39,10 @@ export async function POST(request: NextRequest) {
     .eq("user_id", user.id)
     .single();
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
+
+  // Costs 2 credits per character analysis.
+  const { block } = await checkRateLimit(user.id, createServiceClient(), 2);
+  if (block) return block;
 
   // Fetch the entity
   const { data: entity } = await supabase

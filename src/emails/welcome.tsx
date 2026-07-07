@@ -28,9 +28,10 @@ const border = "#e8e4df";
 
 interface WelcomeEmailProps {
   name?: string;
+  dashboardUrl?: string;
 }
 
-export default function WelcomeEmail({ name = "there" }: WelcomeEmailProps) {
+export default function WelcomeEmail({ name = "there", dashboardUrl = "https://xvault.studio/dashboard" }: WelcomeEmailProps) {
   return (
     <Html lang="en">
       <Head>
@@ -207,7 +208,7 @@ export default function WelcomeEmail({ name = "there" }: WelcomeEmailProps) {
               {/* CTA */}
               <div style={{ marginBottom: "32px" }}>
                 <Button
-                  href="https://xvault.studio/dashboard"
+                  href={dashboardUrl}
                   style={{
                     display: "inline-block",
                     background: violet,

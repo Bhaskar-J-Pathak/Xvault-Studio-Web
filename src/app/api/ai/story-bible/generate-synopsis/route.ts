@@ -8,8 +8,9 @@
  */
 
 import { NextRequest } from "next/server";
-import { createServerSupabaseClient } from "@/lib/auth";
+import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -45,6 +46,10 @@ export async function POST(request: NextRequest) {
   if (bible?.synopsis && !force) {
     return Response.json({ ok: true, synopsis: bible.synopsis, skipped: true });
   }
+
+  // Costs 2 credits — charged every time we actually generate (first-time or forced).
+  const { block } = await checkRateLimit(user.id, createServiceClient(), 2);
+  if (block) return block;
 
   // Fetch chapters with summaries, ordered by position
   const { data: chapters } = await supabase
