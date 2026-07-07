@@ -178,6 +178,8 @@ Continue the story exactly where it left off. Write 150-250 words.
 Rules:
 - Match voice, pacing, and style of the existing text exactly
 - Do not introduce new plot elements — continue the current scene
+- Never use em-dashes (—) — restructure the sentence or use a comma/period instead
+- Keep prose lean — no stacked adjectives, no excessive sensory detail, no purple prose
 - Output ONLY the continuation. No preamble, no labels.
 
 The manuscript so far ends with:
@@ -190,6 +192,10 @@ Continue:`;
   }
 
   const suggestionSystem = `${systemPrompt}
+
+PROSE RULES (always enforced):
+- Never use em-dashes (—). Restructure the sentence, use a comma, or use a period instead.
+- Do not over-describe. Keep prose lean — include only what moves the scene forward. Avoid stacking adjectives, excessive sensory detail, or purple prose.
 
 OUTPUT RULE: Output ONLY the story prose — zero preamble, zero labels, zero meta-commentary. The output will be inserted directly into the manuscript.`;
 
