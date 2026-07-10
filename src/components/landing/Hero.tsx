@@ -129,7 +129,7 @@ export default function Hero() {
             variants={fadeUp}
             className="font-display text-display text-[#1A0A3C]"
           >
-            Write in your voice.
+            Built for Novelists,
             <br />
             <em
               className="not-italic"
@@ -140,7 +140,7 @@ export default function Hero() {
                 backgroundClip: "text",
               }}
             >
-              Never lose the thread.
+              Who take their craft seriously
             </em>
           </motion.h1>
 
