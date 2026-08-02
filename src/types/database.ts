@@ -199,7 +199,7 @@ export interface StoryChunkMatch {
   similarity: number;
 }
 
-export type CoauthorMessageType = "chat" | "observation" | "celebration" | "nudge" | "ghost_accepted";
+export type CoauthorMessageType = "chat" | "observation" | "celebration" | "nudge" | "ghost_accepted" | "prose_redirect";
 
 export interface DbCoauthor {
   id: string;

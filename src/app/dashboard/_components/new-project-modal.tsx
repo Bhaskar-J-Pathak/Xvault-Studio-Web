@@ -30,7 +30,6 @@ export default function NewProjectModal({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
 
-  // Focus title input when modal opens
   useEffect(() => {
     if (open) {
       setTitle("");
@@ -40,7 +39,6 @@ export default function NewProjectModal({ open, onClose }: Props) {
     }
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -65,7 +63,6 @@ export default function NewProjectModal({ open, onClose }: Props) {
         if (!res.ok) throw new Error(json.error ?? "Could not create project.");
 
         onClose();
-        // Refresh server component data so the new card appears immediately
         router.refresh();
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -84,23 +81,23 @@ export default function NewProjectModal({ open, onClose }: Props) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-[2px]" />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-black/[0.08] p-6">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#161329] rounded-2xl shadow-2xl ring-1 ring-black/[0.08] dark:ring-white/[0.08] p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-base font-semibold text-[#1A1A1A] tracking-tight">
+            <h2 className="text-base font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight">
               New project
             </h2>
-            <p className="text-sm text-[#1A1A1A]/45 mt-0.5">
+            <p className="text-sm text-[#71717A] dark:text-white/40 mt-0.5">
               Start a blank project — you can always change details later.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#1A1A1A]/40 hover:text-[#1A1A1A] hover:bg-black/[0.04] transition-colors"
+            className="p-1.5 rounded-lg text-[#A1A1AA] dark:text-white/30 hover:text-[#0F0F0F] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
           >
             <X size={16} />
           </button>
@@ -109,7 +106,7 @@ export default function NewProjectModal({ open, onClose }: Props) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="proj-title" className="block text-sm font-medium text-[#1A1A1A]/70">
+            <label htmlFor="proj-title" className="block text-sm font-medium text-[#71717A] dark:text-white/60">
               Title <span className="text-red-400">*</span>
             </label>
             <input
@@ -121,22 +118,22 @@ export default function NewProjectModal({ open, onClose }: Props) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. The Ember Crown"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] bg-black/[0.02] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E4E7] dark:border-white/[0.08] bg-[#FAFAFA] dark:bg-white/[0.04] text-sm text-[#0F0F0F] dark:text-[#EDEBF0] placeholder:text-[#A1A1AA] dark:placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 dark:focus:border-violet-500 transition-colors"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="proj-genre" className="block text-sm font-medium text-[#1A1A1A]/70">
-              Genre <span className="text-[#1A1A1A]/35 font-normal">(optional)</span>
+            <label htmlFor="proj-genre" className="block text-sm font-medium text-[#71717A] dark:text-white/60">
+              Genre <span className="text-[#A1A1AA] dark:text-white/30 font-normal">(optional)</span>
             </label>
             <select
               id="proj-genre"
               value={genre}
               onChange={(e) => setGenre(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] bg-black/[0.02] text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-colors appearance-none cursor-pointer"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E4E7] dark:border-white/[0.08] bg-[#FAFAFA] dark:bg-white/[0.04] text-sm text-[#0F0F0F] dark:text-[#EDEBF0] focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 dark:focus:border-violet-500 transition-colors appearance-none cursor-pointer"
             >
               {GENRES.map((g) => (
-                <option key={g.value} value={g.value}>
+                <option key={g.value} value={g.value} className="dark:bg-[#161329]">
                   {g.label}
                 </option>
               ))}
@@ -144,7 +141,7 @@ export default function NewProjectModal({ open, onClose }: Props) {
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-xl px-3 py-2">
               {error}
             </p>
           )}
@@ -153,23 +150,16 @@ export default function NewProjectModal({ open, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-black/[0.08] text-sm font-medium text-[#1A1A1A]/60 hover:text-[#1A1A1A] hover:border-black/15 transition-colors"
+              className="flex-1 py-2.5 rounded-xl border border-[#E4E4E7] dark:border-white/[0.08] text-sm font-medium text-[#71717A] dark:text-white/40 hover:text-[#0F0F0F] dark:hover:text-white hover:border-black/15 dark:hover:border-white/20 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !title.trim()}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold hover:bg-[#2A2A2A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#0F0F0F] dark:bg-violet-600 text-white text-sm font-semibold hover:bg-[#2A2A2A] dark:hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? (
-                "Creating…"
-              ) : (
-                <>
-                  <Plus size={15} />
-                  Create project
-                </>
-              )}
+              {loading ? "Creating…" : <><Plus size={15} />Create project</>}
             </button>
           </div>
         </form>

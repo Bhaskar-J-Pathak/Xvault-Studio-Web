@@ -10,7 +10,7 @@
 
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
-import { geminiGenerate } from "@/lib/ai";
+import { geminiChat } from "@/lib/ai";
 import { assembleCoauthorContext, saveCoauthorMessages } from "@/lib/coauthor-context";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -37,6 +37,26 @@ const GLOBAL_CHANGE_PATTERNS = [
 
 function isLikelyGlobalChange(message: string): boolean {
   return GLOBAL_CHANGE_PATTERNS.some((p) => p.test(message));
+}
+
+// Patterns that strongly indicate the writer wants prose generated in the chat
+const PROSE_REQUEST_PATTERNS = [
+  // "write/draft/compose a scene/paragraph/passage/chapter/dialogue/description"
+  /\b(write|draft|compose)\b.{0,60}\b(scene|paragraph|passage|prose|chapter|dialogue|description|excerpt|opening|ending|climax|monologue|flashback)\b/i,
+  // "write the next paragraph / scene / chapter"
+  /\bwrite\s+(the\s+)?(next|following)\b/i,
+  // "continue the scene / story / chapter"
+  /\bcontinue\s+(the\s+)?(scene|story|chapter|writing|narrative|action|from here)\b/i,
+  // "generate some prose / a scene / a paragraph"
+  /\bgenerate\s+(some\s+)?(prose|text|a\s+scene|a\s+paragraph|a\s+passage|a\s+chapter)\b/i,
+  // "give me a paragraph / scene / passage"
+  /\bgive\s+me\s+(a|some)\s+(paragraph|scene|prose|passage|description|excerpt|chapter)\b/i,
+  // "can you write/draft a scene/chapter/paragraph"
+  /\b(can|could)\s+you\s+(write|draft|compose)\s+(me\s+)?(a|the|some)\s+(scene|paragraph|chapter|passage|prose|dialogue|description)\b/i,
+];
+
+function isLikelyProseRequest(message: string): boolean {
+  return PROSE_REQUEST_PATTERNS.some((p) => p.test(message));
 }
 
 export async function POST(request: NextRequest) {
@@ -94,7 +114,7 @@ export async function POST(request: NextRequest) {
   // ── Global change detection ────────────────────────────────────────────────
   // Pattern-match first (fast). If matched, return a special messageType so
   // the panel can trigger the global-change analysis flow.
-  if (isLikelyGlobalChange(message.trim())) {
+    if (isLikelyGlobalChange(message.trim())) {
     const ackReply = `On it — scanning the manuscript for every instance. Give me a moment, I'll show you exactly what I'll change before touching anything.`;
 
     await saveCoauthorMessages(supabase, projectId, message.trim(), ackReply, "chat").catch(
@@ -109,6 +129,29 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // ── Prose request redirect ─────────────────────────────────────────────────
+  // If the writer is asking for prose in the chat, redirect them to Ctrl+K.
+  // Prose in chat history clogs the co-author's memory with text instead of
+  // useful story context, which degrades the quality of feedback over time.
+  if (isLikelyProseRequest(message.trim())) {
+    const redirectReply = `Quick heads up before I do this. If I write prose here in our chat, it fills up my memory with text that crowds out the important stuff: your story decisions, character choices, things you have told me to track. Over time that starts to hurt the quality of my feedback.
+
+Hit Ctrl+K right in the editor instead. It pulls the same story context and keeps our conversation clean for the things I am actually here for.
+
+What were you thinking for this scene? Tell me the idea and I can help you shape it before you write it.`;
+
+    await saveCoauthorMessages(supabase, projectId, message.trim(), redirectReply, "prose_redirect").catch(
+      (e) => console.error("[coauthor/chat] Save failed:", e)
+    );
+
+    return Response.json({
+      ok: true,
+      reply: redirectReply,
+      messageType: "prose_redirect",
+      remaining,
+    });
+  }
+
   // ── Regular chat ───────────────────────────────────────────────────────────
   const { systemPrompt } = await assembleCoauthorContext(
     supabase,
@@ -119,23 +162,13 @@ export async function POST(request: NextRequest) {
     body.chapterId
   );
 
-  const historyBlock = history.length
-    ? history
-        .map((m) => `${m.role === "user" ? "Writer" : coauthorName}: ${m.content}`)
-        .join("\n")
-    : "";
-
-  const fullPrompt = historyBlock
-    ? `${historyBlock}\nWriter: ${message.trim()}\n${coauthorName}:`
-    : message.trim();
-
   let reply: string;
   try {
-    reply = await geminiGenerate(
-      fullPrompt,
+    reply = await geminiChat(
+      history,
+      message.trim(),
       systemPrompt,
       600,
-      false,
       "gemini-2.5-flash"
     );
   } catch (err) {

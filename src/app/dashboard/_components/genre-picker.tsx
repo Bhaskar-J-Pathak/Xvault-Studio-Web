@@ -72,16 +72,16 @@ export default function GenrePicker({ open }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-[#0A0A0A]/80 backdrop-blur-sm">
-      <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-black/[0.06] overflow-hidden">
+      <div className="w-full max-w-xl bg-white dark:bg-[#161329] rounded-3xl shadow-2xl ring-1 ring-black/[0.06] dark:ring-white/[0.07] overflow-hidden">
         {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-black/[0.06]">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#1A1A1A]/35 mb-2">
+        <div className="px-8 pt-8 pb-6 border-b border-black/[0.06] dark:border-white/[0.06]">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#A1A1AA] dark:text-white/30 mb-2">
             Welcome to Xvault Studio
           </p>
-          <h2 className="text-2xl font-semibold text-[#1A1A1A] tracking-tight leading-snug">
+          <h2 className="text-2xl font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight leading-snug">
             What kind of story do you want to write?
           </h2>
-          <p className="text-sm text-[#1A1A1A]/45 mt-2">
+          <p className="text-sm text-[#71717A] dark:text-white/40 mt-2">
             We'll set up a sample project so you can see how everything works — your AI co-author, World Board, and Story Bible, fully loaded and ready.
           </p>
         </div>
@@ -105,7 +105,7 @@ export default function GenrePicker({ open }: Props) {
         )}
 
         {loading && (
-          <div className="flex items-center justify-center gap-2.5 pb-6 text-sm text-[#1A1A1A]/50">
+          <div className="flex items-center justify-center gap-2.5 pb-6 text-sm text-[#71717A] dark:text-white/40">
             <Loader2 size={14} className="animate-spin" />
             Setting up your sample project…
           </div>
@@ -132,12 +132,12 @@ function GenreCard({
       disabled={isDisabled}
       className={`text-left p-4 rounded-2xl border transition-all ${
         genre.available
-          ? "border-black/[0.08] bg-white hover:border-violet-300 hover:bg-violet-50 hover:shadow-sm cursor-pointer group"
-          : "border-black/[0.05] bg-[#FAFAFA] cursor-not-allowed opacity-60"
+          ? "border-[#E4E4E7] dark:border-white/[0.08] bg-white dark:bg-white/[0.03] hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-violet-50 dark:hover:bg-violet-900/15 hover:shadow-sm cursor-pointer group"
+          : "border-[#E4E4E7] dark:border-white/[0.05] bg-[#FAFAFA] dark:bg-white/[0.02] cursor-not-allowed opacity-50"
       }`}
     >
       <div className="flex items-start justify-between mb-2">
-        <span className={`text-sm font-semibold ${genre.available ? "text-[#1A1A1A] group-hover:text-violet-700" : "text-[#1A1A1A]/50"} transition-colors`}>
+        <span className={`text-sm font-semibold ${genre.available ? "text-[#0F0F0F] dark:text-[#EDEBF0] group-hover:text-violet-700 dark:group-hover:text-violet-400" : "text-[#A1A1AA] dark:text-white/30"} transition-colors`}>
           {genre.label}
         </span>
         {genre.available ? (
@@ -145,12 +145,12 @@ function GenreCard({
             Ready
           </span>
         ) : (
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#1A1A1A]/[0.04] text-[#1A1A1A]/35 shrink-0">
+          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-[#A1A1AA] dark:text-white/30 shrink-0">
             Coming soon
           </span>
         )}
       </div>
-      <p className={`text-xs leading-relaxed ${genre.available ? "text-[#1A1A1A]/50 group-hover:text-violet-600" : "text-[#1A1A1A]/35"} transition-colors`}>
+      <p className={`text-xs leading-relaxed ${genre.available ? "text-[#71717A] dark:text-white/40 group-hover:text-violet-600 dark:group-hover:text-violet-400" : "text-[#A1A1AA] dark:text-white/25"} transition-colors`}>
         {genre.tagline}
       </p>
     </button>

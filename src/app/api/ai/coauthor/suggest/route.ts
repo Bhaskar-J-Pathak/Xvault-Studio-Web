@@ -132,7 +132,7 @@ ${afterBlock}
 
 INSTRUCTION: ${instruction.trim()}
 
-Rewrite ONLY the selected text according to the instruction. Match the writer's voice, POV, tense, and style exactly. Output ONLY the rewritten passage — no preamble, no labels, no explanation. Aim for roughly the same length as the original unless the instruction asks for more or less.`;
+Rewrite ONLY the selected text according to the instruction. Match the writer's voice, POV, tense, and style exactly. Never use em-dashes (—). Output ONLY the rewritten passage — no preamble, no labels, no explanation. Aim for roughly the same length as the original unless the instruction asks for more or less.`;
 
     maxTokens = Math.max(512, Math.ceil(selectedText.split(/\s+/).length * 1.5 * 1.4));
 
@@ -160,7 +160,7 @@ ${afterBlock}
 
 INSTRUCTION: ${instruction.trim()}
 
-Write ${wordTarget} words of story prose to be inserted at the cursor. Match the writer's voice, POV, tense, sentence rhythm, and style exactly. Output ONLY the story text — no preamble, no labels, no commentary. Do not repeat the text before the cursor. Pick up naturally from it.`;
+Write ${wordTarget} words of story prose to be inserted at the cursor. Match the writer's voice, POV, tense, sentence rhythm, and style exactly. Never use em-dashes (—). Output ONLY the story text — no preamble, no labels, no commentary. Do not repeat the text before the cursor. Pick up naturally from it.`;
 
   } else {
     // "continue" — blind continuation (Ctrl+K with no instruction, legacy)
@@ -215,6 +215,9 @@ OUTPUT RULE: Output ONLY the story prose — zero preamble, zero labels, zero me
 
   suggestion = suggestion.trim();
   if (!suggestion) return Response.json({ error: "Empty suggestion" }, { status: 500 });
+
+  // Strip any em-dashes that slipped through despite the prompt rule
+  suggestion = suggestion.replace(/ — /g, ", ").replace(/—/g, ", ");
 
   return Response.json({ ok: true, suggestion, remaining });
 }
