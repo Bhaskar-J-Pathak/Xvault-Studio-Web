@@ -2,16 +2,10 @@
 
 import { cn } from "@/lib/utils";
 import NumberFlow from "@number-flow/react";
-import { CheckIcon, Crown, Loader2, Heart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CheckIcon, Crown, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 type BillingPlan = "monthly" | "annually";
-
-type SeatInfo = {
-  taken: number;
-  left: number;
-  loading: boolean;
-};
 
 type Plan = {
   id: string;
@@ -25,14 +19,12 @@ type Plan = {
   originalAnnually?: number;
   credits: number;
   buttonText: string;
-  productId: string;
+  productId: string; // Dodo product ID
   badge?: string;
   highlighted?: boolean;
   isLifetime?: boolean;
   features: Array<{ text: string; muted?: boolean }>;
 };
-
-const TOTAL_SEATS = 30;
 
 const PLANS: Plan[] = [
   // Hobbyist
@@ -83,71 +75,15 @@ const PLANS: Plan[] = [
   },
 ];
 
-// ── Seats progress bar ──────────────────────────────────────────────────────
-
-function SeatsBar({ seats }: { seats: SeatInfo }) {
-  const { taken, left, loading } = seats;
-  const soldOut = left === 0;
-  const pct = Math.min(100, (taken / TOTAL_SEATS) * 100);
-
-  // Color thresholds
-  const barColor =
-    soldOut
-      ? "bg-red-500"
-      : left <= 5
-      ? "bg-gradient-to-r from-red-500 to-orange-500"
-      : left <= 10
-      ? "bg-gradient-to-r from-amber-500 to-yellow-400"
-      : "bg-gradient-to-r from-orange-500 to-amber-400";
-
-  const textColor =
-    soldOut ? "text-red-600" : left <= 5 ? "text-red-600" : "text-orange-700";
-
-  if (loading) {
-    return (
-      <div className="mt-4 mb-2 space-y-2">
-        <div className="h-2 rounded-full bg-orange-100 overflow-hidden">
-          <div className="h-full w-1/3 rounded-full bg-orange-200 animate-pulse" />
-        </div>
-        <div className="h-3 w-40 rounded bg-orange-100 animate-pulse" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-4 mb-2 space-y-1.5">
-      {/* Bar */}
-      <div className="h-2 rounded-full bg-orange-100 overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-700", barColor)}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      {/* Label */}
-      <p className={cn("text-xs font-medium", textColor)}>
-        {soldOut
-          ? "All 30 seats have been claimed"
-          : `${taken}/${TOTAL_SEATS} seats claimed · ${left} remaining`}
-      </p>
-    </div>
-  );
-}
-
-// ── Plan card ───────────────────────────────────────────────────────────────
-
 function PlanCard({
   plan,
   billing,
-  seats,
 }: {
   plan: Plan;
   billing: BillingPlan;
-  seats?: SeatInfo;
 }) {
   const [loading, setLoading] = useState(false);
   const isLifetime = plan.isLifetime ?? false;
-  const soldOut = isLifetime && seats ? seats.left === 0 && !seats.loading : false;
-  const left = seats?.left ?? TOTAL_SEATS;
 
   const price = isLifetime
     ? plan.lifetimePrice!
@@ -161,26 +97,7 @@ function PlanCard({
     ? plan.originalMonthly
     : plan.originalAnnually! / 12;
 
-  // Dynamic badge text
-  const badgeText = isLifetime && seats && !seats.loading
-    ? soldOut
-      ? "SOLD OUT"
-      : `${left} OF ${TOTAL_SEATS} SEATS LEFT`
-    : plan.badge;
-
-  // Badge urgency color
-  const badgeClass = isLifetime
-    ? soldOut
-      ? "bg-gray-400 text-white"
-      : left <= 5
-      ? "bg-gradient-to-r from-red-500 to-orange-500 text-white"
-      : left <= 10
-      ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-white"
-      : "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
-    : "bg-violet-100 text-violet-700";
-
   const handleCheckout = async () => {
-    if (soldOut) return;
     setLoading(true);
 
     try {
@@ -188,12 +105,15 @@ function PlanCard({
         ? "founder_circle"
         : billing === "monthly"
         ? "hobbyist"
-        : "hobbyist";
+        : "hobbyist"; // You can later add annual logic if needed
 
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: plan.productId, planPurchased }),
+        body: JSON.stringify({
+          productId: plan.productId,
+          planPurchased,
+        }),
       });
 
       const data = await res.json();
@@ -217,8 +137,7 @@ function PlanCard({
         "relative flex flex-col rounded-3xl border overflow-visible transition-all h-full",
         plan.highlighted
           ? "border-violet-600 bg-[#2E0F6E] shadow-2xl"
-          : "border-violet-200 bg-white",
-        soldOut && "opacity-70"
+          : "border-violet-200 bg-white"
       )}
     >
       {/* Badge */}
@@ -227,11 +146,13 @@ function PlanCard({
           <span
             className={cn(
               "inline-flex items-center gap-1.5 px-5 py-1 text-xs font-bold tracking-widest rounded-full whitespace-nowrap",
-              badgeClass
+              isLifetime
+                ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
+                : "bg-violet-100 text-violet-700"
             )}
           >
-            {isLifetime && !soldOut && <Crown className="size-3.5" />}
-            {badgeText}
+            {isLifetime && <Crown className="size-3.5" />}
+            {plan.badge}
           </span>
         </div>
       )}
@@ -275,9 +196,6 @@ function PlanCard({
           )}
         </div>
 
-        {/* Seats progress bar — Founder's Circle only */}
-        {isLifetime && seats && <SeatsBar seats={seats} />}
-
         <p
           className={cn(
             "text-sm mt-1 mb-6 min-h-[1.5rem]",
@@ -300,34 +218,17 @@ function PlanCard({
           {plan.desc}
         </p>
 
-        {/* Flood relief callout — Founder's Circle only */}
-        {isLifetime && !soldOut && (
-          <div className="mb-6 rounded-2xl bg-rose-50 border border-rose-200 px-4 py-3.5 flex gap-3 items-start">
-            <Heart size={15} className="text-rose-500 fill-rose-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-semibold text-rose-700 leading-snug">
-                90% of this purchase funds Assam flood relief
-              </p>
-              <p className="text-xs text-rose-600/80 mt-1 leading-relaxed">
-                Assam is facing its worst flood in history. The founder is personally on the ground helping affected families. Every seat purchased goes directly toward that work.
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* CTA Button */}
         <div className="mt-auto">
           <button
             onClick={handleCheckout}
-            disabled={loading || soldOut}
+            disabled={loading}
             className={cn(
               "w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-medium transition-all",
-              soldOut
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : isLifetime
+              isLifetime
                 ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:brightness-110"
                 : "border border-violet-300 hover:bg-violet-50 text-violet-700",
-              (loading) && "opacity-70 cursor-not-allowed"
+              loading && "opacity-70 cursor-not-allowed"
             )}
           >
             {loading ? (
@@ -335,8 +236,6 @@ function PlanCard({
                 <Loader2 className="size-4 animate-spin" />
                 Processing...
               </>
-            ) : soldOut ? (
-              "Sold Out"
             ) : (
               plan.buttonText
             )}
@@ -372,30 +271,8 @@ function PlanCard({
   );
 }
 
-// ── Main export ─────────────────────────────────────────────────────────────
-
 export default function Pricing() {
   const [billing, setBilling] = useState<BillingPlan>("monthly");
-  const [seats, setSeats] = useState<SeatInfo>({
-    taken: 0,
-    left: TOTAL_SEATS,
-    loading: true,
-  });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/founder-seats", { signal: controller.signal })
-      .then((r) => r.json())
-      .then((d) =>
-        setSeats({ taken: d.seatsTaken, left: d.seatsLeft, loading: false })
-      )
-      .catch((err) => {
-        if (err?.name !== "AbortError") {
-          setSeats((s) => ({ ...s, loading: false }));
-        }
-      });
-    return () => controller.abort();
-  }, []);
 
   return (
     <section className="relative bg-[#F8F5FF] py-20 lg:py-28">
@@ -440,12 +317,7 @@ export default function Pricing() {
         {/* Cards - 2 columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {PLANS.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              billing={billing}
-              seats={plan.isLifetime ? seats : undefined}
-            />
+            <PlanCard key={plan.id} plan={plan} billing={billing} />
           ))}
         </div>
       </div>

@@ -4,13 +4,11 @@ import { useState, useCallback, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
 type Step = "email" | "otp";
 
-// useSearchParams() requires a Suspense boundary during static generation.
-// Wrap the inner component and export a shell that provides it.
 export default function AuthPage() {
   return (
     <Suspense>
@@ -20,26 +18,27 @@ export default function AuthPage() {
 }
 
 function AuthForm() {
-  const router  = useRouter();
-  const params  = useSearchParams();
+  const router   = useRouter();
+  const params   = useSearchParams();
   const nextPath = params.get("next") ?? "/dashboard";
+  const refCode  = params.get("ref");
 
-  const refCode = params.get("ref");
+  const [step,     setStep]     = useState<Step>("email");
+  const [email,    setEmail]    = useState("");
+  const [otp,      setOtp]      = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState("");
+  const [resent,   setResent]   = useState(false);
+  // Referral code input — pre-populated from URL param
+  const [refInput, setRefInput] = useState(refCode?.toUpperCase() ?? "");
 
-  // Persist the referral code in localStorage so it survives the OTP redirect
+  const otpInputRef   = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  // Persist the referral code from the URL into localStorage immediately
   useEffect(() => {
     if (refCode) localStorage.setItem("xv_ref", refCode.toUpperCase());
   }, [refCode]);
-
-  const [step,    setStep]    = useState<Step>("email");
-  const [email,   setEmail]   = useState("");
-  const [otp,     setOtp]     = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
-  const [resent,  setResent]  = useState(false);
-
-  const otpInputRef  = useRef<HTMLInputElement>(null);
-  const emailInputRef = useRef<HTMLInputElement>(null);
 
   // Redirect if already signed in
   useEffect(() => {
@@ -48,19 +47,25 @@ function AuthForm() {
     });
   }, [router, nextPath]);
 
-  // Focus OTP input when step changes
+  // Focus inputs on step change
   useEffect(() => {
-    if (step === "otp") setTimeout(() => otpInputRef.current?.focus(), 80);
+    if (step === "otp")   setTimeout(() => otpInputRef.current?.focus(), 80);
     if (step === "email") setTimeout(() => emailInputRef.current?.focus(), 80);
   }, [step]);
 
-  // ── Step 1: send OTP ──────────────────────────────────────────
+  const refNormalised = refInput.replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  const refValid      = refNormalised.length === 8;
+
+  // ── Step 1: send OTP ────────────────────────────────────────────────────
   const handleSendOtp = useCallback(
     async (e?: React.FormEvent) => {
       e?.preventDefault();
       if (!email.trim()) return;
       setError("");
       setLoading(true);
+
+      // Persist any manually entered referral code before navigating away
+      if (refNormalised) localStorage.setItem("xv_ref", refNormalised);
 
       try {
         const supabase = createClient();
@@ -78,10 +83,10 @@ function AuthForm() {
         setLoading(false);
       }
     },
-    [email]
+    [email, refNormalised]
   );
 
-  // ── Step 2: verify OTP ────────────────────────────────────────
+  // ── Step 2: verify OTP ──────────────────────────────────────────────────
   const handleVerify = useCallback(
     async (e?: React.FormEvent) => {
       e?.preventDefault();
@@ -188,6 +193,45 @@ function AuthForm() {
                     placeholder="you@example.com"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.08] bg-black/[0.02] text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-colors"
                   />
+                </div>
+
+                {/* Referral code */}
+                <div className="space-y-1.5">
+                  <label htmlFor="ref-code" className="block text-sm font-medium text-[#1A1A1A]/70">
+                    Referral code{" "}
+                    <span className="text-[#1A1A1A]/35 font-normal">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="ref-code"
+                      type="text"
+                      value={refInput}
+                      onChange={(e) =>
+                        setRefInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))
+                      }
+                      placeholder="e.g. AB12CD34"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-black/[0.02] text-sm font-mono tracking-widest text-[#1A1A1A] placeholder:text-[#1A1A1A]/25 placeholder:font-sans placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-colors ${
+                        refInput && refValid
+                          ? "border-emerald-400 bg-emerald-50/40"
+                          : "border-black/[0.08]"
+                      }`}
+                    />
+                    {refInput && refValid && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                        <Check size={11} className="text-white" strokeWidth={2.5} />
+                      </div>
+                    )}
+                  </div>
+                  {refInput && !refValid && (
+                    <p className="text-[11px] text-[#A1A1AA]">
+                      Codes are 8 characters — {8 - refNormalised.length} more to go
+                    </p>
+                  )}
+                  {refInput && refValid && (
+                    <p className="text-[11px] text-emerald-600 font-medium">
+                      Code applied — you&apos;ll get bonus credits on signup!
+                    </p>
+                  )}
                 </div>
 
                 <button

@@ -43,7 +43,7 @@ function countWords(text: string): number {
 
 const CHAPTER_1 = `The message arrived at 2:14 AM.
 
-Nadia Voss was already awake — she hadn't slept past three in six years. The apartment on Korunní was dark except for the city glow bleeding through the curtains: that grey-orange nothing-light of Prague at night. She'd been sitting at the kitchen table with a glass of water, watching the pigeons on the ledge opposite. They didn't sleep either.
+Nadia Voss was already awake; she hadn't slept past three in six years. The apartment on Korunní was dark except for the city glow bleeding through the curtains: that grey-orange nothing-light of Prague at night. She'd been sitting at the kitchen table with a glass of water, watching the pigeons on the ledge opposite. They didn't sleep either.
 
 The device was in the drawer beneath the sink, behind the cleaning supplies, inside a waterproof case she'd told herself she would throw into the Vltava eighteen months ago. She hadn't. She told herself she'd kept it for the hardware. That was a lie she'd gotten reasonably good at.
 
@@ -57,13 +57,13 @@ No sender ID. Encrypted with a key she hadn't used since Bucharest. She stared a
 
 At 8:30 she put on her coat.
 
-The diner on Mánesova was called Kavárna Modrý Stůl. Blue table. It had blue-painted furniture and the kind of lighting that flattered no one — flat, fluorescent, honest. Nadia arrived twelve minutes early and chose a seat with her back to the wall and a clear line to both exits. Old habit. She ordered coffee she didn't intend to drink and watched the door.
+The diner on Mánesova was called Kavárna Modrý Stůl. Blue table. It had blue-painted furniture and the kind of lighting that flattered no one: flat, fluorescent, honest. Nadia arrived twelve minutes early and chose a seat with her back to the wall and a clear line to both exits. Old habit. She ordered coffee she didn't intend to drink and watched the door.
 
 Marcus Hale came in at 9:04.
 
-He was older than she remembered — of course he was, it had been six years — but the ageing hadn't softened him the way it softened some men. It had clarified him instead. The silver at his temples had spread to most of his hair now, cut short and neat. He wore a grey wool coat, no tie, a posture that had never quite abandoned the military bearing underneath the civilian veneer. He scanned the room before he sat down. He always did that. So did she.
+He was older than she remembered (of course he was, it had been six years) but the ageing hadn't softened him the way it softened some men. It had clarified him instead. The silver at his temples had spread to most of his hair now, cut short and neat. He wore a grey wool coat, no tie, a posture that had never quite abandoned the military bearing underneath the civilian veneer. He scanned the room before he sat down. He always did that. So did she.
 
-"Nadia." He took the seat across from her. Not the one beside her, not the one with his back to the door — the one that put him facing her, open, deliberate. "Thank you for coming."
+"Nadia." He took the seat across from her. Not the one beside her, not the one with his back to the door, but the one that put him facing her, open, deliberate. "Thank you for coming."
 
 "Who sent the message?" she said. She hadn't touched the coffee.
 
@@ -75,11 +75,11 @@ He was older than she remembered — of course he was, it had been six years —
 
 "They were."
 
-"Clearly not all of them." He studied her face. He'd always been good at that — reading her — which was one of the reasons she hadn't kept in touch. "Are you all right?"
+"Clearly not all of them." He studied her face. He'd always been good at that, reading her, which was one of the reasons she hadn't kept in touch. "Are you all right?"
 
 "I'm fine. What does MERIDIAN STILL ACTIVE mean?"
 
-He was quiet for a moment. The diner clattered around them — a spoon against a saucer, the low murmur of a conversation two tables over, the hiss of a milk steamer. "The Meridian Group," he said finally. "We shut them down in 2021. Or we thought we did. Some of us had doubts."
+He was quiet for a moment. The diner clattered around them: a spoon against a saucer, the low murmur of a conversation two tables over, the hiss of a milk steamer. "The Meridian Group," he said finally. "We shut them down in 2021. Or we thought we did. Some of us had doubts."
 
 "You had doubts. You always had doubts about that closure."
 
@@ -89,7 +89,7 @@ He was quiet for a moment. The diner clattered around them — a spoon against a
 
 "Account activations. Travel patterns. A safe house in Bratislava that should have been decommissioned."
 
-"That could be anything. A private contractor, an unrelated operation —"
+"That could be anything. A private contractor, an unrelated operation."
 
 "It could be." He nodded. "It could also be exactly what it looks like."
 
@@ -99,7 +99,7 @@ Nadia looked at the coffee. It had gone cold. "What do you need from me?"
 
 She looked up at him.
 
-"Which leaves you," he said. Not apology in his voice, not manipulation — just the flat delivery of a fact. That was the other reason she'd kept her distance. Marcus Hale never dressed things up. "I'm not asking you to go back into the field. I need you to look at some documents, give me context, tell me what you see. One conversation, maybe two."
+"Which leaves you," he said. Not apology in his voice, not manipulation. Just the flat delivery of a fact. That was the other reason she'd kept her distance. Marcus Hale never dressed things up. "I'm not asking you to go back into the field. I need you to look at some documents, give me context, tell me what you see. One conversation, maybe two."
 
 "And after that?"
 
@@ -107,23 +107,23 @@ She looked up at him.
 
 He knew about the pigeons. She hadn't told him that. She filed it and moved on. "You said one conversation, maybe two. What's the first one about?"
 
-"There's a file. Not physical — digital, archived. The Glass Meridian. It was supposed to have been destroyed with everything else in the 2021 closure. I have reason to believe it wasn't."
+"There's a file. Not physical. Digital, archived. The Glass Meridian. It was supposed to have been destroyed with everything else in the 2021 closure. I have reason to believe it wasn't."
 
 The name was unfamiliar to her. She'd been deep in Meridian's operational structure for three years and she'd never heard it. That meant it was either above her clearance level or it hadn't existed when she was in. Neither option was comfortable. "Where is it?"
 
-"That's what I need to find out. I have a lead — an archivist in Vienna, someone who has access to the kind of buried files that don't officially exist. Elias Vong. Have you heard of him?"
+"That's what I need to find out. I have a lead: an archivist in Vienna, someone who has access to the kind of buried files that don't officially exist. Elias Vong. Have you heard of him?"
 
 "No."
 
-"He's careful. He won't speak to me directly — I'm too visible. But he might speak to you." Marcus reached into his coat pocket and slid a small card across the table. An address, handwritten. "Take a few days to think about it. I can find another approach if —"
+"He's careful. He won't speak to me directly. I'm too visible. But he might speak to you." Marcus reached into his coat pocket and slid a small card across the table. An address, handwritten. "Take a few days to think about it. I can find another approach, if you need it."
 
 "I'll do it," she said.
 
-She didn't know why she said it. She'd had no intention of agreeing when she walked in. But the name — the Glass Meridian file, a thing that had existed inside an organisation she knew from the inside and had never heard mentioned, not once — that bothered her more than she expected it to.
+She didn't know why she said it. She'd had no intention of agreeing when she walked in. But the name caught her. The Glass Meridian file, a thing that had existed inside an organisation she knew from the inside and had never heard mentioned, not once. It bothered her more than she expected it to.
 
 She picked up the card.
 
-Marcus nodded, as if he'd expected it all along. "I'll be in touch in two days with —"
+Marcus nodded, as if he'd expected it all along. "I'll be in touch in two days..."
 
 She heard the door open behind her and felt, rather than saw, the shift in the room's attention. When she looked up, the waiter had stopped moving. Two tables away, the couple with the coffee had gone still.
 
@@ -143,7 +143,7 @@ She found Marcus forty minutes later, in the alley behind the diner. He was sitt
 
 She checked for a pulse because she had to, not because she expected to find one.
 
-She stood up. Looked down the alley in both directions. No one. Just the ordinary sounds of a Prague morning — traffic, trams, the city entirely indifferent to the fact that a man she had known for eleven years was dead.
+She stood up. Looked down the alley in both directions. No one. Just the ordinary sounds of a Prague morning: traffic, trams, the city entirely indifferent to the fact that a man she had known for eleven years was dead.
 
 She reached into her coat and took out the card with the Vienna address.
 
@@ -157,7 +157,7 @@ She put the card back in her pocket and walked out of the alley. She had a train
 
 const CHAPTER_2 = `The archive was not on any map.
 
-Nadia had spent the train journey to Vienna running Elias Vong through every framework she still had access to — which was less than she once had, but more than most civilians. He existed in fragments: a dissertation on Cold War document preservation from 2003, a conference paper from 2009, a gap in the record after that which was itself a kind of record. People who worked in certain kinds of archives didn't advertise. The gap told her more than the papers had.
+Nadia had spent the train journey to Vienna running Elias Vong through every framework she still had access to, which was less than she once had, but more than most civilians. He existed in fragments: a dissertation on Cold War document preservation from 2003, a conference paper from 2009, a gap in the record after that which was itself a kind of record. People who worked in certain kinds of archives didn't advertise. The gap told her more than the papers had.
 
 The address Marcus had given her led to a decommissioned library in the fourth district. Pale stone, art nouveau ornament softened by a century of weather, windows that hadn't been cleaned since before the last government changed. The official sign said CLOSED FOR RENOVATION. It had said that since 2018.
 
@@ -179,11 +179,11 @@ The pause that followed was different from the first two. Shorter. "Marcus Hale 
 
 The door opened.
 
-Elias Vong was shorter than she'd expected, which meant nothing — she had no particular reason to have expected anything. He was in his mid-forties, slight, with the careful movements of someone who worked with irreplaceable things and had extended that habit to his own body. Round glasses. A cardigan that had been expensive once. He looked at her the way a man looks at a mathematical problem: not hostile, not welcoming, analytical.
+Elias Vong was shorter than she'd expected, which meant nothing. She had no particular reason to have expected anything. He was in his mid-forties, slight, with the careful movements of someone who worked with irreplaceable things and had extended that habit to his own body. Round glasses. A cardigan that had been expensive once. He looked at her the way a man looks at a mathematical problem: not hostile, not welcoming, analytical.
 
 "Come in," he said. "Don't touch anything."
 
-The interior was subterranean. Steps led down from the entrance hall into a space that had clearly once been something else — a storage vault, perhaps, or a wine cellar from the building's previous life — and had been converted, with considerable care, into a document archive. Rows of shelving. Climate-controlled cases. The quiet hum of preservation technology.
+The interior was subterranean. Steps led down from the entrance hall into a space that had clearly once been something else, a storage vault perhaps, or a wine cellar from the building's previous life, and had been converted, with considerable care, into a document archive. Rows of shelving. Climate-controlled cases. The quiet hum of preservation technology.
 
 "You're not official," he said. It wasn't a question.
 
@@ -193,7 +193,7 @@ The interior was subterranean. Steps led down from the entrance hall into a spac
 
 "Someone made it look natural. It wasn't."
 
-He nodded, unsurprised. "When you work with documents that powerful people want to believe don't exist, you develop certain expectations about how things end." He gestured to a chair beside a reading table — the only chair in the room that wasn't stacked with something. "Sit. Tell me what you want."
+He nodded, unsurprised. "When you work with documents that powerful people want to believe don't exist, you develop certain expectations about how things end." He gestured to a chair beside a reading table, the only chair in the room that wasn't stacked with something. "Sit. Tell me what you want."
 
 "Marcus mentioned a file. The Glass Meridian."
 
@@ -211,7 +211,7 @@ It was only for a half-second, and then he was in motion again, moving to one of
 
 "And then it wasn't anymore."
 
-She had spent six years building a functional wall between herself and what had happened in Bucharest. Not forgetting — she couldn't forget — but treating it as a fact rather than an event. A thing that had occurred, that had weight and shape, that she could look at from a fixed distance without it moving. "They burned me," she said. "My cover, my network. Everyone I'd spent three years building relationships with. It happened in seventy-two hours." She kept her voice flat. "I assumed it was a security breach. An intelligence failure. I was in protective custody for four months while they worked out what had happened."
+She had spent six years building a functional wall between herself and what had happened in Bucharest. Not forgetting, she couldn't forget, but treating it as a fact rather than an event. A thing that had occurred, that had weight and shape, that she could look at from a fixed distance without it moving. "They burned me," she said. "My cover, my network. Everyone I'd spent three years building relationships with. It happened in seventy-two hours." She kept her voice flat. "I assumed it was a security breach. An intelligence failure. I was in protective custody for four months while they worked out what had happened."
 
 "And what did they determine?"
 
@@ -219,17 +219,17 @@ She had spent six years building a functional wall between herself and what had 
 
 Vong looked at her steadily. "It wasn't."
 
-She'd known this, somewhere, in the way you know things that are too large to fully look at. She'd known it from the pattern of what had happened — too clean, too targeted, too specific about what was burned and what wasn't. She'd known it and she'd chosen, very deliberately, not to pursue it. "Tell me," she said.
+She'd known this, somewhere, in the way you know things that are too large to fully look at. She'd known it from the pattern of what had happened: too clean, too targeted, too specific about what was burned and what wasn't. She'd known it and she'd chosen, very deliberately, not to pursue it. "Tell me," she said.
 
-"The Meridian Group ran a containment protocol in Bucharest. You had gotten too close to something — a network of financial conduits that Meridian was running through the region. Not intelligence work, not sanctioned. Private. Profitable." He opened the box. Inside: a series of folders, numbered, their labels faded. "When it became clear that your analysis was going to surface those conduits, the decision was made to terminate the operation. Your operation. You were the liability."
+"The Meridian Group ran a containment protocol in Bucharest. You had gotten too close to something: a network of financial conduits that Meridian was running through the region. Not intelligence work, not sanctioned. Private. Profitable." He opened the box. Inside: a series of folders, numbered, their labels faded. "When it became clear that your analysis was going to surface those conduits, the decision was made to terminate the operation. Your operation. You were the liability."
 
 "Marcus sanctioned it."
 
-"Marcus was told to sanction it. He was given a version of events in which the breach was real." Vong looked at her. "I don't know if he knew the truth. I suspect not. He wasn't useful enough to Meridian to be made complicit — easier to deceive him."
+"Marcus was told to sanction it. He was given a version of events in which the breach was real." Vong looked at her. "I don't know if he knew the truth. I suspect not. He wasn't useful enough to Meridian to be made complicit. Easier to deceive him."
 
-Nadia sat with this. The wall she'd built was still there, but she could feel the weight of it differently now — not something she'd constructed for protection, but something that had been built around her from the outside. A cage she'd mistaken for a shelter. "The Glass Meridian file," she said. "What is it?"
+Nadia sat with this. The wall she'd built was still there, but she could feel the weight of it differently now, not as something she'd constructed for protection but as something built around her from the outside. A cage she'd mistaken for a shelter. "The Glass Meridian file," she said. "What is it?"
 
-"It's the complete record of Meridian's operations from 2015 to 2021. Everything that was officially destroyed in the closure — the financial ledgers, the personnel files, the operational records. Every sanctioned action and every unsanctioned one." He touched the top folder but didn't open it. "Including Bucharest. Including the names of everyone who authorised what was done to you."
+"It's the complete record of Meridian's operations from 2015 to 2021. Everything that was officially destroyed in the closure: the financial ledgers, the personnel files, the operational records. Every sanctioned action and every unsanctioned one." He touched the top folder but didn't open it. "Including Bucharest. Including the names of everyone who authorised what was done to you."
 
 "Where is the file?"
 
@@ -237,7 +237,7 @@ Nadia sat with this. The wall she'd built was still there, but she could feel th
 
 "Who has the copy?"
 
-"Someone still inside Meridian. Or someone who was inside Meridian and left with leverage." He closed the box. "The message you received — the one that used the Bucharest keys — I think that was the same person. Someone who wanted you here, in this room, having this conversation."
+"Someone still inside Meridian. Or someone who was inside Meridian and left with leverage." He closed the box. "The message you received, the one that used the Bucharest keys, I think that was the same person. Someone who wanted you here, in this room, having this conversation."
 
 "Why?"
 
@@ -265,7 +265,7 @@ const CHAPTER_3 = `The hotel was called The Aurelius. Twelve stories of mid-cent
 
 The contact was supposed to meet her on the rooftop terrace at 9 PM. She was there at 8:40.
 
-Prague at night from twelve stories was exactly what it always was: beautiful in the specific way of cities that have survived more history than they were built for, that carry the weight of it in their stones and bridges and in the way people walk in their streets, as if they know they are being watched by the past. Nadia didn't find it comforting. She found it useful. A rooftop with sight lines to three streets and two exits and enough ambient light to read faces without being read yourself — that was what she needed.
+Prague at night from twelve stories was exactly what it always was: beautiful in the specific way of cities that have survived more history than they were built for, that carry the weight of it in their stones and bridges and in the way people walk in their streets, as if they know they are being watched by the past. Nadia didn't find it comforting. She found it useful. A rooftop with sight lines to three streets and two exits and enough ambient light to read faces without being read yourself. That was what she needed.
 
 She had a glass of wine she wasn't drinking and she watched the door.
 
@@ -277,7 +277,7 @@ He spotted her immediately. Of course he did.
 
 "I'm here." She studied his face. It was a face that gave away nothing, which was itself information. "You arranged all of this."
 
-"Not all of it. The message, yes. Vong, yes — I needed you to understand the context before we spoke." He set the briefcase on the table between them. "Hale's death was not part of the plan."
+"Not all of it. The message, yes. Vong, yes. I needed you to understand the context before we spoke." He set the briefcase on the table between them. "Hale's death was not part of the plan."
 
 "Someone killed him."
 
@@ -293,11 +293,11 @@ Inside: a drive. Small, matte black, the kind of hardware that was anonymous by 
 
 She looked at the drive without touching it. "What do you want?"
 
-"There's a name in the file. A current name — someone who is still active, still protected, still running the remnant of what Meridian became after the official closure. I want that name excluded from any disclosure. Everything else, you can do what you want with. The financial records, the operational history, Bucharest — all of it. One name redacted."
+"There's a name in the file. A current name, someone who is still active, still protected, still running the remnant of what Meridian became after the official closure. I want that name excluded from any disclosure. Everything else, you can do what you want with. The financial records, the operational history, Bucharest, all of it. One name redacted."
 
 "You're protecting someone."
 
-"I'm protecting someone from something they didn't fully choose." He closed the briefcase. "They were recruited young. The things they did — some of them were sanctioned, some weren't, but the line was blurred for them deliberately. I'm not asking you to forgive anything. I'm asking you to make a distinction between people who built this and people who were built by it."
+"I'm protecting someone from something they didn't fully choose." He closed the briefcase. "They were recruited young. The things they did, some of them sanctioned, some not, but the line was blurred for them deliberately. I'm not asking you to forgive anything. I'm asking you to make a distinction between people who built this and people who were built by it."
 
 She thought about this. There was a version of this offer that was straightforward: she took the drive, used the records, brought down the people who had burned her network and killed Marcus and let six years of her life go to waste. One name redacted, the rest of the reckoning intact. It was, in practical terms, a reasonable exchange.
 
@@ -309,11 +309,11 @@ There was another version of this offer that was something else entirely.
 
 "Then we don't have an agreement."
 
-He looked at her steadily. "You understand that without this file, you have nothing. Everything Vong told you is testimony without documentation. The Meridian Group — what's left of it — has lawyers and money and people in the right offices. You have a story about Bucharest that the official record contradicts."
+He looked at her steadily. "You understand that without this file, you have nothing. Everything Vong told you is testimony without documentation. The Meridian Group, what's left of it, has lawyers and money and people in the right offices. You have a story about Bucharest that the official record contradicts."
 
 "I know that."
 
-"Then you understand why —"
+"Then you understand why..."
 
 "I understand the offer," she said. "I'm telling you it's not acceptable without knowing the name."
 
@@ -323,15 +323,15 @@ A silence settled between them, backed by the city sounds twelve floors below. S
 
 She didn't touch the paper.
 
-"There's something else," she said. "The message. The Bucharest keys. You said you sent the message — but how did you have those keys? They should have been destroyed."
+"There's something else," she said. "The message. The Bucharest keys. You said you sent the message, but how did you have those keys? They should have been destroyed."
 
-He looked at her for a long moment. Something crossed his face that she couldn't categorise — not guilt exactly, not regret exactly. Something with the texture of both. "Some copies were kept," he said. "By people who thought they might need them someday."
+He looked at her for a long moment. Something crossed his face that she couldn't categorise. Not guilt exactly, not regret exactly. Something with the texture of both. "Some copies were kept," he said. "By people who thought they might need them someday."
 
 "Who else had them?"
 
 He stood, picked up the briefcase. Left the drive on the table. "That," he said, "I genuinely don't know."
 
-He walked to the door and paused with his hand on it. "The name on that paper — whatever you decide — I'd like you to know it wasn't chosen carelessly." Then he left.
+He walked to the door and paused with his hand on it. "The name on that paper, whatever you decide, I'd like you to know it wasn't chosen carelessly." Then he left.
 
 She sat on the terrace for a long time after. The city hummed below her, indifferent and continuous. Marcus was dead. Vong was compromised by whatever she'd set in motion when she knocked on his door. The file she'd come here to find was sitting on a hotel rooftop table in a matte black drive, and she still didn't know who had sent the original message, or why, or what exactly they had wanted to set in motion by doing it.
 
@@ -351,7 +351,7 @@ She put the paper in her pocket. She put the drive in her bag.
 
 She left the rooftop.
 
-It was the beginning, she understood, not the end of it. The file wasn't what she'd thought it was — complete, conclusive, a key that opened a lock. It was a door, and she'd just found out what was on the other side: something more complicated and more dangerous and less resolvable than a simple act of reckoning.
+It was the beginning, she understood, not the end of it. The file wasn't what she'd thought it was: complete, conclusive, a key that opened a lock. It was a door, and she'd just found out what was on the other side: something more complicated and more dangerous and less resolvable than a simple act of reckoning.
 
 She took the stairs.`;
 
@@ -478,7 +478,7 @@ export async function POST(request: NextRequest) {
         personality: "Methodical, distrustful, reads rooms before she reads people",
         motivations: "Find out who killed Marcus. Understand what Bucharest really was. Get out clean.",
         dialogue_style: "Clipped. Never asks a question she doesn't already know the answer to.",
-        character_arc: "Learns that the betrayal in Bucharest was sanctioned from above — and must decide what to do with that knowledge.",
+        character_arc: "Learns that the betrayal in Bucharest was sanctioned from above, and must decide what to do with that knowledge.",
       },
       position: { x: 200, y: 150 },
     },
@@ -491,7 +491,7 @@ export async function POST(request: NextRequest) {
         hair_color: "Silver",
         age: "Late 50s",
         personality: "Warm on the surface, calculating underneath",
-        role: "Catalyst — his death drives the entire plot. He was deceived about Bucharest.",
+        role: "Catalyst. His death drives the entire plot. He was deceived about Bucharest.",
         last_known_words: "I'm not asking you to go back into the field.",
       },
       position: { x: 450, y: 150 },
@@ -504,15 +504,15 @@ export async function POST(request: NextRequest) {
       attributes: {
         age: "Mid 40s",
         personality: "Nervous, precise, speaks in qualifications",
-        motivations: "Stays neutral. Helps whoever gets to him first — within limits.",
+        motivations: "Stays neutral. Helps whoever gets to him first, within limits.",
         dialogue_style: "Academic. Lots of 'technically' and 'strictly speaking'. Precise about what he knows vs. what he infers.",
-        location: "Vienna — subterranean archive beneath a decommissioned library",
+        location: "Vienna, subterranean archive beneath a decommissioned library",
       },
       position: { x: 200, y: 350 },
     },
     {
       project_id: projectId,
-      name: "Nadia's apartment — Prague",
+      name: "Nadia's apartment, Prague",
       type: "location",
       description: "Sparse, deliberately unmemorable. A professional's home. Korunní district. She keeps a device she told herself she'd thrown away.",
       attributes: { district: "Vinohrady, Prague", tone: "Minimalist, controlled" },
@@ -520,7 +520,7 @@ export async function POST(request: NextRequest) {
     },
     {
       project_id: projectId,
-      name: "The Archive — Vienna",
+      name: "The Archive, Vienna",
       type: "location",
       description: "Subterranean document vault beneath a decommissioned library in Vienna's fourth district. Climate-controlled. Not on any map.",
       attributes: { district: "Fourth district, Vienna", officially: "Closed for renovation since 2018" },
@@ -534,7 +534,7 @@ export async function POST(request: NextRequest) {
       attributes: {
         status: "Officially dissolved, actually active",
         operations: "Financial conduits, containment actions, intelligence access",
-        key_document: "The Glass Meridian file — complete operational records 2015–2021",
+        key_document: "The Glass Meridian file, complete operational records 2015-2021",
       },
       position: { x: 400, y: 350 },
     },
@@ -565,7 +565,7 @@ export async function POST(request: NextRequest) {
   await supabase.from("plot_threads").insert([
     {
       project_id: projectId,
-      description: "Who sent the encrypted message using the Bucharest keys? The sender activated recognition signals that should have been destroyed — but never identified themselves.",
+      description: "Who sent the encrypted message using the Bucharest keys? The sender activated recognition signals that should have been destroyed, but never identified themselves.",
       introduced_chapter_id: chapter1Id,
       last_seen_chapter_id: sortedChapters[1]?.id ?? chapter1Id,
       last_seen_word_position: countWords(CHAPTER_1) + countWords(CHAPTER_2),
@@ -574,7 +574,7 @@ export async function POST(request: NextRequest) {
     },
     {
       project_id: projectId,
-      description: "What happened in Bucharest? Nadia's entire network was burned in 72 hours — she was told it was an intelligence failure.",
+      description: "What happened in Bucharest? Nadia's entire network was burned in 72 hours. She was told it was an intelligence failure.",
       introduced_chapter_id: chapter1Id,
       last_seen_chapter_id: sortedChapters[1]?.id ?? chapter1Id,
       last_seen_word_position: countWords(CHAPTER_1) + countWords(CHAPTER_2),
@@ -596,9 +596,9 @@ export async function POST(request: NextRequest) {
   await supabase.from("story_bibles").insert({
     project_id: projectId,
     synopsis:
-      "Ex-intelligence analyst Nadia Voss is pulled back into the field when a dead encryption key brings a message about her former organisation — The Meridian Group. Her handler Marcus Hale is murdered before he can tell her what he knows. She travels to Vienna to find an underground archivist with access to the buried file at the centre of everything: The Glass Meridian. What she discovers changes the shape of the six-year-old betrayal she thought she understood.",
+      "Ex-intelligence analyst Nadia Voss is pulled back into the field when a dead encryption key brings a message about her former organisation, The Meridian Group. Her handler Marcus Hale is murdered before he can tell her what he knows. She travels to Vienna to find an underground archivist with access to the buried file at the centre of everything: The Glass Meridian. What she discovers changes the shape of the six-year-old betrayal she thought she understood.",
     style_notes:
-      "Third person limited, close to Nadia. Short declarative sentences. Dialogue that does work — no small talk. Present tense atmosphere (immediate) with past tense narration. Thriller pacing: information released carefully, reader always one step behind Nadia.",
+      "Third person limited, close to Nadia. Short declarative sentences. Dialogue that does work. No small talk. Present tense atmosphere (immediate) with past tense narration. Thriller pacing: information released carefully, reader always one step behind Nadia.",
     project_intent:
       "A spy thriller about the cost of institutional betrayal and what it means to seek accountability in systems designed to resist it.",
   });
@@ -619,7 +619,7 @@ export async function POST(request: NextRequest) {
       project_id: projectId,
       role: "assistant",
       content:
-        "Chapter 1 is in strong shape. The 2:14 AM opener works — Nadia's relationship with the device she 'told herself she'd throw away' tells us everything about her without stating it. One thing I'm tracking: the encrypted message sender is never identified. Thread 1 is open. Intentional dead branch, or something you want to resolve later? Also — Marcus's dialogue is very clean. When you're ready to write more, or want to talk through where this goes, I'm here.",
+        "Chapter 1 is in strong shape. The 2:14 AM opener works. Nadia's relationship with the device she 'told herself she'd throw away' tells us everything about her without stating it. One thing I'm tracking: the encrypted message sender is never identified. Thread 1 is open. Intentional dead branch, or something you want to resolve later? Marcus's dialogue is also very clean. When you're ready to write more, or want to talk through where this goes, I'm here.",
       message_type: "observation",
     });
   }

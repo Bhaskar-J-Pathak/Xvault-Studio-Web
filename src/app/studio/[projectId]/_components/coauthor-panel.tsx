@@ -84,35 +84,42 @@ export default function CoauthorPanel({
 
   // Load recent message history on mount
   useEffect(() => {
+    const controller = new AbortController();
     async function loadHistory() {
-      const res = await fetch(
-        `/api/coauthor/messages?projectId=${projectId}&limit=30`
-      );
-      if (!res.ok) return;
-      const { messages: hist } = await res.json() as { messages: DbCoauthorMessage[] };
-      if (!hist?.length) return;
-      // API returns newest-first; sort ascending with tie-break (user before assistant)
-      // so identical timestamps (legacy data) still display in the right order.
-      const sorted = hist.slice().sort((a, b) => {
-        const tA = new Date(a.created_at ?? 0).getTime();
-        const tB = new Date(b.created_at ?? 0).getTime();
-        if (tA !== tB) return tA - tB;
-        // Tie-break: user message always before assistant reply
-        if (a.role === "user" && b.role !== "user") return -1;
-        if (b.role === "user" && a.role !== "user") return 1;
-        return 0;
-      });
-      setMessages(
-        sorted.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          message_type: m.message_type,
-          created_at: m.created_at,
-        }))
-      );
+      try {
+        const res = await fetch(
+          `/api/coauthor/messages?projectId=${projectId}&limit=30`,
+          { signal: controller.signal }
+        );
+        if (!res.ok) return;
+        const { messages: hist } = await res.json() as { messages: DbCoauthorMessage[] };
+        if (!hist?.length) return;
+        // API returns newest-first; sort ascending with tie-break (user before assistant)
+        // so identical timestamps (legacy data) still display in the right order.
+        const sorted = hist.slice().sort((a, b) => {
+          const tA = new Date(a.created_at ?? 0).getTime();
+          const tB = new Date(b.created_at ?? 0).getTime();
+          if (tA !== tB) return tA - tB;
+          // Tie-break: user message always before assistant reply
+          if (a.role === "user" && b.role !== "user") return -1;
+          if (b.role === "user" && a.role !== "user") return 1;
+          return 0;
+        });
+        setMessages(
+          sorted.map((m) => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            message_type: m.message_type,
+            created_at: m.created_at,
+          }))
+        );
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
+      }
     }
     loadHistory();
+    return () => controller.abort();
   }, [projectId]);
 
   // Scroll to bottom when messages change
@@ -515,8 +522,9 @@ function MessageBubble({
     );
   }
 
-  const isObservation = msg.message_type === "observation" || msg.message_type === "nudge";
-  const isCelebration = msg.message_type === "celebration";
+  const isObservation   = msg.message_type === "observation" || msg.message_type === "nudge";
+  const isCelebration   = msg.message_type === "celebration";
+  const isProseRedirect = msg.message_type === "prose_redirect";
 
   return (
     <div
@@ -529,25 +537,39 @@ function MessageBubble({
           {coauthorName.charAt(0).toUpperCase()}
         </span>
       </div>
-      <div
-        className={`max-w-[85%] rounded-2xl rounded-bl-sm px-3 py-2 text-sm leading-relaxed ${
-          msg.pending
-            ? "bg-neutral-100 text-neutral-400 italic"
-            : isCelebration
-            ? "bg-amber-50 text-amber-900 border border-amber-200"
-            : isObservation
-            ? "bg-blue-50 text-blue-900 border border-blue-100"
-            : "bg-white text-neutral-900 border border-neutral-100"
-        }`}
-      >
-        {msg.pending ? (
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:0ms]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:150ms]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:300ms]" />
-          </span>
-        ) : (
-          msg.content
+      <div className="max-w-[85%] flex flex-col gap-2">
+        <div
+          className={`rounded-2xl rounded-bl-sm px-3 py-2 text-sm leading-relaxed ${
+            msg.pending
+              ? "bg-neutral-100 text-neutral-400 italic"
+              : isCelebration
+              ? "bg-amber-50 text-amber-900 border border-amber-200"
+              : isObservation
+              ? "bg-blue-50 text-blue-900 border border-blue-100"
+              : isProseRedirect
+              ? "bg-violet-50 text-violet-900 border border-violet-200"
+              : "bg-white text-neutral-900 border border-neutral-100"
+          }`}
+        >
+          {msg.pending ? (
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:0ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:150ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:300ms]" />
+            </span>
+          ) : (
+            msg.content
+          )}
+        </div>
+
+        {/* Ctrl+K shortcut badge — shown on prose redirect messages */}
+        {isProseRedirect && !msg.pending && (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-neutral-900 w-fit">
+            <kbd className="text-[10px] font-mono font-semibold text-white leading-none">Ctrl</kbd>
+            <span className="text-neutral-500 text-[10px]">+</span>
+            <kbd className="text-[10px] font-mono font-semibold text-white leading-none">K</kbd>
+            <span className="text-[10px] text-neutral-400 ml-0.5">to write prose</span>
+          </div>
         )}
       </div>
       {hovered && !msg.pending && (

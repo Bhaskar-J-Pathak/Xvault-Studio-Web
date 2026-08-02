@@ -1,12 +1,14 @@
 /**
  * POST /api/referral/link
  *
- * Called client-side after signup when a ?ref=CODE was present in the URL.
- * Links the referral code to the current user's profile and creates a
- * pending referral row.
+ * Called client-side after signup when a ?ref=CODE was present in the URL
+ * or the user manually entered a referral code on the auth page.
+ *
+ * Links the referral code to the current user's profile and immediately
+ * awards bonus credits to both the referrer (+30) and the referee (+15).
  *
  * Body:    { code: string }
- * Returns: { ok: true } | { error: string }
+ * Returns: { ok: true, credited: boolean } | { error: string }
  *
  * Idempotent — calling twice for the same user is a no-op.
  */
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!myProfile) return Response.json({ error: "Profile not found" }, { status: 404 });
-  if (myProfile.referred_by) return Response.json({ ok: true }); // already linked, no-op
+  if (myProfile.referred_by) return Response.json({ ok: true, credited: false }); // already linked
 
   // Prevent self-referral
   if (myProfile.referral_code === code) {
@@ -82,5 +84,17 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: refErr.message }, { status: 500 });
   }
 
-  return Response.json({ ok: true });
+  // Immediately award credits to both parties via the DB function.
+  // complete_referral() is idempotent — safe to call again from onboarding.
+  let credited = false;
+  try {
+    const { data: rpcResult } = await service.rpc("complete_referral", {
+      p_referred_id: user.id,
+    });
+    credited = rpcResult?.ok === true;
+  } catch {
+    // Non-fatal — credits can still be awarded later via onboarding completion
+  }
+
+  return Response.json({ ok: true, credited });
 }

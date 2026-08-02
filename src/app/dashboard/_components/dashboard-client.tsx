@@ -6,6 +6,7 @@ import NewProjectModal from "./new-project-modal";
 import ImportModal from "./import-modal";
 import GenrePicker from "./genre-picker";
 
+
 interface Props {
   needsOnboarding?: boolean;
   isBeta?: boolean;
@@ -28,8 +29,8 @@ export default function DashboardClient({ needsOnboarding = false, isBeta = fals
           title={isBeta ? "Import is not available during the beta" : undefined}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
             isBeta
-              ? "border-black/[0.06] text-[#1A1A1A]/25 cursor-not-allowed"
-              : "border-black/[0.10] text-[#1A1A1A]/60 hover:bg-black/[0.04] hover:text-[#1A1A1A]"
+              ? "border-black/[0.06] dark:border-white/[0.06] text-[#A1A1AA] dark:text-white/20 cursor-not-allowed"
+              : "border-[#E4E4E7] dark:border-white/[0.08] text-[#71717A] dark:text-white/40 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-[#0F0F0F] dark:hover:text-white/80"
           }`}
         >
           <Upload size={14} />
@@ -37,7 +38,7 @@ export default function DashboardClient({ needsOnboarding = false, isBeta = fals
         </button>
         <button
           onClick={() => setNewOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold hover:bg-[#2A2A2A] transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0F0F0F] dark:bg-white text-white dark:text-[#0E0C1B] text-sm font-semibold hover:bg-[#2A2A2A] dark:hover:bg-white/90 transition-colors"
         >
           <Plus size={15} />
           New project

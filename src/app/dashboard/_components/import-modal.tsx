@@ -130,13 +130,13 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-white dark:bg-[#161329] rounded-2xl shadow-2xl ring-1 ring-black/[0.07] dark:ring-white/[0.07] flex flex-col overflow-hidden max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06] dark:border-white/[0.06]">
           <div>
-            <h2 className="text-sm font-semibold text-[#1A1A1A]">Import manuscript</h2>
-            <p className="text-[11px] text-[#1A1A1A]/45 mt-0.5">
+            <h2 className="text-sm font-semibold text-[#0F0F0F] dark:text-[#EDEBF0]">Import manuscript</h2>
+            <p className="text-[11px] text-[#71717A] dark:text-white/40 mt-0.5">
               {step === "upload"    && "Upload a .txt or .docx file"}
               {step === "preview"   && `${chapters.length} chapter${chapters.length !== 1 ? "s" : ""} detected`}
               {step === "importing" && "Creating your project…"}
@@ -144,7 +144,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-[#1A1A1A]/40 hover:text-[#1A1A1A]/70 hover:bg-black/[0.05] transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-[#A1A1AA] dark:text-white/30 hover:text-[#0F0F0F] dark:hover:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors"
           >
             <X size={15} />
           </button>
@@ -171,14 +171,14 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
                 onClick={() => !parsing && fileInputRef.current?.click()}
                 className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-12 px-6 text-center cursor-pointer transition-all ${
                   dragging
-                    ? "border-violet-400 bg-violet-50"
-                    : "border-black/[0.10] hover:border-violet-300 hover:bg-violet-50/40"
+                    ? "border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-900/15"
+                    : "border-[#E4E4E7] dark:border-white/[0.10] hover:border-violet-300 dark:hover:border-violet-500/40 hover:bg-violet-50/40 dark:hover:bg-violet-900/10"
                 } ${parsing ? "pointer-events-none" : ""}`}
               >
                 {parsing ? (
                   <>
                     <Loader2 size={28} className="text-violet-500 animate-spin" />
-                    <p className="text-sm font-medium text-[#1A1A1A]/60">Parsing your manuscript…</p>
+                    <p className="text-sm font-medium text-[#71717A] dark:text-white/40">Parsing your manuscript…</p>
                   </>
                 ) : (
                   <>
@@ -186,10 +186,10 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
                       <Upload size={22} className="text-violet-500" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-[#1A1A1A]">
+                      <p className="text-sm font-medium text-[#0F0F0F] dark:text-[#EDEBF0]">
                         Drop your manuscript here
                       </p>
-                      <p className="text-xs text-[#1A1A1A]/45 mt-1">
+                      <p className="text-xs text-[#71717A] dark:text-white/40 mt-1">
                         .txt or .docx · max 10 MB
                       </p>
                     </div>
@@ -210,7 +210,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
                 </div>
               )}
 
-              <p className="text-[11px] text-[#1A1A1A]/30 text-center mt-4">
+              <p className="text-[11px] text-[#A1A1AA] dark:text-white/25 text-center mt-4">
                 Chapters are detected automatically from headings.
                 Works best with Word documents using Heading styles.
               </p>
@@ -223,7 +223,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
 
               {/* Project title */}
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#1A1A1A]/40 mb-1.5">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#A1A1AA] dark:text-white/30 mb-1.5">
                   Project title
                 </label>
                 <input
@@ -231,19 +231,19 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-[13px] text-[#1A1A1A] bg-[#F8F8F8] border border-black/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300"
+                  className="w-full px-3 py-2 text-[13px] text-[#0F0F0F] dark:text-[#EDEBF0] bg-[#F4F4F5] dark:bg-white/[0.04] border border-[#E4E4E7] dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 dark:focus:border-violet-500"
                 />
               </div>
 
               {/* Genre */}
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#1A1A1A]/40 mb-1.5">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#A1A1AA] dark:text-white/30 mb-1.5">
                   Genre (optional)
                 </label>
                 <select
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
-                  className="w-full px-3 py-2 text-[13px] text-[#1A1A1A] bg-[#F8F8F8] border border-black/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-200 cursor-pointer"
+                  className="w-full px-3 py-2 text-[13px] text-[#0F0F0F] dark:text-[#EDEBF0] bg-[#F4F4F5] dark:bg-white/[0.04] border border-[#E4E4E7] dark:border-white/[0.08] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 cursor-pointer"
                 >
                   {GENRES.map((g) => (
                     <option key={g.value} value={g.value}>{g.label}</option>
@@ -253,23 +253,23 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
 
               {/* Chapter list */}
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#1A1A1A]/40 mb-1.5">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#A1A1AA] dark:text-white/30 mb-1.5">
                   Chapters detected
                 </label>
-                <div className="rounded-xl border border-black/[0.07] overflow-hidden max-h-[280px] overflow-y-auto">
+                <div className="rounded-xl border border-[#E4E4E7] dark:border-white/[0.07] overflow-hidden max-h-[280px] overflow-y-auto">
                   {chapters.map((ch, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 px-3 py-2.5 border-b border-black/[0.04] last:border-0 hover:bg-black/[0.02] transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 border-b border-black/[0.04] dark:border-white/[0.04] last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors"
                     >
-                      <span className="text-[11px] font-mono text-[#1A1A1A]/30 w-6 shrink-0 text-right">
+                      <span className="text-[11px] font-mono text-[#A1A1AA] dark:text-white/25 w-6 shrink-0 text-right">
                         {i + 1}
                       </span>
-                      <FileText size={12} className="text-[#1A1A1A]/25 shrink-0" />
-                      <span className="flex-1 text-[13px] text-[#1A1A1A]/80 truncate">
+                      <FileText size={12} className="text-[#A1A1AA] dark:text-white/20 shrink-0" />
+                      <span className="flex-1 text-[13px] text-[#0F0F0F] dark:text-[#EDEBF0] truncate">
                         {ch.title}
                       </span>
-                      <span className="text-[11px] text-[#1A1A1A]/35 shrink-0">
+                      <span className="text-[11px] text-[#A1A1AA] dark:text-white/30 shrink-0">
                         {ch.words.toLocaleString()} words
                       </span>
                     </div>
@@ -290,7 +290,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
           {step === "importing" && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <Loader2 size={28} className="text-violet-500 animate-spin" />
-              <p className="text-sm font-medium text-[#1A1A1A]/60">
+              <p className="text-sm font-medium text-[#71717A] dark:text-white/40">
                 Creating {chapters.length} chapter{chapters.length !== 1 ? "s" : ""}…
               </p>
             </div>
@@ -299,18 +299,18 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
 
         {/* Footer */}
         {step !== "importing" && (
-          <div className="px-5 py-4 border-t border-black/[0.06] flex items-center justify-between">
+          <div className="px-5 py-4 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between">
             {step === "preview" ? (
               <button
                 onClick={() => { setStep("upload"); setError(null); }}
-                className="text-[13px] text-[#1A1A1A]/45 hover:text-[#1A1A1A]/70 transition-colors"
+                className="text-[13px] text-[#71717A] dark:text-white/40 hover:text-[#0F0F0F] dark:hover:text-white/70 transition-colors"
               >
                 ← Back
               </button>
             ) : (
               <button
                 onClick={onClose}
-                className="text-[13px] text-[#1A1A1A]/45 hover:text-[#1A1A1A]/70 transition-colors"
+                className="text-[13px] text-[#71717A] dark:text-white/40 hover:text-[#0F0F0F] dark:hover:text-white/70 transition-colors"
               >
                 Cancel
               </button>
@@ -320,7 +320,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleImport}
                 disabled={!title.trim()}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#1A1A1A] text-white text-[13px] font-semibold hover:bg-[#2A2A2A] disabled:opacity-40 transition-colors"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#0F0F0F] dark:bg-violet-600 text-white text-[13px] font-semibold hover:bg-[#2A2A2A] dark:hover:bg-violet-500 disabled:opacity-40 transition-colors"
               >
                 Create project
                 <ChevronRight size={14} />

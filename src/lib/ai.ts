@@ -127,6 +127,73 @@ export async function geminiGenerate(
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
 
+/**
+ * Multi-turn chat with Gemini using proper alternating user/model turns.
+ * Use this instead of geminiGenerate when conversation history matters.
+ */
+export async function geminiChat(
+  history: Array<{ role: "user" | "assistant"; content: string }>,
+  message: string,
+  systemPrompt?: string,
+  maxTokens = 600,
+  model = "gemini-2.5-flash"
+): Promise<string> {
+  const generationConfig: Record<string, unknown> = {
+    maxOutputTokens: maxTokens,
+    temperature: 0.85,
+  };
+  if (model.includes("flash")) {
+    generationConfig.thinkingConfig = { thinkingBudget: 0 };
+  }
+
+  // Map history to Gemini's role format (assistant → model).
+  // Gemini requires the sequence to start with a user turn and strictly alternate.
+  // Drop any leading assistant messages and merge consecutive same-role turns.
+  const rawTurns = history
+    .filter((m) => m.content?.trim())
+    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", text: m.content }));
+
+  const normalized: { role: "user" | "model"; text: string }[] = [];
+  for (const turn of rawTurns) {
+    if (normalized.length === 0) {
+      if (turn.role !== "user") continue; // skip leading model turns
+      normalized.push(turn);
+    } else if (turn.role === normalized[normalized.length - 1].role) {
+      // Merge consecutive same-role messages
+      normalized[normalized.length - 1].text += "\n" + turn.text;
+    } else {
+      normalized.push(turn);
+    }
+  }
+
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
+    ...normalized.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
+    { role: "user", parts: [{ text: message }] },
+  ];
+
+  const body: Record<string, unknown> = { contents, generationConfig };
+  if (systemPrompt) {
+    body.system_instruction = { parts: [{ text: systemPrompt }] };
+  }
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Gemini chat [${model}] failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
+
 // ---------------------------------------------------------------------------
 // OpenRouter  (with automatic fallback to next free model)
 // ---------------------------------------------------------------------------
