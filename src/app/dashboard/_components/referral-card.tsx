@@ -33,7 +33,7 @@ export default function ReferralCard({ referralCode, referralCount, bonusCredits
     setTimeout(() => setter(false), 2000);
   };
 
-  const spotsLeft = 3 - referralCount;
+  const spotsLeft = 10 - referralCount;
 
   return (
     <div className="bg-white dark:bg-[#161329] rounded-2xl ring-1 ring-black/[0.06] dark:ring-white/[0.07] p-5 space-y-4">
@@ -48,20 +48,20 @@ export default function ReferralCard({ referralCode, referralCount, bonusCredits
               Invite friends
             </p>
             <p className="text-[11px] text-[#A1A1AA] dark:text-white/30">
-              Give 15 credits · Get 30 credits
+              Give 30 credits · Get 50 credits
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-[#A1A1AA] dark:text-white/30">
           <Users size={12} />
-          <span>{referralCount}/3 referred</span>
+          <span>{referralCount}/10 referred</span>
         </div>
       </div>
 
       {/* Slot dots */}
-      <div className="flex gap-1.5">
-        {[0, 1, 2].map((i) => (
+      <div className="flex gap-1">
+        {Array.from({ length: 10 }, (_, i) => (
           <div
             key={i}
             className={`flex-1 h-1.5 rounded-full transition-colors ${

@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Referral code not found" }, { status: 404 });
   }
 
-  // Referrer must have < 3 completed referrals
-  if (referrer.referral_count >= 3) {
+  // Referrer must have < 10 completed referrals
+  if (referrer.referral_count >= 10) {
     return Response.json({ error: "Referral limit reached" }, { status: 409 });
   }
 

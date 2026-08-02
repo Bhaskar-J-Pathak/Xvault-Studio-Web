@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type PlanValue = "hobbyist" | "scribe" | "pro" | "founder_circle";
+type PlanValue = "hobbyist" | "founder_circle";
 
 type DodoEvent = {
   id?: string;

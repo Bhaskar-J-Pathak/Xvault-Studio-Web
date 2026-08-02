@@ -7,18 +7,17 @@ import { cookies } from "next/headers";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const environment =
-  (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") ||
-  (process.env.NODE_ENV === "production" ? "live_mode" : "test_mode");
-
-const dodo = new DodoPayments({
-  bearerToken: environment === "live_mode"
-    ? process.env.DODO_API_KEY_LIVE!
-    : process.env.DODO_API_KEY_TEST!,
-  environment,
-});
-
 export async function POST(req: NextRequest) {
+  const environment =
+    (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") ||
+    (process.env.NODE_ENV === "production" ? "live_mode" : "test_mode");
+
+  const dodo = new DodoPayments({
+    bearerToken: environment === "live_mode"
+      ? process.env.DODO_API_KEY_LIVE!
+      : process.env.DODO_API_KEY_TEST!,
+    environment,
+  });
   const body = (await req.json().catch(() => null)) as
     | { productId?: string; planPurchased?: string }
     | null;

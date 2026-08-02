@@ -1,6 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-export type Plan = "free" | "hobbyist" | "scribe" | "pro" | "founder_circle";
+export type Plan = "free" | "hobbyist" | "founder_circle";
 
 export const TRIAL_DAYS = 14;
 export const TRIAL_CREDITS = 100;
@@ -30,16 +30,12 @@ export interface Profile {
 export const PLAN_LIMITS: Record<string, number> = {
   free: 50,
   hobbyist: 300,
-  scribe: 300,
-  pro: 600,
   founder_circle: 600,
 };
 
 export const PLAN_LABELS: Record<string, string> = {
   free: "Free",
   hobbyist: "Hobbyist",
-  scribe: "Hobbyist",
-  pro: "Pro",
   founder_circle: "Founder's Circle",
 };
 
