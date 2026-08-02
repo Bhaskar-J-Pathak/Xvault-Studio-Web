@@ -186,14 +186,31 @@ export default function CoauthorPanel({
         const data = await res.json() as {
           reply?: string;
           error?: string;
+          reason?: string;
           messageType?: string;
           instruction?: string;
           remaining?: number;
         };
-        const reply = data.reply ?? "Sorry, something went wrong.";
-        const msgType = (data.messageType ?? "chat") as CoauthorMessageType;
 
+        // Always update credit display from any response (success or rate-limit)
         if (data.remaining !== undefined) onCreditUpdate?.(data.remaining);
+
+        // Handle HTTP errors (especially 429 rate-limit) before treating as a reply
+        if (!res.ok) {
+          const errorMsg = res.status === 429
+            ? (data.error ?? "You've run out of AI credits. Upgrade to keep writing.")
+            : (data.error ?? "Something went wrong. Try again.");
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.pending ? { ...m, content: errorMsg, message_type: "chat", pending: false } : m
+            )
+          );
+          onResponseReceived?.();
+          return;
+        }
+
+        const reply = data.reply ?? "Something went wrong. Try again.";
+        const msgType = (data.messageType ?? "chat") as CoauthorMessageType;
 
         setMessages((prev) =>
           prev.map((m) =>

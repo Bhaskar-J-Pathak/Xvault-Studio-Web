@@ -132,7 +132,9 @@ ${afterBlock}
 
 INSTRUCTION: ${instruction.trim()}
 
-Rewrite ONLY the selected text according to the instruction. Match the writer's voice, POV, tense, and style exactly. Never use em-dashes (—). Output ONLY the rewritten passage — no preamble, no labels, no explanation. Aim for roughly the same length as the original unless the instruction asks for more or less.`;
+Rewrite ONLY the selected text according to the instruction. Match the writer's voice, POV, tense, and style exactly.
+Craft rules: no em-dashes, no AI-cliché phrases (see system rules), no bare emotion labels — show through action or detail, no adverbs on dialogue tags, write specific not vague.
+Output ONLY the rewritten passage — no preamble, no labels, no explanation. Aim for roughly the same length as the original unless the instruction asks for more or less.`;
 
     maxTokens = Math.max(512, Math.ceil(selectedText.split(/\s+/).length * 1.5 * 1.4));
 
@@ -160,7 +162,9 @@ ${afterBlock}
 
 INSTRUCTION: ${instruction.trim()}
 
-Write ${wordTarget} words of story prose to be inserted at the cursor. Match the writer's voice, POV, tense, sentence rhythm, and style exactly. Never use em-dashes (—). Output ONLY the story text — no preamble, no labels, no commentary. Do not repeat the text before the cursor. Pick up naturally from it.`;
+Write ${wordTarget} words of story prose to be inserted at the cursor. Match the writer's voice, POV, tense, sentence rhythm, and style exactly.
+Craft rules: no em-dashes, no AI-cliché phrases (see system rules), no bare emotion labels — ground them in action or sensation, no adverbs on dialogue tags, write specific and concrete not vague. Vary sentence length and structure.
+Output ONLY the story text — no preamble, no labels, no commentary. Do not repeat the text before the cursor. Pick up naturally from it.`;
 
   } else {
     // "continue" — blind continuation (Ctrl+K with no instruction, legacy)
@@ -180,6 +184,10 @@ Rules:
 - Do not introduce new plot elements — continue the current scene
 - Never use em-dashes (—) — restructure the sentence or use a comma/period instead
 - Keep prose lean — no stacked adjectives, no excessive sensory detail, no purple prose
+- No AI-cliché phrases (see system rules): no "washed over," no "found herself," no "heart raced," no "in that moment," no bare emotion labels — show through action or sensation
+- Write specific and concrete — "the smell of diesel and wet asphalt" beats "the smell of the city"
+- Vary sentence length — avoid three consecutive sentences starting with the same subject
+- No adverbs on dialogue tags — use action beats or just "said"
 - Output ONLY the continuation. No preamble, no labels.
 
 The manuscript so far ends with:
@@ -195,7 +203,21 @@ Continue:`;
 
 PROSE RULES (always enforced):
 - Never use em-dashes (—). Restructure the sentence, use a comma, or use a period instead.
-- Do not over-describe. Keep prose lean — include only what moves the scene forward. Avoid stacking adjectives, excessive sensory detail, or purple prose.
+- Keep prose lean. Include only what moves the scene forward. No stacked adjectives, no excessive sensory detail, no purple prose.
+
+ANTI-CLICHÉ RULES (strictly enforced — these are the marks of AI-generated slop):
+- Never open a sentence with "Suddenly," "In that moment," "It was as if," or "Needless to say."
+- Never use these overworked phrases: "a tapestry of", "a dance of", "a symphony of", "a sea of", "a cascade of", "a mosaic of", "a labyrinth of", "bathed in light", "hung in the air", "washed over", "a wave of [emotion]", "heart of stone", "heart raced", "butterflies in her stomach", "eyes like the ocean", "the weight of the world."
+- Never use "found herself/himself [verb]ing" (e.g., "she found herself wondering") — just write the action directly.
+- Never use "couldn't help but" — cut it.
+- Never use "It was then that" or "With that in mind" as transitions.
+- No redundant body language: never "nodded his head," "shrugged her shoulders," "blinked her eyes."
+- Avoid bare emotion labels: don't write "she felt sad" — show it through action, dialogue, or physical detail.
+- Avoid adverbs on dialogue tags: never "she said softly," "he replied warmly," "she whispered quietly." Use action beats or just "said."
+- Do not overuse "suddenly" — use it at most once per scene, and only when the surprise is genuine.
+- Avoid starting consecutive sentences with the same subject pronoun (He/She/They three times in a row is flat).
+- No filler intensifiers: "truly," "deeply," "utterly," "profoundly," "incredibly" — cut them.
+- Write specific and concrete, never vague: "the smell of diesel and wet asphalt" beats "the smell of the city."
 
 OUTPUT RULE: Output ONLY the story prose — zero preamble, zero labels, zero meta-commentary. The output will be inserted directly into the manuscript.`;
 

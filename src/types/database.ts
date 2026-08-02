@@ -1,7 +1,7 @@
 // TypeScript types mirroring every Supabase table.
 // Keep in sync with supabase/migrations/001_initial.sql.
 
-export type Plan = "free" | "scribe" | "pro";
+export type Plan = "free" | "hobbyist" | "founder_circle";
 export type EntityType = "character" | "location" | "faction" | "item" | "event";
 export type ThreadStatus = "open" | "resolved" | "dead";
 

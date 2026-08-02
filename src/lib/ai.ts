@@ -149,9 +149,9 @@ export async function geminiChat(
   // Map history to Gemini's role format (assistant → model).
   // Gemini requires the sequence to start with a user turn and strictly alternate.
   // Drop any leading assistant messages and merge consecutive same-role turns.
-  const rawTurns = history
+  const rawTurns: { role: "user" | "model"; text: string }[] = history
     .filter((m) => m.content?.trim())
-    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", text: m.content }));
+    .map((m) => ({ role: (m.role === "assistant" ? "model" : "user") as "user" | "model", text: m.content }));
 
   const normalized: { role: "user" | "model"; text: string }[] = [];
   for (const turn of rawTurns) {
