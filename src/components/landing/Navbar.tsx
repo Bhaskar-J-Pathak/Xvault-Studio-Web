@@ -21,6 +21,8 @@ const navLinks = [
   { label: "Features",     href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "Blog",         href: "/blog" },
+  { label: "Guides",       href: "/guides" },
+  { label: "Compare",      href: "/compare" },
   { label: "FAQ",          href: "#faq" },
 ];
 
