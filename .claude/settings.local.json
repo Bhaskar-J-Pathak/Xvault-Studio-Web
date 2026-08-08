@@ -37,7 +37,28 @@
       "WebFetch(domain:saaspo.com)",
       "WebFetch(domain:craftwork.design)",
       "WebFetch(domain:docs.sudowrite.com)",
-      "WebFetch(domain:checkthat.ai)"
+      "WebFetch(domain:checkthat.ai)",
+      "Bash(del:*)",
+      "WebFetch(domain:videos.feedspot.com)",
+      "WebFetch(domain:caffeinatedwriter.substack.com)",
+      "WebFetch(domain:www.youtube.com)",
+      "WebFetch(domain:socialblade.com)",
+      "WebFetch(domain:sarahraedraws.substack.com)",
+      "WebFetch(domain:www.substackwritersatwork.com)",
+      "WebFetch(domain:archive.bookstr.com)",
+      "WebFetch(domain:thewritelife.com)",
+      "WebFetch(domain:miblart.com)",
+      "WebFetch(domain:novelpad.co)",
+      "WebFetch(domain:www.noxinfluencer.com)",
+      "WebFetch(domain:gellius.substack.com)",
+      "WebFetch(domain:legendfiction.substack.com)",
+      "WebFetch(domain:beacons.ai)",
+      "WebFetch(domain:www.reginapaul.com)",
+      "WebFetch(domain:prattlefogandgravelrap.substack.com)",
+      "WebFetch(domain:ghostwritingsolution.com)",
+      "WebFetch(domain:vidiq.com)",
+      "WebFetch(domain:www.quotidianwriter.com)",
+      "WebFetch(domain:www.authorbrookepassmore.com)"
     ]
   }
 }

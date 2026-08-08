@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import AnnouncementBar  from "@/components/landing/AnnouncementBar";
-import Navbar           from "@/components/landing/Navbar";
-import Hero             from "@/components/landing/Hero";
-import FeaturesShowcase from "@/components/landing/FeaturesShowcase";
-import CoAuthorSection  from "@/components/landing/CoAuthorSection";
-import WhyXvault        from "@/components/landing/WhyXvault";
-import HowItWorks       from "@/components/landing/HowItWorks";
-import SocialProof      from "@/components/landing/SocialProof";
-import FAQ              from "@/components/landing/FAQ";
-import Pricing          from "@/components/landing/Pricing";
-import CTA              from "@/components/landing/CTA";
-import Footer           from "@/components/landing/Footer";
+import { LandingShell }   from "@/components/landing/LandingShell";
+import AnnouncementBar    from "@/components/landing/AnnouncementBar";
+import Navbar             from "@/components/landing/Navbar";
+import Hero               from "@/components/landing/Hero";
+import FeaturesShowcase   from "@/components/landing/FeaturesShowcase";
+import CoAuthorSection    from "@/components/landing/CoAuthorSection";
+import WhyXvault          from "@/components/landing/WhyXvault";
+import HowItWorks         from "@/components/landing/HowItWorks";
+import SocialProof        from "@/components/landing/SocialProof";
+import FAQ                from "@/components/landing/FAQ";
+import Pricing            from "@/components/landing/Pricing";
+import CTA                from "@/components/landing/CTA";
+import Footer             from "@/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Xvault Studio — AI Writing Studio for Novelists",
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <>
+    <LandingShell>
       <AnnouncementBar />
       <Navbar />
       <main>
@@ -43,6 +44,6 @@ export default function HomePage() {
         <CTA />
       </main>
       <Footer />
-    </>
+    </LandingShell>
   );
 }

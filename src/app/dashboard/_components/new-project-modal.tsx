@@ -5,15 +5,27 @@ import { useRouter } from "next/navigation";
 import { X, Plus } from "lucide-react";
 
 const GENRES = [
-  { value: "",          label: "No genre selected" },
-  { value: "fantasy",   label: "Fantasy" },
-  { value: "scifi",     label: "Sci-Fi" },
-  { value: "thriller",  label: "Thriller" },
-  { value: "romance",   label: "Romance" },
-  { value: "mystery",   label: "Mystery" },
-  { value: "horror",    label: "Horror" },
-  { value: "literary",  label: "Literary Fiction" },
-  { value: "other",     label: "Other" },
+  { value: "",              label: "No genre selected" },
+  { value: "fantasy",       label: "Fantasy" },
+  { value: "dark-fantasy",  label: "Dark Fantasy" },
+  { value: "urban-fantasy", label: "Urban Fantasy" },
+  { value: "scifi",         label: "Sci-Fi" },
+  { value: "dystopian",     label: "Dystopian" },
+  { value: "thriller",      label: "Thriller" },
+  { value: "suspense",      label: "Suspense" },
+  { value: "mystery",       label: "Mystery" },
+  { value: "crime",         label: "Crime / Noir" },
+  { value: "horror",        label: "Horror" },
+  { value: "romance",       label: "Romance" },
+  { value: "paranormal",    label: "Paranormal Romance" },
+  { value: "literary",      label: "Literary Fiction" },
+  { value: "historical",    label: "Historical Fiction" },
+  { value: "contemporary",  label: "Contemporary Fiction" },
+  { value: "ya",            label: "Young Adult" },
+  { value: "womens",        label: "Women's Fiction" },
+  { value: "adventure",     label: "Adventure" },
+  { value: "magical-realism", label: "Magical Realism" },
+  { value: "other",         label: "Other" },
 ];
 
 interface Props {

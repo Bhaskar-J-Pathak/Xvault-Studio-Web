@@ -353,7 +353,7 @@ function getStepContent(
     case 1:
       return {
         title: "Welcome to your sample project.",
-        body: "The Glass Meridian — a thriller across 3 chapters. Your AI co-author Alex has already read all of it. Let's take a quick tour.",
+        body: "The Glass Meridian — 3 chapters, a full World Board, and a Story Bible. Your AI co-author Alex has already read all of it. Let's take a quick tour.",
         ctaLabel: "Let's go",
         nextStep: 2,
       };

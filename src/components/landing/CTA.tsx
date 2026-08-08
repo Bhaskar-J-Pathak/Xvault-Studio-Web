@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
+import { MagneticButton } from "./MagneticButton";
 
 const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -88,15 +89,17 @@ export default function CTA() {
           transition={{ delay: 0.5, duration: 0.65, ease }}
           className="mt-10"
         >
-          <Link
-            href="/auth?mode=signup"
-            className="inline-flex items-center gap-2.5 rounded-full bg-violet-600 px-8 py-3.5 text-[0.9rem] font-semibold text-white shadow-[0_0_28px_rgba(124,58,237,0.30)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-[0_0_36px_rgba(124,58,237,0.40)]"
-          >
-            Start writing — it&apos;s free
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
+          <MagneticButton strength={0.3}>
+            <Link
+              href="/auth?mode=signup"
+              className="inline-flex items-center gap-2.5 rounded-full bg-violet-600 px-8 py-3.5 text-[0.9rem] font-semibold text-white shadow-[0_0_28px_rgba(124,58,237,0.30)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-[0_0_36px_rgba(124,58,237,0.40)]"
+            >
+              Start writing — it&apos;s free
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          </MagneticButton>
         </motion.div>
 
         {/* Trust items */}

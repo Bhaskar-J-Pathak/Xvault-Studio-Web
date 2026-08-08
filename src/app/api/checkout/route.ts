@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       : process.env.DODO_API_KEY_TEST!,
     environment,
   });
+
   const body = (await req.json().catch(() => null)) as
     | { productId?: string; planPurchased?: string }
     | null;

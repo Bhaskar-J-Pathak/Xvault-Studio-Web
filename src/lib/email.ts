@@ -92,7 +92,67 @@ export async function sendGiftCreditsEmail(
   });
 }
 
-// ── 6. Internal feedback notification (to Bhaskar) ────────────────────────
+// ── 6. Affiliate application notification (to Bhaskar) ───────────────────
+
+export async function sendAffiliateApplicationEmail(opts: {
+  name: string;
+  email: string;
+  platform: string;
+  url: string;
+  audienceSize: string;
+  about: string;
+}): Promise<void> {
+  const safe = (s: string) => s.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background:#f6f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 20px;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;border:1px solid #e8e4df;overflow:hidden;">
+        <tr><td style="height:4px;background:#7c3aed;"></td></tr>
+        <tr><td style="padding:32px 36px 28px;">
+          <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#7c3aed;letter-spacing:0.07em;text-transform:uppercase;">New Affiliate Application</p>
+          <h2 style="margin:0 0 28px 0;font-size:20px;font-weight:700;color:#1a1a1a;letter-spacing:-0.3px;">${safe(opts.name)}</h2>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding-bottom:16px;">
+              <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#7c3aed;letter-spacing:0.07em;text-transform:uppercase;">Email</p>
+              <p style="margin:0;font-size:14px;color:#1a1a1a;">${safe(opts.email)}</p>
+            </td></tr>
+            <tr><td style="padding-bottom:16px;">
+              <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#7c3aed;letter-spacing:0.07em;text-transform:uppercase;">Platform</p>
+              <p style="margin:0;font-size:14px;color:#1a1a1a;">${safe(opts.platform)}</p>
+            </td></tr>
+            <tr><td style="padding-bottom:16px;">
+              <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#7c3aed;letter-spacing:0.07em;text-transform:uppercase;">URL / Handle</p>
+              <p style="margin:0;font-size:14px;color:#1a1a1a;">${safe(opts.url)}</p>
+            </td></tr>
+            <tr><td style="padding-bottom:16px;">
+              <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#7c3aed;letter-spacing:0.07em;text-transform:uppercase;">Audience Size</p>
+              <p style="margin:0;font-size:14px;color:#1a1a1a;">${safe(opts.audienceSize)}</p>
+            </td></tr>
+            <tr><td style="padding-bottom:0;">
+              <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#7c3aed;letter-spacing:0.07em;text-transform:uppercase;">About their audience</p>
+              <p style="margin:0;font-size:14px;color:#1a1a1a;line-height:1.7;white-space:pre-wrap;">${safe(opts.about)}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  await resend.emails.send({
+    from:    FROM,
+    to:      FROM,
+    subject: `[Affiliate Application] ${opts.name} — ${opts.platform}`,
+    html,
+  });
+}
+
+// ── 7. Internal feedback notification (to Bhaskar) ────────────────────────
 
 const MOOD_LABEL: Record<string, string> = {
   good: "😊 Good",
