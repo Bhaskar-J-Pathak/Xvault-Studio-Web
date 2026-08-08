@@ -3,10 +3,10 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Xvault vs Other AI Writing Tools — Honest Comparisons",
+  title: "Xvault vs Other AI Writing Tools: Honest Comparisons",
   description: "How does Xvault Studio compare to Sudowrite, NovelCrafter, and NovelAI? Honest side-by-side comparisons of pricing, features, and manuscript memory.",
   openGraph: {
-    title: "Xvault vs Other AI Writing Tools — Honest Comparisons",
+    title: "Xvault vs Other AI Writing Tools: Honest Comparisons",
     description: "Honest side-by-side comparisons of AI writing tools for novelists. Pricing, features, manuscript memory, and content restrictions.",
     type: "website",
   },
@@ -16,21 +16,21 @@ const comparisons = [
   {
     slug: "xvault-vs-sudowrite",
     opponent: "Sudowrite",
-    tagline: "The established name — but pricing backlash and content restrictions are pushing writers away.",
+    tagline: "The established name, but pricing backlash and content restrictions are pushing writers away.",
     xvaultWins: ["No content restrictions for serious fiction", "Reads entire manuscript before responding", "Transparent, stable pricing"],
     opponentWins: ["Proprietary Muse model fine-tuned on published novels", "More established, larger community"],
   },
   {
     slug: "xvault-vs-novelcrafter",
     opponent: "NovelCrafter",
-    tagline: "157,000 users and growing — but BYOK friction and unpredictable API costs are its ceiling.",
+    tagline: "157,000 users and growing, but BYOK friction and unpredictable API costs are its ceiling.",
     xvaultWins: ["No API keys to manage", "Predictable flat pricing", "Automatic World Board — no manual entry"],
     opponentWins: ["Flexible AI model selection", "Strong worldbuilding codex structure"],
   },
   {
     slug: "xvault-vs-novelai",
     opponent: "NovelAI",
-    tagline: "The uncensored option — strong on freedom, weaker on prose quality and project management.",
+    tagline: "The uncensored option: strong on freedom, weaker on prose quality and project management.",
     xvaultWins: ["Voice matching keeps your prose sounding like you", "Auto story bible and plot thread tracking", "Full project management built in"],
     opponentWins: ["Minimal content filtering", "Established fiction-trained models"],
   },

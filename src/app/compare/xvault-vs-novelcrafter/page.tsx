@@ -3,10 +3,10 @@ import Link from "next/link";
 import { Check, X, Minus } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Xvault Studio vs NovelCrafter (2026) — Honest Comparison",
+  title: "Xvault Studio vs NovelCrafter (2026): Honest Comparison",
   description: "NovelCrafter has 157,000 users but requires API keys and unpredictable monthly costs. Xvault just works. Here is the honest comparison.",
   openGraph: {
-    title: "Xvault Studio vs NovelCrafter — Honest Comparison",
+    title: "Xvault Studio vs NovelCrafter: Honest Comparison",
     description: "API keys, pricing, manuscript memory, and worldbuilding compared honestly.",
     type: "article",
   },

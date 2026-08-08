@@ -3,10 +3,10 @@ import Link from "next/link";
 import { Check, X, Minus } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Xvault Studio vs NovelAI (2026) — Honest Comparison",
+  title: "Xvault Studio vs NovelAI (2026): Honest Comparison",
   description: "NovelAI is the go-to for uncensored fiction but its prose quality and lack of project management leave serious novelists wanting more. Here is the comparison.",
   openGraph: {
-    title: "Xvault Studio vs NovelAI — Honest Comparison",
+    title: "Xvault Studio vs NovelAI: Honest Comparison",
     description: "Content restrictions, prose quality, manuscript memory, and project management compared honestly.",
     type: "article",
   },

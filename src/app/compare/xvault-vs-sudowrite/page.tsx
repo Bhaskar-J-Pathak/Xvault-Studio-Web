@@ -3,10 +3,10 @@ import Link from "next/link";
 import { Check, X, Minus } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Xvault Studio vs Sudowrite (2026) — Honest Comparison",
+  title: "Xvault Studio vs Sudowrite (2026): Honest Comparison",
   description: "Sudowrite is expensive and now restricts dark fiction. Xvault Studio reads your entire manuscript and doesn't police your story. Here is the honest comparison.",
   openGraph: {
-    title: "Xvault Studio vs Sudowrite — Honest Comparison",
+    title: "Xvault Studio vs Sudowrite: Honest Comparison",
     description: "Pricing, manuscript memory, content restrictions, and prose quality compared honestly.",
     type: "article",
   },

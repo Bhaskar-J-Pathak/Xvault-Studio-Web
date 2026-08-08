@@ -119,7 +119,7 @@ export default function CoauthorPanel({
       }
     }
     loadHistory();
-    return () => controller.abort();
+    return () => controller.abort(new DOMException("unmounted", "AbortError"));
   }, [projectId]);
 
   // Scroll to bottom when messages change

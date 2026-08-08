@@ -3,10 +3,10 @@ import Link from "next/link";
 import { getAllGuides } from "@/lib/guides";
 
 export const metadata: Metadata = {
-  title: "Writing Guides — Xvault Studio",
-  description: "Practical guides for writing novels in every genre. Fantasy, mystery, romance, thriller, and the craft of plotting — written for serious novelists.",
+  title: "Writing Guides | Xvault Studio",
+  description: "Practical guides for writing novels in every genre. Fantasy, mystery, romance, thriller, and the craft of plotting, written for serious novelists.",
   openGraph: {
-    title: "Writing Guides — Xvault Studio",
+    title: "Writing Guides | Xvault Studio",
     description: "Practical guides for writing novels in every genre. Fantasy, mystery, romance, thriller, and the craft of plotting.",
     type: "website",
   },
@@ -48,7 +48,7 @@ export default function GuidesPage() {
           </h1>
           <p className="text-stone-500 text-lg leading-relaxed max-w-xl">
             Practical craft guides for serious novelists. Each one focuses on the structural
-            problems specific to that genre — the ones that cause most writers to give up
+            problems specific to that genre, the ones that cause most writers to give up
             before the final chapter.
           </p>
         </div>

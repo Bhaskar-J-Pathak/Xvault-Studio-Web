@@ -23,7 +23,7 @@ export default function AuthLinker() {
     }).catch(() => {
       // Silently ignore — non-critical path
     });
-    return () => controller.abort();
+    return () => controller.abort(new DOMException("unmounted", "AbortError"));
   }, []);
 
   return null;

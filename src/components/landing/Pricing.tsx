@@ -394,7 +394,7 @@ export default function Pricing() {
           setSeats((s) => ({ ...s, loading: false }));
         }
       });
-    return () => controller.abort();
+    return () => controller.abort(new DOMException("unmounted", "AbortError"));
   }, []);
 
   return (

@@ -35,7 +35,7 @@ export default function ReferralLinker() {
       .catch(() => {
         // Non-critical — silently ignore
       });
-    return () => controller.abort();
+    return () => controller.abort(new DOMException("unmounted", "AbortError"));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
