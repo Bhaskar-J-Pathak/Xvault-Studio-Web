@@ -20,6 +20,7 @@ function Logo() {
 const navLinks = [
   { label: "Features",     href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
+  { label: "Blog",         href: "/blog" },
   { label: "FAQ",          href: "#faq" },
 ];
 
