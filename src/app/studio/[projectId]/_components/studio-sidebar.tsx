@@ -47,11 +47,12 @@ export default function StudioSidebar({
   const pathname = usePathname();
   const activeId = params.chapterId;
 
-  const [chapters,       setChapters]       = useState<Chapter[]>(initialChapters);
-  const [openMenuId,     setOpenMenuId]     = useState<string | null>(null);
-  const [renamingId,     setRenamingId]     = useState<string | null>(null);
-  const [renameValue,    setRenameValue]    = useState("");
-  const [addingChapter,  setAddingChapter]  = useState(false);
+  const [chapters,         setChapters]         = useState<Chapter[]>(initialChapters);
+  const [openMenuId,       setOpenMenuId]       = useState<string | null>(null);
+  const [renamingId,       setRenamingId]       = useState<string | null>(null);
+  const [renameValue,      setRenameValue]      = useState("");
+  const [addingChapter,    setAddingChapter]    = useState(false);
+  const [confirmDeleteId,  setConfirmDeleteId]  = useState<string | null>(null);
 
   // ── Add chapter ────────────────────────────────────────────────
   const handleAddChapter = useCallback(async () => {
@@ -111,6 +112,7 @@ export default function StudioSidebar({
   const handleDelete = useCallback(
     async (id: string) => {
       setOpenMenuId(null);
+      setConfirmDeleteId(null);
       if (chapters.length <= 1) return; // never delete the last chapter
 
       const remaining = chapters.filter((c) => c.id !== id);
@@ -241,6 +243,7 @@ export default function StudioSidebar({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      setConfirmDeleteId(null);
                       setOpenMenuId(openMenuId === chapter.id ? null : chapter.id);
                     }}
                     className={`p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity ${
@@ -263,13 +266,33 @@ export default function StudioSidebar({
                     Rename
                   </button>
                   {chapters.length > 1 && (
-                    <button
-                      onClick={() => handleDelete(chapter.id)}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <Trash2 size={13} />
-                      Delete
-                    </button>
+                    confirmDeleteId === chapter.id ? (
+                      <div className="px-3 py-2 space-y-1.5">
+                        <p className="text-[11px] text-[#1A1A1A]/50">Delete this chapter?</p>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => handleDelete(chapter.id)}
+                            className="flex-1 text-xs py-1 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="flex-1 text-xs py-1 rounded-lg border border-black/[0.08] text-[#1A1A1A]/60 hover:bg-black/[0.04] transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(chapter.id)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 size={13} />
+                        Delete
+                      </button>
+                    )
                   )}
                 </div>
               )}

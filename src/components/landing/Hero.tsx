@@ -140,14 +140,14 @@ export default function Hero() {
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-600" />
               </span>
               <span className="text-[0.72rem] font-semibold tracking-wide text-violet-700">
-                Now in public beta
+                Built for novelists who take their craft seriously
               </span>
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="font-display text-display text-[#1A0A3C]">
-            <span className="hero-line-1 block">Built for Novelists,</span>
+            <span className="hero-line-1 block">The AI co-author that</span>
             <em
               className="hero-line-2 not-italic block"
               style={{
@@ -157,14 +157,14 @@ export default function Hero() {
                 backgroundClip: "text",
               }}
             >
-              Who take their craft seriously
+              knows your whole story
             </em>
           </h1>
 
           {/* Subtext */}
           <p className="hero-sub max-w-[44ch] text-[1.0625rem] leading-[1.85] text-violet-900/50">
-            Xvault remembers your characters, world, and tone. So every
-            suggestion actually fits your story.
+            Xvault reads your entire manuscript before it says a word — so every
+            suggestion fits your characters, world, and voice.
           </p>
 
           {/* CTA */}
@@ -191,7 +191,7 @@ export default function Hero() {
               </Link>
             </MagneticButton>
             <p className="text-[0.74rem] text-violet-500/60">
-              No credit card required
+              14-day free trial · 100 AI credits · no credit card
             </p>
           </div>
 

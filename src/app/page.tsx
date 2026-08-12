@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { LandingShell }   from "@/components/landing/LandingShell";
-import AnnouncementBar    from "@/components/landing/AnnouncementBar";
 import Navbar             from "@/components/landing/Navbar";
 import Hero               from "@/components/landing/Hero";
 import FeaturesShowcase   from "@/components/landing/FeaturesShowcase";
@@ -30,7 +29,6 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <LandingShell>
-      <AnnouncementBar />
       <Navbar />
       <main>
         <Hero />

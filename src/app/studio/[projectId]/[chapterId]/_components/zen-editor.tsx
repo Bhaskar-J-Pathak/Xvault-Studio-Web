@@ -600,7 +600,10 @@ export default function ZenEditor({
 
   // Co-author
   const [coauthor,           setCoauthor]           = useState<DbCoauthor | null>(initialCoauthor);
-  const [coauthorSlim,       setCoauthorSlim]       = useState(true);  // starts collapsed; resets on chapter navigation
+  const [coauthorSlim,       setCoauthorSlim]       = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("xv_coauthor_slim") !== "false" : true
+  );
+  const userClosedPanel = useRef(false);
   const [showCoauthorSetup,  setShowCoauthorSetup]  = useState(false);
   const [pendingObservation, setPendingObservation] = useState<string | null>(null);
   const [recentText,         setRecentText]         = useState("");
@@ -689,7 +692,9 @@ export default function ZenEditor({
     if (data.coauthor) {
       setCoauthor(data.coauthor);
       setShowCoauthorSetup(false);
-      setCoauthorSlim(false); // expand after setup
+      userClosedPanel.current = false;
+      setCoauthorSlim(false);
+      localStorage.setItem("xv_coauthor_slim", "false");
     }
   }, [projectId]);
 
@@ -698,7 +703,9 @@ export default function ZenEditor({
       setShowCoauthorSetup(true);
       return;
     }
+    userClosedPanel.current = false;
     setCoauthorSlim(false);
+    localStorage.setItem("xv_coauthor_slim", "false");
   }
 
 
@@ -817,7 +824,7 @@ export default function ZenEditor({
             onRecentTextChange={setRecentText}
             onObservation={(obs) => {
               setPendingObservation(obs);
-              setCoauthorSlim(false);
+              if (!userClosedPanel.current) setCoauthorSlim(false);
             }}
             onCtrlK={handleCtrlK}
             ghostSuggestion={ghostSuggestion}
@@ -860,7 +867,7 @@ export default function ZenEditor({
                 {credits <= 0 ? "No credits · Upgrade" : `${credits} credit${credits !== 1 ? "s" : ""}${credits <= 20 ? " · Low" : ""}`}
               </span>
             </button>
-            <span className="text-xs text-[#1A1A1A]/25 font-mono">
+            <span className="text-xs text-[#1A1A1A]/40 font-mono">
               Ctrl+K write · Tab accept · Esc dismiss
             </span>
           </div>
@@ -902,6 +909,8 @@ export default function ZenEditor({
             slim={coauthorSlim}
             onSlimChange={(v) => {
               setCoauthorSlim(v);
+              userClosedPanel.current = v;
+              localStorage.setItem("xv_coauthor_slim", v ? "true" : "false");
             }}
             pendingObservation={pendingObservation}
             onObservationConsumed={() => setPendingObservation(null)}
@@ -933,6 +942,7 @@ export default function ZenEditor({
           chatResponseReceived={chatResponseReceived}
           editorFocused={editorFocused}
           onExpandCoauthor={() => {
+            userClosedPanel.current = false;
             setCoauthorSlim(false);
           }}
         />

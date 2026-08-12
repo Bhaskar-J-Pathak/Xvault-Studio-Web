@@ -32,9 +32,55 @@ const rows: { feature: string; xvault: React.ReactNode; opponent: React.ReactNod
   { feature: "Fiction-specific model",    xvault: <No />,     opponent: <Yes />,     note: "NovelAI uses fine-tuned fiction models designed specifically for narrative generation." },
 ];
 
+const comparisonSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "Xvault Studio vs NovelAI (2026): Honest Comparison",
+  description:
+    "NovelAI is the go-to for uncensored fiction but its prose quality and lack of project management leave serious novelists wanting more. Here is the comparison.",
+  datePublished: "2026-08-01",
+  dateModified: "2026-08-12",
+  author: {
+    "@type": "Organization",
+    name: "Xvault Studio",
+    url: "https://xvault.dev",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Xvault Studio",
+    url: "https://xvault.dev",
+    logo: { "@type": "ImageObject", url: "https://xvault.dev/XVault.svg" },
+  },
+  url: "https://xvault.dev/compare/xvault-vs-novelai",
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": "https://xvault.dev/compare/xvault-vs-novelai",
+  },
+  about: [
+    {
+      "@type": "SoftwareApplication",
+      name: "Xvault Studio",
+      applicationCategory: "WritingApplication",
+      url: "https://xvault.dev",
+      offers: { "@type": "Offer", price: "11.99", priceCurrency: "USD" },
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "NovelAI",
+      applicationCategory: "WritingApplication",
+      url: "https://novelai.net",
+      offers: { "@type": "Offer", price: "10", priceCurrency: "USD" },
+    },
+  ],
+};
+
 export default function VsNovelAIPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-stone-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(comparisonSchema) }}
+      />
       <header className="border-b border-black/[0.06] bg-[#FAFAF8]">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
           <Link href="/compare" className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors">

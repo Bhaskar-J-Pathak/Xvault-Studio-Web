@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import NumberFlow from "@number-flow/react";
-import { CheckIcon, Crown, Loader2, Heart } from "lucide-react";
+import { CheckIcon, Crown, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type BillingPlan = "monthly" | "annually";
@@ -299,21 +299,6 @@ function PlanCard({
         >
           {plan.desc}
         </p>
-
-        {/* Flood relief callout — Founder's Circle only */}
-        {isLifetime && !soldOut && (
-          <div className="mb-6 rounded-2xl bg-rose-50 border border-rose-200 px-4 py-3.5 flex gap-3 items-start">
-            <Heart size={15} className="text-rose-500 fill-rose-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-semibold text-rose-700 leading-snug">
-                90% of this purchase funds Assam flood relief
-              </p>
-              <p className="text-xs text-rose-600/80 mt-1 leading-relaxed">
-                Assam is facing its worst flood in history. The founder is personally on the ground helping affected families. Every seat purchased goes directly toward that work.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* CTA Button */}
         <div className="mt-auto">

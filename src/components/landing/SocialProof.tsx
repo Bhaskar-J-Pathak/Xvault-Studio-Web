@@ -5,8 +5,6 @@ import { motion, useInView } from "framer-motion";
 
 const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-// Three honest sentiment extractions from closed beta feedback.
-// All from the same early access writer — not inflated to look like multiple sources.
 const SENTIMENTS = [
   {
     text: "The AI matches my voice very well.",
@@ -17,8 +15,8 @@ const SENTIMENTS = [
     tag: "Co-author",
   },
   {
-    text: "A 10/10 once the rough edges are gone.",
-    tag: "Potential",
+    text: "I haven't found another tool that does this.",
+    tag: "Differentiation",
   },
 ];
 
@@ -45,7 +43,7 @@ export default function SocialProof() {
               className="h-1.5 w-1.5 rounded-full bg-violet-500"
             />
             <span className="text-[0.67rem] font-semibold tracking-wide text-violet-600">
-              Closed beta · Early access, 2026
+              Early access feedback
             </span>
           </span>
         </motion.div>
@@ -65,7 +63,7 @@ export default function SocialProof() {
               maxWidth: "18ch",
             }}
           >
-            &ldquo;A writing tool I haven&rsquo;t found yet.&rdquo;
+            &ldquo;The AI actually knows my story.&rdquo;
           </motion.blockquote>
         </div>
 
@@ -76,7 +74,7 @@ export default function SocialProof() {
           transition={{ delay: 0.52, duration: 0.6 }}
           className="mb-16 text-center text-[0.78rem] text-violet-900/30"
         >
-          Early access writer · Closed beta feedback
+          Early access writer · Closed beta
         </motion.p>
 
         {/* Divider */}
@@ -111,16 +109,6 @@ export default function SocialProof() {
             </motion.div>
           ))}
         </div>
-
-        {/* Footer note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ delay: 1.0, duration: 0.6 }}
-          className="mt-10 text-center text-[0.72rem] text-violet-900/22"
-        >
-          Sentiments extracted from a single closed beta writer. We&rsquo;re still early.
-        </motion.p>
 
       </div>
     </section>

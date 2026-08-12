@@ -23,14 +23,16 @@ function AuthForm() {
   const nextPath = params.get("next") ?? "/dashboard";
   const refCode  = params.get("ref");
 
-  const [step,     setStep]     = useState<Step>("email");
-  const [email,    setEmail]    = useState("");
-  const [otp,      setOtp]      = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState("");
-  const [resent,   setResent]   = useState(false);
+  const [step,         setStep]         = useState<Step>("email");
+  const [email,        setEmail]        = useState("");
+  const [otp,          setOtp]          = useState("");
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState("");
+  const [resent,       setResent]       = useState(false);
   // Referral code input — pre-populated from URL param
-  const [refInput, setRefInput] = useState(refCode?.toUpperCase() ?? "");
+  const [refInput,     setRefInput]     = useState(refCode?.toUpperCase() ?? "");
+  // Only reveal the referral field if a code came in via URL, or the user asks
+  const [showRefField, setShowRefField] = useState(!!refCode);
 
   const otpInputRef   = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
@@ -195,44 +197,55 @@ function AuthForm() {
                   />
                 </div>
 
-                {/* Referral code */}
-                <div className="space-y-1.5">
-                  <label htmlFor="ref-code" className="block text-sm font-medium text-[#1A1A1A]/70">
-                    Referral code{" "}
-                    <span className="text-[#1A1A1A]/35 font-normal">(optional)</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="ref-code"
-                      type="text"
-                      value={refInput}
-                      onChange={(e) =>
-                        setRefInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))
-                      }
-                      placeholder="e.g. AB12CD34"
-                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-black/[0.02] text-sm font-mono tracking-widest text-[#1A1A1A] placeholder:text-[#1A1A1A]/25 placeholder:font-sans placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-colors ${
-                        refInput && refValid
-                          ? "border-emerald-400 bg-emerald-50/40"
-                          : "border-black/[0.08]"
-                      }`}
-                    />
+                {/* Referral code — hidden by default, revealed on click */}
+                {!showRefField ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowRefField(true)}
+                    className="text-xs text-[#1A1A1A]/35 hover:text-violet-600 transition-colors text-left"
+                  >
+                    Have a referral code?
+                  </button>
+                ) : (
+                  <div className="space-y-1.5">
+                    <label htmlFor="ref-code" className="block text-sm font-medium text-[#1A1A1A]/70">
+                      Referral code{" "}
+                      <span className="text-[#1A1A1A]/35 font-normal">(optional)</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="ref-code"
+                        type="text"
+                        autoFocus={!refCode}
+                        value={refInput}
+                        onChange={(e) =>
+                          setRefInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8))
+                        }
+                        placeholder="e.g. AB12CD34"
+                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-black/[0.02] text-sm font-mono tracking-widest text-[#1A1A1A] placeholder:text-[#1A1A1A]/25 placeholder:font-sans placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-colors ${
+                          refInput && refValid
+                            ? "border-emerald-400 bg-emerald-50/40"
+                            : "border-black/[0.08]"
+                        }`}
+                      />
+                      {refInput && refValid && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                          <Check size={11} className="text-white" strokeWidth={2.5} />
+                        </div>
+                      )}
+                    </div>
+                    {refInput && !refValid && (
+                      <p className="text-[11px] text-[#A1A1AA]">
+                        Codes are 8 characters — {8 - refNormalised.length} more to go
+                      </p>
+                    )}
                     {refInput && refValid && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                        <Check size={11} className="text-white" strokeWidth={2.5} />
-                      </div>
+                      <p className="text-[11px] text-emerald-600 font-medium">
+                        Code applied — you&apos;ll get bonus credits on signup!
+                      </p>
                     )}
                   </div>
-                  {refInput && !refValid && (
-                    <p className="text-[11px] text-[#A1A1AA]">
-                      Codes are 8 characters — {8 - refNormalised.length} more to go
-                    </p>
-                  )}
-                  {refInput && refValid && (
-                    <p className="text-[11px] text-emerald-600 font-medium">
-                      Code applied — you&apos;ll get bonus credits on signup!
-                    </p>
-                  )}
-                </div>
+                )}
 
                 <button
                   type="submit"

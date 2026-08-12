@@ -46,8 +46,39 @@ export default async function GuidePage({ params }: Props) {
   const guide = getGuideBySlug(slug);
   if (!guide) notFound();
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: guide.title,
+    description: guide.description,
+    datePublished: guide.date || new Date().toISOString().split("T")[0],
+    dateModified: guide.date || new Date().toISOString().split("T")[0],
+    author: {
+      "@type": "Organization",
+      name: "Xvault Studio",
+      url: "https://xvault.dev",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Xvault Studio",
+      url: "https://xvault.dev",
+      logo: { "@type": "ImageObject", url: "https://xvault.dev/XVault.svg" },
+    },
+    url: `https://xvault.dev/guides/${guide.slug}`,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://xvault.dev/guides/${guide.slug}`,
+    },
+    about: { "@type": "Thing", name: `${guide.genre} Fiction Writing` },
+    keywords: `${guide.genre} novel writing, how to write a ${guide.genre.toLowerCase()} novel, fiction writing guide`,
+  };
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-stone-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
       {/* Nav */}
       <header className="border-b border-black/[0.06] bg-[#FAFAF8]">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">

@@ -30,9 +30,55 @@ const rows: { feature: string; xvault: React.ReactNode; opponent: React.ReactNod
   { feature: "Proprietary fiction model",  xvault: <No />,  opponent: <Yes />,     note: "Sudowrite's Muse model is fine-tuned on published novels." },
 ];
 
+const comparisonSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "Xvault Studio vs Sudowrite (2026): Honest Comparison",
+  description:
+    "Sudowrite is expensive and now restricts dark fiction. Xvault Studio reads your entire manuscript and doesn't police your story. Here is the honest comparison.",
+  datePublished: "2026-08-01",
+  dateModified: "2026-08-12",
+  author: {
+    "@type": "Organization",
+    name: "Xvault Studio",
+    url: "https://xvault.dev",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Xvault Studio",
+    url: "https://xvault.dev",
+    logo: { "@type": "ImageObject", url: "https://xvault.dev/XVault.svg" },
+  },
+  url: "https://xvault.dev/compare/xvault-vs-sudowrite",
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": "https://xvault.dev/compare/xvault-vs-sudowrite",
+  },
+  about: [
+    {
+      "@type": "SoftwareApplication",
+      name: "Xvault Studio",
+      applicationCategory: "WritingApplication",
+      url: "https://xvault.dev",
+      offers: { "@type": "Offer", price: "11.99", priceCurrency: "USD" },
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "Sudowrite",
+      applicationCategory: "WritingApplication",
+      url: "https://www.sudowrite.com",
+      offers: { "@type": "Offer", price: "19", priceCurrency: "USD" },
+    },
+  ],
+};
+
 export default function VsSudowritePage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-stone-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(comparisonSchema) }}
+      />
       <header className="border-b border-black/[0.06] bg-[#FAFAF8]">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
           <Link href="/compare" className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors">

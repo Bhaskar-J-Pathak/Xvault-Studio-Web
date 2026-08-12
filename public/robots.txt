@@ -1,0 +1,64 @@
+# Allow all well-behaved crawlers; block private app routes
+User-agent: *
+Disallow: /studio/
+Disallow: /dashboard/
+Disallow: /account/
+Disallow: /api/
+Disallow: /auth/
+
+# ──────────────────────────────────────────────────
+# AI search crawlers — explicitly allowed
+# Listing each bot individually so there is no
+# ambiguity about access to public content pages.
+# ──────────────────────────────────────────────────
+
+# OpenAI / ChatGPT
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# Google AI Overviews & Gemini
+User-agent: Google-Extended
+Allow: /
+
+# Microsoft Copilot (via Bing)
+User-agent: Bingbot
+Allow: /
+
+# Meta AI
+User-agent: meta-externalagent
+Allow: /
+
+# ──────────────────────────────────────────────────
+# Training-only crawlers — blocked
+# These bots harvest data for AI training but are
+# not connected to any search or citation system.
+# Blocking them prevents training use without
+# preventing AI search citation.
+# ──────────────────────────────────────────────────
+User-agent: CCBot
+Disallow: /
+
+User-agent: omgili
+Disallow: /
+
+User-agent: omgilibot
+Disallow: /
+
+Sitemap: https://xvault.dev/sitemap.xml

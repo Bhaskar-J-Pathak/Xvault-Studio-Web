@@ -60,8 +60,39 @@ export default async function BlogPostPage({ params }: Props) {
   const post = getPostBySlug(slug);
   if (!post) notFound();
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: {
+      "@type": "Organization",
+      name: "Xvault Team",
+      url: "https://xvault.dev",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Xvault Studio",
+      url: "https://xvault.dev",
+      logo: { "@type": "ImageObject", url: "https://xvault.dev/XVault.svg" },
+    },
+    url: `https://xvault.dev/blog/${post.slug}`,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://xvault.dev/blog/${post.slug}`,
+    },
+    keywords: post.tags.join(", "),
+    articleSection: post.tags[0] ?? "Writing",
+  };
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-stone-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
       {/* Nav */}
       <header className="border-b border-black/[0.06] bg-[#FAFAF8]">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
