@@ -58,7 +58,9 @@
       "WebFetch(domain:ghostwritingsolution.com)",
       "WebFetch(domain:vidiq.com)",
       "WebFetch(domain:www.quotidianwriter.com)",
-      "WebFetch(domain:www.authorbrookepassmore.com)"
+      "WebFetch(domain:www.authorbrookepassmore.com)",
+      "WebFetch(domain:www.savannahgilbo.com)",
+      "WebFetch(domain:developers.google.com)"
     ]
   }
 }

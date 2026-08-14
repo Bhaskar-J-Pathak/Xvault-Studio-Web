@@ -47,7 +47,7 @@ export default function WelcomeEmail({ name = "there", dashboardUrl = "https://x
         />
       </Head>
 
-      <Preview>Welcome to Xvault Studio — here's how to get started.</Preview>
+      <Preview>Welcome to Xvault Studio. Here's how to get started.</Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 20px" }}>
@@ -120,7 +120,7 @@ export default function WelcomeEmail({ name = "there", dashboardUrl = "https://x
               >
                 Xvault is built to feel like having a real co-author who has read your
                 entire story. It automatically builds a living knowledge graph of your
-                manuscript — and can proactively point out continuity issues, dead
+                manuscript, and can proactively point out continuity issues, dead
                 branches, and inconsistencies as you write, while staying in your voice.
               </Text>
 
@@ -136,7 +136,7 @@ export default function WelcomeEmail({ name = "there", dashboardUrl = "https://x
                   textTransform: "uppercase",
                 }}
               >
-                Quick start — takes ~5 minutes
+                Quick start: takes ~5 minutes
               </Text>
 
               <div
@@ -159,7 +159,7 @@ export default function WelcomeEmail({ name = "there", dashboardUrl = "https://x
                   ],
                   [
                     "3. Explore the Story Bible & World Board",
-                    "Every character, location, and plot thread is extracted from your manuscript automatically — no tagging needed.",
+                    "Every character, location, and plot thread is extracted from your manuscript automatically, no tagging needed.",
                   ],
                 ].map(([step, desc], i, arr) => (
                   <div
@@ -245,7 +245,7 @@ export default function WelcomeEmail({ name = "there", dashboardUrl = "https://x
                   fontWeight: 600,
                 }}
               >
-                Since it's still early, I'd love your honest feedback — especially around:
+                Since it's still early, I'd love your honest feedback, especially around:
               </Text>
 
               <Text

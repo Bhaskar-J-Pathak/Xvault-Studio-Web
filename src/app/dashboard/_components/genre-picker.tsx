@@ -47,7 +47,7 @@ export default function GenrePicker({ open }: Props) {
             Let's show you around.
           </h2>
           <p className="text-sm text-[#71717A] dark:text-white/40 leading-relaxed mb-8">
-            We'll load a sample project — three chapters, a full World Board, and a Story Bible — so you can see exactly how your AI co-author Alex works before you bring in your own manuscript.
+            We'll load a sample project (three chapters, a full World Board, and a Story Bible) so you can see exactly how your AI co-author Alex works before you bring in your own manuscript.
           </p>
 
           {error && (

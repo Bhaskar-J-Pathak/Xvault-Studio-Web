@@ -37,8 +37,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!post) return {};
 
   return {
-    title: `${post.title} — Xvault Blog`,
+    title: `${post.title} | Xvault Blog`,
     description: post.description,
+    alternates: { canonical: `https://xvault.dev/blog/${post.slug}` },
     openGraph: {
       title: post.title,
       description: post.description,
@@ -59,6 +60,16 @@ export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
   if (!post) notFound();
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home",  item: "https://xvault.dev" },
+      { "@type": "ListItem", position: 2, name: "Blog",  item: "https://xvault.dev/blog" },
+      { "@type": "ListItem", position: 3, name: post.title, item: `https://xvault.dev/blog/${post.slug}` },
+    ],
+  };
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -89,6 +100,10 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-stone-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
@@ -157,7 +172,7 @@ export default async function BlogPostPage({ params }: Props) {
               href="/auth"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors"
             >
-              Start free — 14 days, 100 credits
+              Start free: 14 days, 100 credits
             </Link>
           </div>
         </div>

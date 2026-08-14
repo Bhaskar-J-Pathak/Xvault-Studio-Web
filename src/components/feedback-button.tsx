@@ -107,7 +107,7 @@ export default function FeedbackButton() {
             {done ? (
               <div className="flex flex-col items-center justify-center py-10 text-zinc-300 gap-2">
                 <span className="text-3xl">🙏</span>
-                <span className="text-sm font-medium">Thanks — that really helps.</span>
+                <span className="text-sm font-medium">Thanks. That really helps.</span>
                 <span className="text-xs text-zinc-500">I read every submission personally.</span>
               </div>
             ) : (

@@ -15,7 +15,7 @@ const MODES = [
   {
     id: "beta",
     label: "Beta Reader",
-    body: "Honest, specific feedback on pacing, character arcs, and emotional beats — before anyone else reads a word.",
+    body: "Honest, specific feedback on pacing, character arcs, and emotional beats, before anyone else reads a word.",
   },
   {
     id: "editor",
@@ -32,7 +32,7 @@ const MODES = [
 // ── Brainstorm Panel ───────────────────────────────────────────────────────────
 function BrainstormPanel() {
   const ideas = [
-    "Marcus protects her secret before she even knew he could. No explanation — just action.",
+    "Marcus protects her secret before she even knew he could. No explanation. Just action.",
     "They work through something mundane together. She sees how he handles pressure. Evidence, not promises.",
     "He tells her something that makes him more vulnerable, not less dangerous.",
   ];
@@ -174,7 +174,7 @@ function ContinuityPanel() {
         className="rounded-lg bg-violet-50/50 px-3 py-2.5"
       >
         <p className="text-[0.74rem] leading-[1.6] text-violet-900/55">
-          <span className="font-semibold text-violet-600">Resolve:</span> Was the lanyard lost or stolen — or is this a continuity error?
+          <span className="font-semibold text-violet-600">Resolve:</span> Was the lanyard lost or stolen, or is this a continuity error?
         </p>
       </motion.div>
     </div>
@@ -226,7 +226,7 @@ export default function CoAuthorSection() {
                 className="h-1.5 w-1.5 rounded-full bg-violet-500"
               />
               <span className="text-[0.67rem] font-semibold tracking-wide text-violet-600">
-                Meet Alex — your AI co-author
+                Meet Alex: your AI co-author
               </span>
             </span>
           </motion.div>

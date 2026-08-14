@@ -166,7 +166,7 @@ export default function Hero() {
 
           {/* Subtext */}
           <p className="hero-sub max-w-[44ch] text-[1.0625rem] leading-[1.85] text-violet-900/50">
-            Xvault reads your entire manuscript before it says a word — so every
+            Xvault reads your entire manuscript before it says a word, so every
             suggestion fits your characters, world, and voice.
           </p>
 

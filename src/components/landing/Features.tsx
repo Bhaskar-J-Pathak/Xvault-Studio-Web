@@ -69,7 +69,7 @@ function AlexChatDemo({ live }: { live: boolean }) {
               className="rounded-xl rounded-tl-sm bg-white px-3 py-2 shadow-sm"
             >
               <p className="text-[0.68rem] leading-[1.7] text-stone-600">
-                It&apos;s complicated. In Chapter 2 you planted real tension — she knows he was at the warehouse, but hasn&apos;t confronted him. Thread 1 is still open.
+                It&apos;s complicated. In Chapter 2 you planted real tension. She knows he was at the warehouse but hasn&apos;t confronted him. Thread 1 is still open.
               </p>
             </motion.div>
           )}
@@ -82,7 +82,7 @@ function AlexChatDemo({ live }: { live: boolean }) {
 // ─── Demo: Ghost Writing ───────────────────────────────────────────────────────
 
 function GhostWritingDemo({ live }: { live: boolean }) {
-  const TYPED = "She stepped into the corridor, her hand outstretched — ";
+  const TYPED = "She stepped into the corridor, her hand outstretched, ";
   const GHOST = "fingers brushing cold stone as the vault door swung open.";
   const [chars, setChars] = useState(0);
   const [showGhost, setShowGhost] = useState(false);
@@ -342,9 +342,9 @@ const FEATURES = [
     id: "alex",
     num: "01",
     category: "Co-Author",
-    title: "Alex — Your Co-Author",
+    title: "Alex: Your Co-Author",
     description:
-      "Alex lives in a panel next to your writing canvas. Before you type a word, it reads your entire manuscript. Ask it anything — who Nadia is, what happened in Chapter 3, which plot threads are still open. Every answer grounded in what you've actually written.",
+      "Alex lives in a panel next to your writing canvas. Before you type a word, it reads your entire manuscript. Ask it anything: who Nadia is, what happened in Chapter 3, which plot threads are still open. Every answer grounded in what you've actually written.",
     demo: (live: boolean) => <AlexChatDemo live={live} />,
   },
   {
@@ -353,7 +353,7 @@ const FEATURES = [
     category: "AI Writing",
     title: "Ghost Writing",
     description:
-      "Press Ctrl+K. Describe what you want to happen. The AI writes it in your voice — trained on your existing chapters, not a generic model. Tab to accept, Esc to dismiss.",
+      "Press Ctrl+K. Describe what you want to happen. The AI writes it in your voice, trained on your existing chapters, not a generic model. Tab to accept, Esc to dismiss.",
     demo: (live: boolean) => <GhostWritingDemo live={live} />,
   },
   {
@@ -362,7 +362,7 @@ const FEATURES = [
     category: "World Building",
     title: "World Board",
     description:
-      "Every character, location, and faction extracted as you write. Your story's universe mapped automatically into a live knowledge graph — no spreadsheets required.",
+      "Every character, location, and faction extracted as you write. Your story's universe mapped automatically into a live knowledge graph, no spreadsheets required.",
     demo: (live: boolean) => <WorldBoardDemo live={live} />,
   },
   {
@@ -371,7 +371,7 @@ const FEATURES = [
     category: "Plot Intel",
     title: "Story Bible",
     description:
-      "Plot threads, style notes, and your writer's intent — all tracked automatically. Nothing introduced in your manuscript disappears without a trace.",
+      "Plot threads, style notes, and your writer's intent, all tracked automatically. Nothing introduced in your manuscript disappears without a trace.",
     demo: (live: boolean) => <StoryBibleDemo live={live} />,
   },
   {
@@ -380,7 +380,7 @@ const FEATURES = [
     category: "Editing",
     title: "Global Replace",
     description:
-      "Rename a character once. It propagates everywhere — preserving voice, tense, and context across your entire manuscript automatically.",
+      "Rename a character once. It propagates everywhere, preserving voice, tense, and context across your entire manuscript automatically.",
     demo: (live: boolean) => <GlobalReplaceDemo live={live} />,
   },
 ];

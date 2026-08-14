@@ -69,7 +69,7 @@ export default function AffiliatesPage() {
             Write about Xvault.<br className="hidden sm:block" /> Earn every month.
           </h1>
           <p className="text-stone-500 text-lg leading-relaxed max-w-xl">
-            If you create content for writers — YouTube, Substack, a blog, a podcast — and you
+            If you create content for writers (YouTube, Substack, a blog, a podcast) and you
             genuinely find Xvault useful, we would like to pay you for every writer you bring in.
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function AffiliatesPage() {
               {
                 step: "03",
                 title: "Earn as long as they stay",
-                body: "Every writer who subscribes through your link earns you 20% of their subscription — every month they remain active.",
+                body: "Every writer who subscribes through your link earns you 20% of their subscription, every month they remain active.",
               },
             ].map(({ step, title, body }) => (
               <div key={step} className="flex gap-5">
@@ -148,7 +148,7 @@ export default function AffiliatesPage() {
           </h2>
           <ul className="space-y-2.5">
             {[
-              "Your audience is primarily writers — novelists, fiction writers, aspiring authors",
+              "Your audience is primarily writers: novelists, fiction writers, aspiring authors",
               "You create regularly and have an established presence (audience size is less important than relevance)",
               "You are willing to use Xvault genuinely before recommending it",
               "You produce content in English",

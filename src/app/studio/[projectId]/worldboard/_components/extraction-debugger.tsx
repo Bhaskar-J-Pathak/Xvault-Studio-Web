@@ -185,7 +185,7 @@ export default function ExtractionDebugger({ projectId }: { projectId: string })
         <div>
           <p className="text-sm font-semibold text-[#1A1A1A]">Extraction Debug</p>
           <p className="text-[11px] text-[#1A1A1A]/40">
-            Dry-run — nothing is saved to your World Board
+            Dry-run: nothing is saved to your World Board
           </p>
         </div>
         <span className="ml-auto text-[11px] text-[#1A1A1A]/30 bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full font-medium">

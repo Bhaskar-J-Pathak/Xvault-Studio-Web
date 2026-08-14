@@ -87,7 +87,7 @@ const CHARACTER_SHEET_FIELDS: {
   placeholder: string;
 }[] = [
   { key: "personality",    label: "Personality",    placeholder: "Core traits, quirks, and behavioral patterns…" },
-  { key: "motivations",    label: "Motivations",    placeholder: "What drives them — goals, desires, fears, needs…" },
+  { key: "motivations",    label: "Motivations",    placeholder: "What drives them: goals, desires, fears, needs…" },
   { key: "character_arc",  label: "Character Arc",  placeholder: "How they change or develop through the story…" },
   { key: "dialogue_style", label: "Dialogue Style", placeholder: "How they speak: vocabulary, cadence, tone, what they leave unsaid…" },
 ];
@@ -451,10 +451,10 @@ export default function BibleView({
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-[13px] font-semibold text-[#1A1A1A]">Braindump</h2>
             {intentSaving && <span className="text-[11px] text-[#1A1A1A]/30">Saving…</span>}
-            {intentError && <span className="text-[11px] text-red-400">Save failed — check your connection</span>}
+            {intentError && <span className="text-[11px] text-red-400">Save failed. Check your connection</span>}
           </div>
           <p className="text-[11px] text-[#1A1A1A]/40 mb-3">
-            The raw seed of this story. Why does it exist? What feeling are you chasing? Write freely — this feeds your co-author.
+            The raw seed of this story. Why does it exist? What feeling are you chasing? Write freely, this feeds your co-author.
           </p>
           <textarea
             value={intent}
@@ -471,7 +471,7 @@ export default function BibleView({
             {genreSaving && <span className="text-[11px] text-[#1A1A1A]/30">Saving…</span>}
           </div>
           <p className="text-[11px] text-[#1A1A1A]/40 mb-3">
-            Genre shapes tone, pacing, and reader expectations. Be specific — "Dark Portal Fantasy" beats "Fantasy".
+            Genre shapes tone, pacing, and reader expectations. Be specific: "Dark Portal Fantasy" beats "Fantasy".
           </p>
           <input
             type="text"
@@ -487,7 +487,7 @@ export default function BibleView({
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-[13px] font-semibold text-[#1A1A1A]">Style & Voice</h2>
             {styleSaving && <span className="text-[11px] text-[#1A1A1A]/30">Saving…</span>}
-            {styleError && <span className="text-[11px] text-red-400">Save failed — check your connection</span>}
+            {styleError && <span className="text-[11px] text-red-400">Save failed. Check your connection</span>}
           </div>
           <p className="text-[11px] text-[#1A1A1A]/40 mb-3">
             How this story is written. POV, tense, sentence rhythm, tone, what you avoid. Your co-author reads this before every suggestion.
@@ -689,7 +689,7 @@ export default function BibleView({
                                     }}
                                     className="w-full max-w-[220px] bg-white border border-black/[0.08] rounded-lg px-3 py-1.5 text-[12px] text-[#1A1A1A] outline-none focus:border-violet-300 focus:ring-1 focus:ring-violet-100 transition-colors"
                                   >
-                                    <option value="">— Select role —</option>
+                                    <option value="">Select role</option>
                                     {CHARACTER_ROLES.map((r) => (
                                       <option key={r.value} value={r.value}>{r.label}</option>
                                     ))}
@@ -746,7 +746,7 @@ export default function BibleView({
               </button>
             </div>
             <p className="text-[11px] text-[#1A1A1A]/40 mb-5">
-              Open plot threads — every one must be paid off before the story ends.
+              Open plot threads. Every one must be paid off before the story ends.
             </p>
 
             {/* Add thread input */}
@@ -776,7 +776,7 @@ export default function BibleView({
 
             {activeThreads.length === 0 && !showAddThread ? (
               <p className="text-[12px] text-[#1A1A1A]/30 italic">
-                No open threads. The story owes the reader nothing — or you haven&apos;t written enough yet.
+                No open threads. The story owes the reader nothing, or you haven&apos;t written enough yet.
               </p>
             ) : (
               <div className="space-y-2">

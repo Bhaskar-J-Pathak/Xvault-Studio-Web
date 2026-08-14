@@ -35,7 +35,7 @@ function AlexChatDemo({ live }: { live: boolean }) {
           <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
           <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
         </div>
-        <span className="text-[0.58rem] font-medium text-[#1A1A1A]/30">The Glass Meridian — Ch. 3</span>
+        <span className="text-[0.58rem] font-medium text-[#1A1A1A]/30">The Glass Meridian, Ch. 3</span>
         <div className="h-5 w-5 rounded-lg bg-amber-100 flex items-center justify-center">
           <span className="text-[0.55rem] text-amber-600">✦</span>
         </div>
@@ -258,7 +258,7 @@ function WorldBoardDemo({ live }: { live: boolean }) {
           <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
           <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
         </div>
-        <span className="text-[0.58rem] text-black/25 mx-auto">World Board — The Glass Meridian</span>
+        <span className="text-[0.58rem] text-black/25 mx-auto">World Board: The Glass Meridian</span>
       </div>
 
       {/* Content: mini sidebar + world board */}
@@ -378,7 +378,7 @@ function StoryBibleDemo({ live }: { live: boolean }) {
           <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
           <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
         </div>
-        <span className="text-[0.58rem] text-black/25 mx-auto">Story Bible — The Glass Meridian</span>
+        <span className="text-[0.58rem] text-black/25 mx-auto">Story Bible: The Glass Meridian</span>
       </div>
 
       {/* Content: mini sidebar + story bible */}
@@ -480,7 +480,7 @@ function GlobalReplaceDemo({ live }: { live: boolean }) {
           <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
           <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
         </div>
-        <span className="text-[0.58rem] font-medium text-[#1A1A1A]/30">Global Replace — All Chapters</span>
+        <span className="text-[0.58rem] font-medium text-[#1A1A1A]/30">Global Replace: All Chapters</span>
         <div className="h-5 w-5 rounded-lg bg-amber-100 flex items-center justify-center">
           <span className="text-[0.55rem] text-amber-600">✦</span>
         </div>
@@ -578,7 +578,7 @@ function CustomAlexDemo({ live }: { live: boolean }) {
           <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
           <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
         </div>
-        <span className="text-[0.58rem] text-black/25 mx-auto">Configure Alex — The Glass Meridian</span>
+        <span className="text-[0.58rem] text-black/25 mx-auto">Configure Alex: The Glass Meridian</span>
       </div>
 
       {/* Config panel */}
@@ -599,7 +599,7 @@ function CustomAlexDemo({ live }: { live: boolean }) {
         {/* Personality presets */}
         <div className="mb-3">
           <label className="block text-[0.5rem] font-semibold uppercase tracking-widest text-neutral-400 mb-2">
-            Personality — pick a starting point
+            Personality: pick a starting point
           </label>
           <div className="grid grid-cols-2 gap-1.5">
             {ALEX_PRESETS.map((preset, i) => (
@@ -635,7 +635,7 @@ function CustomAlexDemo({ live }: { live: boolean }) {
               </motion.p>
             ) : (
               <motion.p key="placeholder" className="text-[0.6rem] text-neutral-300">
-                Or describe them yourself — how they speak, what they care about, how blunt they are…
+                Or describe them yourself: how they speak, what they care about, how blunt they are…
               </motion.p>
             )}
           </AnimatePresence>
@@ -773,7 +773,7 @@ const CHAPTERS: ChapterData[] = [
     details: [
       "4 built-in personas, each with a distinct approach to feedback",
       "Or write your own: describe exactly how blunt, warm, or demanding you want",
-      "Per-story setting — different projects can have different co-authors",
+      "Per-story setting: different projects can have different co-authors",
     ],
     Demo: CustomAlexDemo,
   },

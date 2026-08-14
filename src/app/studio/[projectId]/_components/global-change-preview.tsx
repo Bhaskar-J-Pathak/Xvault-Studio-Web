@@ -89,9 +89,9 @@ export default function GlobalChangePreview({
       const summary =
         data.applied > 0
           ? `Applied ${data.applied} change${data.applied !== 1 ? "s" : ""} across the manuscript.${
-              data.skipped > 0 ? ` ${data.skipped} couldn't be matched exactly — check manually.` : ""
+              data.skipped > 0 ? ` ${data.skipped} couldn't be matched exactly, check manually.` : ""
             }`
-          : "No changes could be applied — phrases may have changed since the analysis.";
+          : "No changes could be applied. Phrases may have changed since the analysis.";
 
       onDone(summary);
     } catch {
@@ -147,7 +147,7 @@ export default function GlobalChangePreview({
           {plan.changes.length > 0 && (
             <div>
               <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide mb-2">
-                Clear matches — {plan.changes.length}
+                Clear matches: {plan.changes.length}
               </p>
               <div className="space-y-2">
                 {plan.changes.map((change, i) => (
@@ -171,7 +171,7 @@ export default function GlobalChangePreview({
             <div>
               <p className="text-xs font-medium text-amber-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                 <AlertTriangle size={11} />
-                Ambiguous — {plan.flagged.length} (skipped by default)
+                Ambiguous: {plan.flagged.length} (skipped by default)
               </p>
               <div className="space-y-2">
                 {plan.flagged.map((item, i) => (

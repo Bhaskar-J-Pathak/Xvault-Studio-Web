@@ -24,7 +24,7 @@ const comparisons = [
     slug: "xvault-vs-novelcrafter",
     opponent: "NovelCrafter",
     tagline: "157,000 users and growing, but BYOK friction and unpredictable API costs are its ceiling.",
-    xvaultWins: ["No API keys to manage", "Predictable flat pricing", "Automatic World Board — no manual entry"],
+    xvaultWins: ["No API keys to manage", "Predictable flat pricing", "Automatic World Board, no manual entry"],
     opponentWins: ["Flexible AI model selection", "Strong worldbuilding codex structure"],
   },
   {
@@ -122,7 +122,7 @@ export default function ComparePage() {
           <p className="text-stone-500 text-sm leading-relaxed max-w-xl">
             These comparisons are written by the Xvault team and are therefore not neutral.
             We have tried to be honest about where competitors are genuinely stronger.
-            Try Xvault free for 14 days — no credit card — and make the decision yourself.
+            Try Xvault free for 14 days, no credit card required. Make the decision yourself.
           </p>
           <Link
             href="/auth"

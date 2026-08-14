@@ -78,7 +78,7 @@ export default function CTA() {
           transition={{ delay: 0.38, duration: 0.65, ease }}
           className="mx-auto mt-7 max-w-[44ch] text-[0.9375rem] leading-[1.8] text-violet-900/50"
         >
-          Sign up in 10 seconds. 100 AI credits and 14 days of full access —
+          Sign up in 10 seconds. 100 AI credits and 14 days of full access,
           no card needed. Upgrade when your manuscript demands it.
         </motion.p>
 
@@ -94,7 +94,7 @@ export default function CTA() {
               href="/auth?mode=signup"
               className="inline-flex items-center gap-2.5 rounded-full bg-violet-600 px-8 py-3.5 text-[0.9rem] font-semibold text-white shadow-[0_0_28px_rgba(124,58,237,0.30)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-[0_0_36px_rgba(124,58,237,0.40)]"
             >
-              Start writing — it&apos;s free
+              Start writing, it&apos;s free
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                 <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>

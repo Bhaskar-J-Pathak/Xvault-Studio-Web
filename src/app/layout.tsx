@@ -17,11 +17,11 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: {
-    default: "Xvault Studio — AI Writing Studio for Novelists",
+    default: "Xvault Studio | AI Writing Studio for Novelists",
     template: "%s | Xvault Studio",
   },
   description:
-    "A browser-based writing studio for novelists. Your AI co-author lives alongside your canvas — loaded with your entire manuscript, so it always knows your characters, your world, and where the story is going. Free 14-day trial, no credit card.",
+    "A browser-based writing studio for novelists. Your AI co-author lives alongside your canvas, loaded with your entire manuscript, so it always knows your characters, your world, and where the story is going. Free 14-day trial, no credit card.",
   keywords: [
     "AI writing tool for novels",
     "AI co-author for fiction",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://xvault.dev"),
   alternates: { canonical: "https://xvault.dev" },
   openGraph: {
-    title: "Xvault Studio — AI Writing Studio for Novelists",
+    title: "Xvault Studio | AI Writing Studio for Novelists",
     description:
       "Write your novel with AI that actually knows your story. Your AI co-author lives alongside your canvas, loaded with your entire manuscript. Free 14-day trial.",
     url: "https://xvault.dev",
@@ -52,13 +52,13 @@ export const metadata: Metadata = {
         url: "/OG.png",
         width: 1200,
         height: 630,
-        alt: "Xvault Studio — AI Writing Studio for Novelists",
+        alt: "Xvault Studio | AI Writing Studio for Novelists",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Xvault Studio — AI Writing Studio for Novelists",
+    title: "Xvault Studio | AI Writing Studio for Novelists",
     description:
       "Write your novel with AI that actually knows your story. Your AI co-author lives alongside your canvas, loaded with your entire manuscript. Free 14-day trial.",
     images: ["/OG.png"],
@@ -84,12 +84,12 @@ const softwareSchema = {
   featureList: [
     "AI co-author that reads your full manuscript (Alex)",
     "Ghost writing in your voice via Ctrl+K",
-    "World board — automatic character, location, and faction extraction",
+    "World board: automatic character, location, and faction extraction",
     "Story bible with semantic search across your manuscript",
     "Plot thread tracking and dead-branch detection",
     "Global character rename with context and voice preservation",
     "14-day free trial with 100 AI credits included",
-    "Browser-based — no download or installation required",
+    "Browser-based, no download or installation required",
     "Auto-saves every 2 seconds",
   ],
   browserRequirements: "Requires a modern web browser (Chrome, Firefox, Safari, or Edge)",
@@ -97,7 +97,7 @@ const softwareSchema = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "USD",
-    description: "Free to start — 100 AI credits included in 14-day trial, no credit card required",
+    description: "Free to start: 100 AI credits included in 14-day trial, no credit card required",
   },
   publisher: {
     "@type": "Organization",
@@ -123,7 +123,7 @@ const websiteSchema = {
   name: "Xvault Studio",
   url: "https://xvault.dev",
   description:
-    "AI co-author for fiction writers — reads your entire manuscript before it says a word.",
+    "AI co-author for fiction writers: reads your entire manuscript before it says a word.",
 };
 
 export default function RootLayout({

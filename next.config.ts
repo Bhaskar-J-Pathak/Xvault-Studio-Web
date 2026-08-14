@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/api/checkout/success",
+        destination: "/checkout/success",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

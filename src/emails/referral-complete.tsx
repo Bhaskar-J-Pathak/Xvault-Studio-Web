@@ -57,8 +57,8 @@ export default function ReferralCompleteEmail({
 
       <Preview>
         {isMaxed
-          ? `You've hit the referral cap — ${totalBonusCredits} bonus credits total. Well earned.`
-          : `Someone you referred just got started — +30 credits are in your account.`}
+          ? `You've hit the referral cap. ${totalBonusCredits} bonus credits total. Well earned.`
+          : `Someone you referred just got started. +30 credits are in your account.`}
       </Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
@@ -117,7 +117,7 @@ export default function ReferralCompleteEmail({
                 Someone you referred just completed their setup on Xvault Studio.
                 Your{" "}
                 <span style={{ color: dark, fontWeight: 600 }}>+30 bonus credits</span>{" "}
-                are already in your account — no action needed.
+                are already in your account. No action needed.
               </Text>
 
               {/* Credits summary */}
@@ -222,7 +222,7 @@ export default function ReferralCompleteEmail({
                   <span style={{ color: dark, fontWeight: 600 }}>
                     {totalBonusCredits} bonus credits total
                   </span>{" "}
-                  — they're permanently part of your account. That's genuinely
+                  . They're permanently part of your account. That's genuinely
                   helpful to us at this stage, and I appreciate it.
                 </Text>
               ) : (
@@ -283,7 +283,7 @@ export default function ReferralCompleteEmail({
                   lineHeight: "1.7",
                 }}
               >
-                Thanks for helping spread the word — it really does make a
+                Thanks for helping spread the word. It really does make a
                 difference at this stage.
                 {"\n\n"}Best,
                 {"\n"}

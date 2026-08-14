@@ -5,6 +5,7 @@ import { Check, X, Minus } from "lucide-react";
 export const metadata: Metadata = {
   title: "Xvault Studio vs Sudowrite (2026): Honest Comparison",
   description: "Sudowrite is expensive and now restricts dark fiction. Xvault Studio reads your entire manuscript and doesn't police your story. Here is the honest comparison.",
+  alternates: { canonical: "https://xvault.dev/compare/xvault-vs-sudowrite" },
   openGraph: {
     title: "Xvault Studio vs Sudowrite: Honest Comparison",
     description: "Pricing, manuscript memory, content restrictions, and prose quality compared honestly.",
@@ -72,9 +73,23 @@ const comparisonSchema = {
   ],
 };
 
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home",       item: "https://xvault.dev" },
+    { "@type": "ListItem", position: 2, name: "Compare",    item: "https://xvault.dev/compare" },
+    { "@type": "ListItem", position: 3, name: "Xvault vs Sudowrite", item: "https://xvault.dev/compare/xvault-vs-sudowrite" },
+  ],
+};
+
 export default function VsSudowritePage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-stone-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(comparisonSchema) }}
@@ -124,43 +139,40 @@ export default function VsSudowritePage() {
         </div>
 
         {/* Written analysis */}
-        <div className="blog-prose">
+        <div className="blog-prose space-y-10">
 
-## The Pricing Problem
+          <div>
+            <h2 className="text-xl font-semibold text-stone-900 mb-4">The Pricing Problem</h2>
+            <p className="text-stone-600 leading-relaxed mb-4">Sudowrite has changed its credit system multiple times since launch. Writers who joined under "unlimited" plans found access significantly reduced after each restructure. The community shorthand for this ("so damn expensive") appears consistently in writing forums and has become part of how the tool is discussed.</p>
+            <p className="text-stone-600 leading-relaxed mb-4">The current pricing is $19 to $59 per month at monthly rates, or $10 to $44 per month annually. These are not unreasonable numbers for a professional tool, but the history of changes makes writers understandably cautious about committing to an annual plan.</p>
+            <p className="text-stone-600 leading-relaxed">Xvault's Hobbyist tier is $11.99 per month or $119 per year. The Founder's Circle lifetime access is $49, a one-time payment with no future credit restructures.</p>
+          </div>
 
-Sudowrite has changed its credit system multiple times since launch. Writers who joined under "unlimited" plans found access significantly reduced after each restructure. The community shorthand for this — "so damn expensive" — appears consistently in writing forums and has become part of how the tool is discussed.
+          <div>
+            <h2 className="text-xl font-semibold text-stone-900 mb-4">The Content Restriction Problem</h2>
+            <p className="text-stone-600 leading-relaxed mb-4">After Sudowrite migrated to Claude-based models, its Story Engine mode began refusing content involving violence, explicit themes, and morally dark scenarios. Writers have received account warnings for content that falls within the range of published commercial and literary fiction.</p>
+            <p className="text-stone-600 leading-relaxed mb-4">This is a direct product failure for horror novelists, grimdark writers, dark fantasy authors, and anyone writing fiction that deals honestly with adult themes. A writing tool that cannot follow you into the darker areas of your story is not a serious tool for serious fiction.</p>
+            <p className="text-stone-600 leading-relaxed">Xvault is built for the full range of literary fiction, including work that explores darkness, moral complexity, violence, and mature content. We do not apply blanket restrictions that would make us unusable for significant genres.</p>
+          </div>
 
-The current pricing is $19–$59 per month at monthly rates, or $10–$44 per month annually. These are not unreasonable numbers for a professional tool, but the history of changes makes writers understandably cautious about committing to an annual plan.
+          <div>
+            <h2 className="text-xl font-semibold text-stone-900 mb-4">Where Sudowrite Is Genuinely Better</h2>
+            <p className="text-stone-600 leading-relaxed mb-4">Sudowrite's Muse model is fine-tuned specifically on published novels. This gives it a different quality of output than tools running on general-purpose models, particularly for prose at the sentence level. The Beat and Prose modes are well-designed for the specific task of generating scene-level content.</p>
+            <p className="text-stone-600 leading-relaxed">If you write in genres with lighter content and can tolerate the pricing uncertainty, Sudowrite's output quality is genuinely strong. The tool has been iterated on for years and the craft-focused features show that experience.</p>
+          </div>
 
-Xvault's Hobbyist tier is $11.99 per month or $119 per year. The Founder's Circle lifetime access is $49 — a one-time payment with no future credit restructures.
+          <div>
+            <h2 className="text-xl font-semibold text-stone-900 mb-4">The Manuscript Memory Difference</h2>
+            <p className="text-stone-600 leading-relaxed mb-4">The central claim of Xvault is that every AI response is grounded in your complete manuscript. Alex, the AI co-author, reads everything you have written before responding to anything.</p>
+            <p className="text-stone-600 leading-relaxed mb-4">Sudowrite's context window limitations mean it loses track of character details and established world facts in longer manuscripts. Writers in the Sudowrite community regularly report suggestions that contradict things established in earlier chapters, with characters behaving inconsistently and world details ignored.</p>
+            <p className="text-stone-600 leading-relaxed">For a short novel or for scene-level work in isolation, this matters less. For a long, complex manuscript where continuity is load-bearing, it is a material difference.</p>
+          </div>
 
-## The Content Restriction Problem
-
-After Sudowrite migrated to Claude-based models, its Story Engine mode began refusing content involving violence, explicit themes, and morally dark scenarios. Writers have received account warnings for content that falls within the range of published commercial and literary fiction.
-
-This is a direct product failure for horror novelists, grimdark writers, dark fantasy authors, and anyone writing fiction that deals honestly with adult themes. A writing tool that cannot follow you into the darker areas of your story is not a serious tool for serious fiction.
-
-Xvault is built for the full range of literary fiction, including work that explores darkness, moral complexity, violence, and mature content. We do not apply blanket restrictions that would make us unusable for significant genres.
-
-## Where Sudowrite Is Genuinely Better
-
-Sudowrite's Muse model is fine-tuned specifically on published novels. This gives it a different quality of output than tools running on general-purpose models — particularly for prose at the sentence level. The Beat and Prose modes are well-designed for the specific task of generating scene-level content.
-
-If you write in genres with lighter content and can tolerate the pricing uncertainty, Sudowrite's output quality is genuinely strong. The tool has been iterated on for years and the craft-focused features show that experience.
-
-## The Manuscript Memory Difference
-
-The central claim of Xvault is that every AI response is grounded in your complete manuscript. Alex, the AI co-author, reads everything you have written before responding to anything.
-
-Sudowrite's context window limitations mean it loses track of character details and established world facts in longer manuscripts. Writers in the Sudowrite community regularly report suggestions that contradict things established in earlier chapters — characters behaving inconsistently, world details ignored.
-
-For a short novel or for scene-level work in isolation, this matters less. For a long, complex manuscript where continuity is load-bearing, it is a material difference.
-
-## Who Should Use What
-
-**Use Sudowrite if:** You write in lighter genres, want access to the Muse model's prose quality, and are comfortable with the current pricing structure and credit system.
-
-**Use Xvault if:** You write horror, dark fantasy, grimdark, or mature fiction; you are writing a long manuscript where continuity matters; you want pricing that does not change after you commit; or you want a story bible and world board that build themselves.
+          <div>
+            <h2 className="text-xl font-semibold text-stone-900 mb-4">Who Should Use What</h2>
+            <p className="text-stone-600 leading-relaxed mb-3"><strong className="text-stone-800">Use Sudowrite if:</strong> You write in lighter genres, want access to the Muse model's prose quality, and are comfortable with the current pricing structure and credit system.</p>
+            <p className="text-stone-600 leading-relaxed"><strong className="text-stone-800">Use Xvault if:</strong> You write horror, dark fantasy, grimdark, or mature fiction; you are writing a long manuscript where continuity matters; you want pricing that does not change after you commit; or you want a story bible and world board that build themselves.</p>
+          </div>
 
         </div>
 

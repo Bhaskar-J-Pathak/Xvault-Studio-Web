@@ -14,7 +14,7 @@ const STEPS = [
     borderColor: "border-violet-200/70",
     label:       "Sign Up",
     title:       "Free in 10 seconds",
-    body:        "No credit card. No download. Open your browser, sign up, pick your genre — your project is ready before you've finished your coffee.",
+    body:        "No credit card. No download. Open your browser, sign up, pick your genre and your project is ready before you've finished your coffee.",
     detail:      "Free · 14-day trial · 100 AI credits",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
@@ -29,7 +29,7 @@ const STEPS = [
     borderColor: "border-rose-200/70",
     label:       "Explore",
     title:       "A sample story loads instantly",
-    body:        "\"The Glass Meridian\" — a thriller with 3 chapters, pre-seeded characters, and Alex already reading. The tutorial walks you through every feature in about 2 minutes.",
+    body:        "\"The Glass Meridian\", a thriller with 3 chapters, pre-seeded characters, and Alex already reading. The tutorial walks you through every feature in about 2 minutes.",
     detail:      "No setup · Just open and go",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
@@ -45,7 +45,7 @@ const STEPS = [
     borderColor: "border-amber-200/70",
     label:       "Write",
     title:       "Canvas on the left. Alex on the right.",
-    body:        "The studio is a clean writing canvas — no distractions. Alex lives in a panel alongside it, loaded with your entire manuscript. Press Ctrl+K anywhere in your text for an inline suggestion. No switching tabs, no copy-pasting context. Everything in one place.",
+    body:        "The studio is a clean writing canvas with no distractions. Alex lives in a panel alongside it, loaded with your entire manuscript. Press Ctrl+K anywhere in your text for an inline suggestion. No switching tabs, no copy-pasting context. Everything in one place.",
     detail:      "Ctrl+K anywhere · Alex always in context",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
@@ -60,7 +60,7 @@ const STEPS = [
     borderColor: "border-emerald-200/70",
     label:       "Finish",
     title:       "Finish the draft",
-    body:        "Stay in the flow. Press Ctrl+K when you're stuck. Ask Alex anything. When you're done, your manuscript is saved and organised — ready for the next session.",
+    body:        "Stay in the flow. Press Ctrl+K when you're stuck. Ask Alex anything. When you're done, your manuscript is saved and organised, ready for the next session.",
     detail:      "Cloud-saved · Always accessible",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">

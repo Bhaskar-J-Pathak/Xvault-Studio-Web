@@ -34,7 +34,7 @@ export function SevenBeatSpine() {
       style={{ fontFamily: "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif" }}
     >
       <p className="text-[10px] font-semibold tracking-widest uppercase text-violet-600 mb-8">
-        The seven beat spine — one page, every novel
+        The seven beat spine: one page, every novel
       </p>
 
       <div className="overflow-x-auto pb-1">

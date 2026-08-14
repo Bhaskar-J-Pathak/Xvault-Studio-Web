@@ -353,14 +353,14 @@ function getStepContent(
     case 1:
       return {
         title: "Welcome to your sample project.",
-        body: "The Glass Meridian — 3 chapters, a full World Board, and a Story Bible. Your AI co-author Alex has already read all of it. Let's take a quick tour.",
+        body: "The Glass Meridian: 3 chapters, a full World Board, and a Story Bible. Your AI co-author Alex has already read all of it. Let's take a quick tour.",
         ctaLabel: "Let's go",
         nextStep: 2,
       };
 
     case 2:
       return {
-        title: "Your editor — click inside to start.",
+        title: "Your editor. Click inside to start.",
         body: "Everything auto-saves as you write. Word count is bottom-left. Click anywhere in the story text to continue.",
         hint: "← Click anywhere in the story",
         waiting: "Waiting for you to click in the editor…",
@@ -371,7 +371,7 @@ function getStepContent(
     case 3:
       return {
         title: "Ask Alex something.",
-        body: "Alex has read Chapter 1 and left you a note. Type a message in the chat and hit Enter — see what comes back.",
+        body: "Alex has read Chapter 1 and left you a note. Type a message in the chat and hit Enter to see what comes back.",
         hint: "Try: \"What do you think of the opening?\"",
         waiting: "Waiting for Alex's reply…",
         ctaLabel: "Next →",
@@ -380,7 +380,7 @@ function getStepContent(
 
     case 4:
       return {
-        title: "AI ghostwriter — press Ctrl+K.",
+        title: "AI ghostwriter: press Ctrl+K.",
         body: "Click anywhere in the text, press Ctrl+K, and give Alex an instruction. Press Tab to accept, Esc to dismiss.",
         hint: "Try: \"What does Nadia find in the diner?\"",
         waiting: "Waiting for you to try it and check the result…",
@@ -390,8 +390,8 @@ function getStepContent(
 
     case 5:
       return {
-        title: "Global Change — rewrite across every chapter.",
-        body: "This is the big one. Tell Alex to rename a character, shift a plot detail, or change something about the writing — and it scans every chapter at once, shows you a diff of every planned edit, and waits for your approval before touching anything.",
+        title: "Global Change: rewrite across every chapter.",
+        body: "This is the big one. Tell Alex to rename a character, shift a plot detail, or change something about the writing. It scans every chapter at once, shows you a diff of every planned edit, and waits for your approval before touching anything.",
         hint: "Try in the chat: \"Rename Marcus to Viktor everywhere\"",
         ctaLabel: "Next →",
         nextStep: 6,
@@ -402,14 +402,14 @@ function getStepContent(
       if (onBiblePage) {
         return {
           title: "This is Alex's brain.",
-          body: "Every section feeds your co-author before every reply:\n\n• Braindump — freewrite your premise, themes, anything unformed. Alex reads it raw.\n• Genre — sets the lens Alex uses for suggestions.\n• Style & Voice — prose rhythm, POV, tense. Alex imitates what you describe here.\n• Chapter Summaries — auto-generated; power the Synopsis. Edit them to correct AI drift.\n• Characters & World — hit Analyze on any character to build a deep profile from your manuscript.\n• Plot Threads — open story debts Alex tracks automatically.\n\nThe more you keep this updated, the smarter and more on-voice Alex becomes.",
+          body: "Every section feeds your co-author before every reply:\n\n• Braindump: freewrite your premise, themes, anything unformed. Alex reads it raw.\n• Genre: sets the lens Alex uses for suggestions.\n• Style & Voice: prose rhythm, POV, tense. Alex imitates what you describe here.\n• Chapter Summaries: auto-generated; power the Synopsis. Edit them to correct AI drift.\n• Characters & World: hit Analyze on any character to build a deep profile from your manuscript.\n• Plot Threads: open story debts Alex tracks automatically.\n\nThe more you keep this updated, the smarter and more on-voice Alex becomes.",
           hint: "Explore each section, then click Got it.",
           ctaLabel: "Got it",
           nextStep: 7,
         };
       }
       return {
-        title: "Full Story Bible — Alex's long-term memory.",
+        title: "Full Story Bible: Alex's long-term memory.",
         body: "Click Story Bible in the sidebar. Every section feeds Alex before every reply: braindump, genre, style notes, AI chapter summaries, character profiles, and tracked plot threads. The more you fill it in, the better Alex writes in your voice.",
         hint: "← Click Story Bible in the sidebar",
         waiting: "Waiting for you to open the Story Bible…",
@@ -419,8 +419,8 @@ function getStepContent(
 
     case 7:
       return {
-        title: "World Board — your characters and places.",
-        body: "Click World Board in the sidebar. Every character, location, and faction was extracted from the manuscript automatically — no tagging needed. You can edit entities, add relationships, or re-index after big rewrites.",
+        title: "World Board: your characters and places.",
+        body: "Click World Board in the sidebar. Every character, location, and faction was extracted from the manuscript automatically, no tagging needed. You can edit entities, add relationships, or re-index after big rewrites.",
         hint: onWorldboardPage
           ? "You're here. Explore, then click Got it."
           : "← Click World Board in the sidebar",

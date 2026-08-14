@@ -104,7 +104,7 @@ export default function NewProjectModal({ open, onClose }: Props) {
               New project
             </h2>
             <p className="text-sm text-[#71717A] dark:text-white/40 mt-0.5">
-              Start a blank project — you can always change details later.
+              Start a blank project. You can always change details later.
             </p>
           </div>
           <button

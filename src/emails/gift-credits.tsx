@@ -52,7 +52,7 @@ export default function GiftCreditsEmail({
         />
       </Head>
 
-      <Preview>{`You've been gifted ${credits} credits — thank you for your feedback.`}</Preview>
+      <Preview>{`You've been gifted ${credits} credits. Thank you for your feedback.`}</Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 20px" }}>
@@ -122,10 +122,10 @@ export default function GiftCreditsEmail({
                   lineHeight: "1.7",
                 }}
               >
-                Your feedback has been genuinely valuable — you're exactly the kind of early
+                Your feedback has been genuinely valuable. You're exactly the kind of early
                 user that helps shape where this goes. As a small thank you, I've added{" "}
                 <strong style={{ color: dark }}>{credits} bonus credits</strong> to your
-                account. They're already there — no action needed.
+                account. They're already there. No action needed.
               </Text>
 
               {/* Credits badge */}
@@ -172,7 +172,7 @@ export default function GiftCreditsEmail({
                   lineHeight: "1.7",
                 }}
               >
-                If you're up for it, I'd love to hear more — specifically:
+                If you're up for it, I'd love to hear more, specifically:
               </Text>
 
               <Text
@@ -199,7 +199,7 @@ export default function GiftCreditsEmail({
                   lineHeight: "1.7",
                 }}
               >
-                Just hit reply — I read every message personally.
+                Just hit reply. I read every message personally.
               </Text>
 
               {/* CTA */}

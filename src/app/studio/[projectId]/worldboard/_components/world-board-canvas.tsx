@@ -334,7 +334,7 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
         </h2>
         <p className="text-sm text-[#1A1A1A]/45 max-w-[340px] leading-relaxed">
           Start writing in the editor. After every ~1,500 words, characters, locations,
-          factions, and relationships will appear here automatically — at zero cost.
+          factions, and relationships will appear here automatically, at zero cost.
         </p>
       </div>
     );

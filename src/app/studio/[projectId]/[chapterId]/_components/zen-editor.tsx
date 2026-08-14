@@ -882,7 +882,7 @@ export default function ZenEditor({
                 You&apos;ve used all your beta credits
               </h2>
               <p className="text-sm text-[#1A1A1A]/55 mb-6">
-                Thanks for exploring — you&apos;ve hit the limit for this beta. Paid plans are coming soon. Your work stays saved.
+                Thanks for exploring. You&apos;ve hit the limit for this beta. Paid plans are coming soon. Your work stays saved.
               </p>
               <div className="flex flex-col gap-2">
                 <button

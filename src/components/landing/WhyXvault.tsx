@@ -8,7 +8,7 @@ const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 // ─── Marquee ──────────────────────────────────────────────────────────────────
 
 const ROW_1 = [
-  "Alex — Your Co-Author",
+  "Alex: Your Co-Author",
   "Ghost Writing",
   "World Board",
   "Story Bible",
@@ -70,7 +70,7 @@ const PROBLEMS = [
     num: "02",
     problem: "AI suggestions sound nothing like me. My editor could spot them from a mile away.",
     solution: "Ghost Writing",
-    detail: "Press Ctrl+K. The AI is trained on your existing chapters — every suggestion in your voice.",
+    detail: "Press Ctrl+K. The AI is trained on your existing chapters, so every suggestion sounds like you.",
     badge: "bg-rose-50 text-rose-700 border-rose-200",
     dot: "bg-rose-500",
   },
@@ -86,7 +86,7 @@ const PROBLEMS = [
     num: "04",
     problem: "I renamed a character. I caught 43 of the 47 instances. The other four made it to my editor.",
     solution: "Global Replace",
-    detail: "Rename once. It propagates everywhere — preserving voice, tense, and context.",
+    detail: "Rename once. It propagates everywhere, preserving voice, tense, and context.",
     badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
     dot: "bg-emerald-500",
   },
@@ -150,10 +150,10 @@ function ProblemRow({ data, index }: { data: typeof PROBLEMS[number]; index: num
 // ─── Facts strip ──────────────────────────────────────────────────────────────
 
 const FACTS = [
-  { value: "Free",    detail: "to start — no card required" },
+  { value: "Free",    detail: "to start, no card required" },
   { value: "100",     detail: "AI credits in your 14-day trial" },
   { value: "14",      detail: "days of full access" },
-  { value: "Browser", detail: "— write on any device, anywhere" },
+  { value: "Browser", detail: "write on any device, anywhere" },
 ];
 
 function FactsStrip() {

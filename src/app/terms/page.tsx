@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Xvault Studio",
+  title: "Terms of Service | Xvault Studio",
   description: "The terms that govern your use of Xvault Studio.",
 };
 
@@ -77,7 +77,7 @@ export default function TermsPage() {
               <li>You must be at least 13 years old to use the Service.</li>
               <li>
                 You are responsible for maintaining the security of your account. We use
-                OTP (one-time passcode) authentication — keep your email account secure.
+                OTP (one-time passcode) authentication. Keep your email account secure.
               </li>
               <li>
                 You may only have one account per person. Creating multiple accounts to
@@ -98,7 +98,7 @@ export default function TermsPage() {
             </p>
             <p>
               By using the Service, you grant us a limited, non-exclusive licence to store
-              and process Your Content solely to provide the Service — for example, to save
+              and process Your Content solely to provide the Service, for example to save
               your projects, generate AI responses in context, and create search embeddings
               for Story Bible features. This licence ends when you delete your content or
               account.
@@ -143,7 +143,7 @@ export default function TermsPage() {
             <p>
               Paid subscriptions are billed in advance. All payments are processed by
               Dodo Payments. We do not store payment card details. Refunds are handled
-              on a case-by-case basis — contact{" "}
+              on a case-by-case basis. Contact{" "}
               <a href={`mailto:${CONTACT_EMAIL}`} className="text-violet-600 underline underline-offset-2">
                 {CONTACT_EMAIL}
               </a>{" "}
@@ -194,7 +194,7 @@ export default function TermsPage() {
               To the fullest extent permitted by law, Xvault Studio shall not be liable
               for any indirect, incidental, special, consequential, or punitive damages,
               including loss of data, loss of profits, or loss of business, arising from
-              your use of or inability to use the Service — even if we have been advised
+              your use of or inability to use the Service, even if we have been advised
               of the possibility of such damages.
             </p>
             <p>

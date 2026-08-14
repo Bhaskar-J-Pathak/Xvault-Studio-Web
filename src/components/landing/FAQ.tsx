@@ -8,19 +8,19 @@ const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const FAQS = [
   {
     q: "Is Xvault Studio free to start?",
-    a: "Yes. Sign up in 10 seconds — no credit card needed. You get 100 AI credits and 14 days of full access. After your trial, the free plan gives you continued access with a smaller monthly credit allowance. Paid plans with higher limits are coming at full launch.",
+    a: "Yes. Sign up in 10 seconds, no credit card needed. You get 100 AI credits and 14 days of full access. After your trial, the free plan gives you continued access with a smaller monthly credit allowance. Paid plans with higher limits are coming at full launch.",
   },
   {
     q: "Is this the full product?",
-    a: "Xvault Studio is currently in public beta. The core writing experience — Alex, Ghost Writing, World Board, Story Bible, and Global Replace — is fully functional. We're actively building toward a full launch with expanded features and subscription plans. Beta users get full access and directly shape what we build next.",
+    a: "Xvault Studio is currently in public beta. The core writing experience (Alex, Ghost Writing, World Board, Story Bible, and Global Replace) is fully functional. We're actively building toward a full launch with expanded features and subscription plans. Beta users get full access and directly shape what we build next.",
   },
   {
     q: "What exactly is Alex?",
-    a: "Alex is your AI co-author. Before it says a word, it reads your entire manuscript — every chapter, every character, every open thread. Ask it anything about your story, get ghost suggestions in your voice, or just talk through a plot problem. Alex always has context.",
+    a: "Alex is your AI co-author. Before it says a word, it reads your entire manuscript: every chapter, every character, every open thread. Ask it anything about your story, get ghost suggestions in your voice, or just talk through a plot problem. Alex always has context.",
   },
   {
     q: "How does Ghost Writing preserve my voice?",
-    a: "Press Ctrl+K anywhere in the editor. Alex generates suggestions trained on your existing chapters — not generic AI output. The more you've written, the better it understands your rhythm, vocabulary, and style. Every suggestion is optional and editable.",
+    a: "Press Ctrl+K anywhere in the editor. Alex generates suggestions trained on your existing chapters, not generic AI output. The more you've written, the better it understands your rhythm, vocabulary, and style. Every suggestion is optional and editable.",
   },
   {
     q: "Can I export my manuscript?",
@@ -32,7 +32,7 @@ const FAQS = [
   },
   {
     q: "Do I need to install anything?",
-    a: "Nothing. Xvault Studio runs entirely in your browser — Chrome, Firefox, Safari, Edge. Open a tab and start writing. Your work is auto-saved to the cloud, so you can pick up on any device, anywhere.",
+    a: "Nothing. Xvault Studio runs entirely in your browser: Chrome, Firefox, Safari, Edge. Open a tab and start writing. Your work is auto-saved to the cloud, so you can pick up on any device, anywhere.",
   },
 ];
 

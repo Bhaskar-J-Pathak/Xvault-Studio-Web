@@ -3,10 +3,10 @@ import Link from "next/link";
 import { getAllPosts, formatDate } from "@/lib/blog";
 
 export const metadata: Metadata = {
-  title: "Blog — Xvault Studio",
+  title: "Blog | Xvault Studio",
   description: "Writing craft, AI tools for novelists, and the thinking behind Xvault Studio.",
   openGraph: {
-    title: "Blog — Xvault Studio",
+    title: "Blog | Xvault Studio",
     description: "Writing craft, AI tools for novelists, and the thinking behind Xvault Studio.",
     type: "website",
   },

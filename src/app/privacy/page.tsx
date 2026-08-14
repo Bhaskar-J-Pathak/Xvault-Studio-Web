@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Xvault Studio",
+  title: "Privacy Policy | Xvault Studio",
   description: "How Xvault Studio collects, uses, and protects your data.",
 };
 
@@ -68,26 +68,26 @@ export default function PrivacyPage() {
             <p>We collect only what is necessary to provide the service:</p>
             <ul>
               <li>
-                <strong>Account data</strong> — your email address, collected when you sign
+                <strong>Account data</strong>: your email address, collected when you sign
                 up via one-time passcode (OTP). We do not store passwords.
               </li>
               <li>
-                <strong>Writing content</strong> — projects, chapters, notes, and any story
+                <strong>Writing content</strong>: projects, chapters, notes, and any story
                 content you create inside the editor. This is stored in your account and is
                 not used for any purpose other than delivering the service to you.
               </li>
               <li>
-                <strong>Usage data</strong> — page views, feature interactions, and session
+                <strong>Usage data</strong>: page views, feature interactions, and session
                 data, collected via PostHog (see Section 5) to help us understand how the
                 product is used and where to improve it.
               </li>
               <li>
-                <strong>AI interactions</strong> — messages sent to your AI co-author and
+                <strong>AI interactions</strong>: messages sent to your AI co-author and
                 the responses generated. These are processed by a third-party AI provider
                 and are not used to train any AI model.
               </li>
               <li>
-                <strong>Referral data</strong> — if you refer another user, we record the
+                <strong>Referral data</strong>: if you refer another user, we record the
                 referral relationship to award bonus credits.
               </li>
             </ul>
@@ -98,7 +98,7 @@ export default function PrivacyPage() {
               <li>To authenticate you and manage your account.</li>
               <li>To store and serve your writing projects.</li>
               <li>To power AI features (co-author, ghostwriter, Story Bible, World Board).</li>
-              <li>To send transactional emails — account confirmation, welcome, and
+              <li>To send transactional emails: account confirmation, welcome, and
                   credit/referral notifications.</li>
               <li>To understand product usage and improve the service.</li>
               <li>To comply with legal obligations.</li>
@@ -112,8 +112,7 @@ export default function PrivacyPage() {
           <Section title="4. Data storage and security">
             <p>
               Your data is stored in Supabase (PostgreSQL, hosted on AWS in the
-              United States). Row-Level Security (RLS) is enforced on all tables —
-              each user can only access their own data. Data is encrypted in transit
+              United States). Row-Level Security (RLS) is enforced on all tables: each user can only access their own data. Data is encrypted in transit
               (TLS) and at rest.
             </p>
             <p>
@@ -131,21 +130,21 @@ export default function PrivacyPage() {
             <p>We use the following third-party providers. Each has their own privacy policy:</p>
             <ul>
               <li>
-                <strong>Supabase</strong> — authentication and database hosting.{" "}
+                <strong>Supabase</strong>: authentication and database hosting.{" "}
                 <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer"
                    className="text-violet-600 underline underline-offset-2">
                   supabase.com/privacy
                 </a>
               </li>
               <li>
-                <strong>Resend</strong> — transactional email delivery.{" "}
+                <strong>Resend</strong>: transactional email delivery.{" "}
                 <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer"
                    className="text-violet-600 underline underline-offset-2">
                   resend.com/legal/privacy-policy
                 </a>
               </li>
               <li>
-                <strong>PostHog</strong> — product analytics and session recording.
+                <strong>PostHog</strong>: product analytics and session recording.
                 Analytics data is anonymised where possible.{" "}
                 <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer"
                    className="text-violet-600 underline underline-offset-2">
@@ -153,7 +152,7 @@ export default function PrivacyPage() {
                 </a>
               </li>
               <li>
-                <strong>Google Gemini / OpenRouter</strong> — AI inference for co-author
+                <strong>Google Gemini / OpenRouter</strong>: AI inference for co-author
                 features. Your content is sent to these services solely to generate AI
                 responses and is not retained or used for training.
               </li>

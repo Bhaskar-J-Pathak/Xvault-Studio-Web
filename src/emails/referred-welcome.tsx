@@ -46,7 +46,7 @@ export default function ReferredWelcomeEmail({ name = "there" }: ReferredWelcome
         />
       </Head>
 
-      <Preview>A friend brought you here — and they added 15 credits to your account.</Preview>
+      <Preview>A friend brought you here and added 15 credits to your account.</Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 20px" }}>
@@ -101,7 +101,7 @@ export default function ReferredWelcomeEmail({ name = "there" }: ReferredWelcome
                   lineHeight: "1.7",
                 }}
               >
-                A friend referred you to Xvault Studio — which tells me you're probably
+                A friend referred you to Xvault Studio, which tells me you're probably
                 a writer who takes the craft seriously. That's exactly who this is built for.
               </Text>
 
@@ -116,8 +116,8 @@ export default function ReferredWelcomeEmail({ name = "there" }: ReferredWelcome
               >
                 As a thank you for coming in through a referral, I've added{" "}
                 <span style={{ color: dark, fontWeight: 600 }}>15 bonus credits</span>{" "}
-                to your account on top of the standard 100. They're already there —
-                no code, nothing to activate.
+                to your account on top of the standard 100. They're already there.
+                No code, nothing to activate.
               </Text>
 
               <Text
@@ -131,7 +131,7 @@ export default function ReferredWelcomeEmail({ name = "there" }: ReferredWelcome
               >
                 Xvault is built to feel like having a real co-author who has read your
                 entire story. It tracks characters, locations, plot threads, and
-                continuity — and speaks up when something doesn't add up, in your voice.
+                continuity, and speaks up when something doesn't add up, in your voice.
               </Text>
 
               {/* Quick start */}
@@ -146,7 +146,7 @@ export default function ReferredWelcomeEmail({ name = "there" }: ReferredWelcome
                   textTransform: "uppercase",
                 }}
               >
-                Quick start — takes ~5 minutes
+                Quick start: takes ~5 minutes
               </Text>
 
               <div
@@ -169,7 +169,7 @@ export default function ReferredWelcomeEmail({ name = "there" }: ReferredWelcome
                   ],
                   [
                     "3. Explore the Story Bible & World Board",
-                    "Every character, location, and plot thread is extracted from your manuscript automatically — no tagging needed.",
+                    "Every character, location, and plot thread is extracted from your manuscript automatically, no tagging needed.",
                   ],
                 ].map(([step, desc], i, arr) => (
                   <div

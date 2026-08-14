@@ -236,12 +236,12 @@ function AuthForm() {
                     </div>
                     {refInput && !refValid && (
                       <p className="text-[11px] text-[#A1A1AA]">
-                        Codes are 8 characters — {8 - refNormalised.length} more to go
+                        Codes are 8 characters. {8 - refNormalised.length} more to go
                       </p>
                     )}
                     {refInput && refValid && (
                       <p className="text-[11px] text-emerald-600 font-medium">
-                        Code applied — you&apos;ll get bonus credits on signup!
+                        Code applied. You&apos;ll get bonus credits on signup!
                       </p>
                     )}
                   </div>
@@ -283,7 +283,7 @@ function AuthForm() {
 
               {resent && (
                 <div className="rounded-xl bg-green-50 border border-green-100 px-4 py-3 text-sm text-green-700">
-                  New code sent — check your inbox.
+                  New code sent. Check your inbox.
                 </div>
               )}
 

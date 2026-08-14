@@ -78,7 +78,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
       setChapters(data.chapters);
       setStep("preview");
     } catch {
-      setError("Network error — please try again.");
+      setError("Network error. Please try again.");
     } finally {
       setParsing(false);
     }
@@ -121,7 +121,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
       router.push(`/studio/${data.projectId}`);
       onClose();
     } catch {
-      setError("Network error — please try again.");
+      setError("Network error. Please try again.");
       setStep("preview");
     }
   }

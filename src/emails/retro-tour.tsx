@@ -43,7 +43,7 @@ export default function RetroTourEmail() {
         />
       </Head>
 
-      <Preview>The guided tour is ready — open your studio to see it.</Preview>
+      <Preview>The guided tour is ready. Open your studio to see it.</Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 20px" }}>
@@ -103,7 +103,7 @@ export default function RetroTourEmail() {
                 }}
               >
                 When you signed up, a bug meant the guided tour of Xvault Studio
-                never loaded. You landed in a blank studio with no introduction —
+                never loaded. You landed in a blank studio with no introduction,
                 which is a bad first experience, and we're sorry about that.
               </Text>
 

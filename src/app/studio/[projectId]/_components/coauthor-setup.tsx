@@ -84,7 +84,7 @@ export default function CoauthorSetup({ onSave, onClose, initial }: Props) {
 
         {/* Personality presets */}
         <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide">
-          Personality — pick a starting point
+          Personality: pick a starting point
         </label>
         <div className="grid grid-cols-2 gap-2 mb-3">
           {PRESETS.map((p, i) => (
@@ -109,7 +109,7 @@ export default function CoauthorSetup({ onSave, onClose, initial }: Props) {
             setPersonality(e.target.value);
             setSelectedPreset(null);
           }}
-          placeholder="Or describe them yourself — how they speak, what they care about, how blunt they are…"
+          placeholder="Or describe them yourself: how they speak, what they care about, how blunt they are…"
           rows={3}
           className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 resize-none mb-5"
         />

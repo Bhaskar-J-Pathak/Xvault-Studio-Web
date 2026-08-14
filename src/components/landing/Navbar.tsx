@@ -184,7 +184,7 @@ export default function Navbar() {
                     onClick={() => setMenuOpen(false)}
                     className="btn-shimmer inline-flex w-fit items-center rounded-full bg-stone-900 px-6 py-3 text-base font-semibold text-white"
                   >
-                    Start writing — free
+                    Start writing, it&apos;s free
                   </Link>
                 </div>
               </motion.div>
