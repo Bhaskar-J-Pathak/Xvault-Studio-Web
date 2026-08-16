@@ -30,7 +30,7 @@ export interface Profile {
 export const PLAN_LIMITS: Record<string, number> = {
   free: 50,
   hobbyist: 300,
-  founder_circle: 600,
+  founder_circle: 500,
 };
 
 export const PLAN_LABELS: Record<string, string> = {
@@ -68,9 +68,9 @@ export function getCreditLimit(profile: {
   is_lifetime?: boolean | null;
   bonus_credits?: number | null;
 }): number {
-  // Founder's Circle / lifetime always get 600
+  // Founder's Circle / lifetime always get 500
   if (profile.is_lifetime || profile.plan === "founder_circle") {
-    return 600 + (profile.bonus_credits ?? 0);
+    return 500 + (profile.bonus_credits ?? 0);
   }
 
   const base = PLAN_LIMITS[profile.plan ?? "free"] ?? 50;

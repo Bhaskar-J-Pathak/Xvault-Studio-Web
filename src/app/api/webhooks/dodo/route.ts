@@ -134,10 +134,19 @@ export async function POST(req: NextRequest) {
       case "subscription.cancelled":
       case "subscription.canceled": {
         if (userId) {
-          await supabaseAdmin
+          // Never downgrade lifetime members — Dodo may fire this for one-time payments
+          const { data: profile } = await supabaseAdmin
             .from("profiles")
-            .update({ plan: "free", subscription_status: "cancelled" })
-            .eq("id", userId);
+            .select("is_lifetime")
+            .eq("id", userId)
+            .single();
+
+          if (!profile?.is_lifetime) {
+            await supabaseAdmin
+              .from("profiles")
+              .update({ plan: "free", subscription_status: "cancelled" })
+              .eq("id", userId);
+          }
         }
         break;
       }

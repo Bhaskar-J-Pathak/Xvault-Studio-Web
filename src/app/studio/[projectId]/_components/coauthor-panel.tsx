@@ -297,27 +297,51 @@ export default function CoauthorPanel({
   // ─── Slim mode ──────────────────────────────────────────────────────────────
   if (slim) {
     return (
-      <div id={id} className="flex flex-col h-full border-l border-neutral-200 bg-[#FAFAF8] w-[52px] items-center py-4 gap-3">
+      <>
+        {/* Desktop: collapsed strip */}
+        <div id={id} className="hidden md:flex flex-col h-full border-l border-neutral-200 bg-[#FAFAF8] w-[52px] items-center py-4 gap-3">
+          <button
+            onClick={() => onSlimChange(false)}
+            className="text-neutral-400 hover:text-neutral-700 transition-colors"
+            title={`Open ${coauthor.name}`}
+          >
+            <ChevronRight size={18} />
+          </button>
+          {lastAssistantMsg && (
+            <div
+              className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"
+              title="New message from your co-author"
+            />
+          )}
+        </div>
+        {/* Mobile: floating action button */}
         <button
+          id={id}
           onClick={() => onSlimChange(false)}
-          className="text-neutral-400 hover:text-neutral-700 transition-colors"
-          title={`Open ${coauthor.name}`}
+          className="md:hidden fixed bottom-5 right-4 z-40 w-12 h-12 rounded-full bg-[#1A1A1A] text-white shadow-lg flex items-center justify-center transition-transform active:scale-95"
+          aria-label={`Open ${coauthor.name}`}
         >
-          <ChevronRight size={18} />
+          <span className="text-sm font-semibold">{coauthor.name.charAt(0).toUpperCase()}</span>
+          {lastAssistantMsg && (
+            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-amber-400 border-2 border-white" />
+          )}
         </button>
-        {lastAssistantMsg && (
-          <div
-            className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"
-            title="New message from your co-author"
-          />
-        )}
-      </div>
+      </>
     );
   }
 
   // ─── Full panel ─────────────────────────────────────────────────────────────
   return (
-    <div id={id} className="flex flex-col h-full border-l border-neutral-200 bg-[#FAFAF8] w-[360px] flex-shrink-0">
+    <div id={id} className="
+      flex flex-col border-l border-neutral-200 bg-[#FAFAF8]
+      fixed inset-x-0 bottom-0 z-50 h-[78dvh] rounded-t-2xl shadow-2xl
+      md:relative md:inset-auto md:h-full md:rounded-none md:shadow-none md:w-[360px] md:flex-shrink-0
+    ">
+      {/* Mobile drag handle */}
+      <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
+        <div className="w-8 h-1 rounded-full bg-neutral-200" />
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200">
         <div className="flex items-center gap-2">
@@ -473,7 +497,8 @@ export default function CoauthorPanel({
           </button>
         </div>
         <p className="text-[10px] text-neutral-400 mt-1.5 text-center">
-          Enter to send · Shift+Enter for newline
+          <span className="hidden md:inline">Enter to send · Shift+Enter for newline</span>
+          <span className="md:hidden">Tap send to message</span>
         </p>
       </div>
 
@@ -523,10 +548,10 @@ function MessageBubble({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {hovered && !msg.pending && (
+        {(hovered || true) && !msg.pending && (
           <button
             onClick={() => onDelete(msg.id)}
-            className="self-center p-0.5 text-neutral-300 hover:text-red-400 transition-colors flex-shrink-0"
+            className="self-center p-0.5 text-neutral-200 hover:text-red-400 transition-colors flex-shrink-0 md:opacity-0 md:group-hover:opacity-100"
             title="Delete message"
           >
             <X size={12} />
@@ -589,10 +614,10 @@ function MessageBubble({
           </div>
         )}
       </div>
-      {hovered && !msg.pending && (
+      {!msg.pending && (
         <button
           onClick={() => onDelete(msg.id)}
-          className="self-start mt-1.5 p-0.5 text-neutral-300 hover:text-red-400 transition-colors flex-shrink-0"
+          className="self-start mt-1.5 p-0.5 text-neutral-300 hover:text-red-400 transition-colors flex-shrink-0 md:opacity-0 md:group-hover:opacity-100"
           title="Delete message"
         >
           <X size={12} />

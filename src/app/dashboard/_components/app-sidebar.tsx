@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, User, LogOut, Zap, Crown, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, User, LogOut, Zap, Crown, Sun, Moon, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { isInTrial, trialDaysLeft, PLAN_LABELS } from "@/lib/supabase";
 import type { Profile } from "@/lib/supabase";
@@ -17,9 +17,11 @@ const NAV = [
 interface Props {
   profile: Profile | null;
   email: string;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export default function AppSidebar({ profile, email }: Props) {
+export default function AppSidebar({ profile, email, isMobileOpen, onMobileClose }: Props) {
   const pathname = usePathname();
   const router   = useRouter();
   const { theme, toggle } = useTheme();
@@ -37,16 +39,29 @@ export default function AppSidebar({ profile, email }: Props) {
   }
 
   return (
-    <aside className="w-[216px] shrink-0 flex flex-col h-screen bg-white dark:bg-[#100E1D] border-r border-black/[0.06] dark:border-white/[0.06]">
+    <aside className={`
+      fixed inset-y-0 left-0 z-50 w-[216px] shrink-0 flex flex-col h-[100dvh]
+      bg-white dark:bg-[#100E1D] border-r border-black/[0.06] dark:border-white/[0.06]
+      transition-transform duration-300 ease-in-out
+      md:relative md:translate-x-0 md:z-auto
+      ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+    `}>
 
       {/* Logo */}
-      <div className="h-[52px] flex items-center px-4 border-b border-black/[0.04] dark:border-white/[0.04] shrink-0">
+      <div className="h-[52px] flex items-center justify-between px-4 border-b border-black/[0.04] dark:border-white/[0.04] shrink-0">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image src="/XVault.svg" alt="" width={20} height={20} />
           <span className="font-semibold text-[13px] tracking-tight text-[#0F0F0F] dark:text-[#EDEBF0]">
             Xvault Studio
           </span>
         </Link>
+        <button
+          onClick={onMobileClose}
+          className="md:hidden p-1 rounded-lg text-[#A1A1AA] dark:text-white/30 hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors"
+          aria-label="Close menu"
+        >
+          <X size={14} strokeWidth={2} />
+        </button>
       </div>
 
       {/* Nav */}

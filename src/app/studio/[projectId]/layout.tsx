@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getUser, createServerSupabaseClient } from "@/lib/auth";
-import StudioSidebar from "./_components/studio-sidebar";
+import StudioShell from "./_components/studio-shell";
 
 export const metadata: Metadata = {
   title: "Studio",
@@ -38,13 +38,12 @@ export default async function StudioLayout({
     .order("position", { ascending: true });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
-      <StudioSidebar
-        projectId={projectId}
-        projectTitle={project.title}
-        initialChapters={chapters ?? []}
-      />
-      <main className="flex-1 overflow-hidden">{children}</main>
-    </div>
+    <StudioShell
+      projectId={projectId}
+      projectTitle={project.title}
+      initialChapters={chapters ?? []}
+    >
+      {children}
+    </StudioShell>
   );
 }

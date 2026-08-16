@@ -99,7 +99,7 @@ export default async function DashboardPage() {
   return (
     <>
       <ReferralLinker />
-      <div className="max-w-[900px] mx-auto px-8 py-8 space-y-8">
+      <div className="max-w-[900px] mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-4">
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
         )}
 
         {/* ── Stats ── */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <StatCard
             label="Projects"
             value={projects.length.toString()}

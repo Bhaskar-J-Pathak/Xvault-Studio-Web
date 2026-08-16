@@ -64,8 +64,7 @@ const PLANS: Plan[] = [
     badge: "ONLY 30 SEATS",
     isLifetime: true,
     features: [
-      { text: "Everything in Pro plan" },
-      { text: "600 AI credits / month (resets)" },
+      { text: "500 AI credits / month (resets)" },
       { text: "Unlimited active manuscripts" },
       { text: "Direct access to founder (lifetime)" },
       { text: "Priority feature requests" },

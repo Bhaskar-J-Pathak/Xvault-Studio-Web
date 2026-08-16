@@ -245,8 +245,13 @@ export default function BibleView({
       ),
     ];
 
-    const results = await Promise.all(ops);
-    const allOk   = results.every(Boolean);
+    let allOk = false;
+    try {
+      const results = await Promise.all(ops);
+      allOk = results.every(Boolean);
+    } catch (err) {
+      console.error("[bible] save failed:", err);
+    }
 
     setSaveStatus(allOk ? "saved" : "error");
     savedResetRef.current = setTimeout(() => setSaveStatus("idle"), 2500);

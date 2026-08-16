@@ -60,7 +60,22 @@
       "WebFetch(domain:www.quotidianwriter.com)",
       "WebFetch(domain:www.authorbrookepassmore.com)",
       "WebFetch(domain:www.savannahgilbo.com)",
-      "WebFetch(domain:developers.google.com)"
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:x.feedspot.com)",
+      "WebFetch(domain:www.reddit.com)",
+      "WebFetch(domain:thehiveindex.com)",
+      "WebFetch(domain:www.writersdigest.com)",
+      "WebFetch(domain:tweetstorm.ai)",
+      "WebFetch(domain:nowastedink.substack.com)",
+      "WebFetch(domain:www.growreddit.com)",
+      "WebFetch(domain:scribecount.com)",
+      "WebFetch(domain:gummysearch.com)",
+      "WebFetch(domain:bookriot.com)",
+      "WebFetch(domain:crafty.house)",
+      "WebFetch(domain:forthwrite.substack.com)",
+      "WebFetch(domain:toffu.ai)",
+      "WebFetch(domain:x.com)",
+      "WebFetch(domain:twitter.com)"
     ]
   }
 }

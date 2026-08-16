@@ -53,13 +53,6 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: true, summary: chapter.summary, skipped: true });
   }
 
-  // First-time auto-summary (force=false, no existing summary) is free.
-  // Forced regeneration costs 1 credit.
-  if (force) {
-    const { block } = await checkRateLimit(user.id, createServiceClient(), 1);
-    if (block) return block;
-  }
-
   const text = lexicalToText(chapter.content);
   const wordCount = text.split(/\s+/).filter(Boolean).length;
   if (wordCount < 100) {
@@ -102,6 +95,13 @@ Rules: specific and factual, past tense, no editorializing, no spoilers framing.
 
   summary = summary.trim();
   if (!summary) return Response.json({ error: "Empty summary" }, { status: 500 });
+
+  // Deduct credit only after AI succeeds — forced regenerations cost 1 credit.
+  // First-time auto-summaries (force=false) are free.
+  if (force) {
+    const { block } = await checkRateLimit(user.id, createServiceClient(), 1);
+    if (block) return block;
+  }
 
   await supabase
     .from("chapters")

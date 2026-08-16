@@ -30,6 +30,8 @@ interface Props {
   projectId: string;
   projectTitle: string;
   initialChapters: Chapter[];
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 function formatWords(n: number) {
@@ -41,6 +43,8 @@ export default function StudioSidebar({
   projectId,
   projectTitle,
   initialChapters,
+  isMobileOpen,
+  onMobileClose,
 }: Props) {
   const router   = useRouter();
   const params   = useParams<{ chapterId?: string }>();
@@ -132,9 +136,15 @@ export default function StudioSidebar({
   );
 
   return (
-    <aside className="w-[210px] shrink-0 flex flex-col h-screen bg-[#F7F6F4] border-r border-black/[0.06]">
+    <aside className={`
+      fixed inset-y-0 left-0 z-50 w-[210px] shrink-0 flex flex-col h-[100dvh]
+      bg-[#F7F6F4] border-r border-black/[0.06]
+      transition-transform duration-300 ease-in-out
+      md:relative md:translate-x-0 md:z-auto
+      ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+    `}>
       {/* Back to dashboard */}
-      <div className="px-3 pt-4 pb-2">
+      <div className="px-3 pt-4 pb-2 flex items-center justify-between">
         <Link
           href="/dashboard"
           className="flex items-center gap-1.5 text-xs text-[#1A1A1A]/45 hover:text-[#1A1A1A]/70 transition-colors"
@@ -142,6 +152,13 @@ export default function StudioSidebar({
           <ArrowLeft size={12} />
           Dashboard
         </Link>
+        <button
+          onClick={onMobileClose}
+          className="md:hidden p-1 rounded-lg text-[#1A1A1A]/30 hover:text-[#1A1A1A]/60 hover:bg-black/[0.05] transition-colors"
+          aria-label="Close"
+        >
+          <X size={13} />
+        </button>
       </div>
 
       {/* Project title */}
@@ -246,9 +263,9 @@ export default function StudioSidebar({
                       setConfirmDeleteId(null);
                       setOpenMenuId(openMenuId === chapter.id ? null : chapter.id);
                     }}
-                    className={`p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity ${
+                    className={`p-0.5 rounded transition-opacity ${
                       isActive ? "text-white/60 hover:text-white" : "text-[#1A1A1A]/40 hover:text-[#1A1A1A]"
-                    }`}
+                    } opacity-100 md:opacity-0 md:group-hover:opacity-100`}
                   >
                     <MoreHorizontal size={13} />
                   </button>
