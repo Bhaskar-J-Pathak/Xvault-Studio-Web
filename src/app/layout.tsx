@@ -23,17 +23,52 @@ export const metadata: Metadata = {
   description:
     "A browser-based writing studio for novelists. Your AI co-author lives alongside your canvas, loaded with your entire manuscript, so it always knows your characters, your world, and where the story is going. Free 14-day trial, no credit card.",
   keywords: [
-    "AI writing tool for novels",
+    // Primary — high-volume, high-intent
+    "AI novel writing software",
+    "AI writing tool for novelists",
+    "novel writing app",
+    "fiction writing software",
+    "AI writing assistant for authors",
     "AI co-author for fiction",
-    "plot thread tracker for writers",
-    "world building tool fiction",
-    "novel writing software",
-    "fiction writing app",
-    "character consistency checker writing",
-    "AI ghostwriting",
-    "story bible",
+
+    // Feature-specific long-tail
+    "AI that reads your entire manuscript",
+    "story bible software for writers",
+    "world building software for novelists",
+    "character tracker for fiction writers",
+    "plot thread tracker for novels",
+    "manuscript-aware AI writing assistant",
+    "AI ghostwriting for fiction",
+    "novel planning and drafting software",
+    "character consistency AI for writers",
+    "novel writing studio online",
+    "browser-based novel writing software",
+    "AI story bible with semantic search",
+    "automatic character extraction from manuscript",
+    "world board for novels",
+    "zen writing mode for authors",
+    "global character rename tool",
+    "dead branch detection fiction",
+
+    // Competitor alternatives (people searching for these are your audience)
+    "Sudowrite alternative",
+    "NovelAI alternative",
+    "NovelCrafter alternative",
+    "Scrivener alternative online",
+    "Plottr alternative",
+
+    // Audience / use-case
     "NaNoWriMo writing app",
+    "writing app for fiction authors",
+    "indie author writing software",
+    "self-publishing writing tool",
+    "fantasy novel writing software",
+    "AI writing tool for book authors",
+    "novel writing tool free trial",
+
+    // Brand
     "xvault studio",
+    "xvault",
   ],
   authors: [{ name: "Xvault Studio", url: "https://xvault.dev" }],
   creator: "Xvault Studio",
