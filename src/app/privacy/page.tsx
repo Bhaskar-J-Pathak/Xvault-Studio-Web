@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy Policy | Xvault Studio",
   description: "How Xvault Studio collects, uses, and protects your data.",
+  alternates: { canonical: "https://xvault.dev/privacy" },
 };
 
 const EFFECTIVE_DATE = "June 15, 2026";

@@ -5,9 +5,11 @@ import { ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "Xvault vs Other AI Writing Tools: Honest Comparisons",
   description: "How does Xvault Studio compare to Sudowrite, NovelCrafter, and NovelAI? Honest side-by-side comparisons of pricing, features, and manuscript memory.",
+  alternates: { canonical: "https://xvault.dev/compare" },
   openGraph: {
     title: "Xvault vs Other AI Writing Tools: Honest Comparisons",
     description: "Honest side-by-side comparisons of AI writing tools for novelists. Pricing, features, manuscript memory, and content restrictions.",
+    url: "https://xvault.dev/compare",
     type: "website",
   },
 };

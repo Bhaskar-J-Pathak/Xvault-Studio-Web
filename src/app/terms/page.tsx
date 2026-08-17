@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Terms of Service | Xvault Studio",
   description: "The terms that govern your use of Xvault Studio.",
+  alternates: { canonical: "https://xvault.dev/terms" },
 };
 
 const EFFECTIVE_DATE = "June 15, 2026";

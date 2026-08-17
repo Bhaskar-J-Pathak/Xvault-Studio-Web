@@ -7,6 +7,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Pricing | Xvault Studio",
   description: "Simple pricing for writers. Free during public beta.",
+  alternates: { canonical: "https://xvault.dev/pricing" },
 };
 
 export default async function PricingPage() {

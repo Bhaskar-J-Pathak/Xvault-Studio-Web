@@ -38,7 +38,6 @@ export const metadata: Metadata = {
   authors: [{ name: "Xvault Studio", url: "https://xvault.dev" }],
   creator: "Xvault Studio",
   metadataBase: new URL("https://xvault.dev"),
-  alternates: { canonical: "https://xvault.dev" },
   openGraph: {
     title: "Xvault Studio | AI Writing Studio for Novelists",
     description:

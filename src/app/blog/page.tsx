@@ -5,9 +5,11 @@ import { getAllPosts, formatDate } from "@/lib/blog";
 export const metadata: Metadata = {
   title: "Blog | Xvault Studio",
   description: "Writing craft, AI tools for novelists, and the thinking behind Xvault Studio.",
+  alternates: { canonical: "https://xvault.dev/blog" },
   openGraph: {
     title: "Blog | Xvault Studio",
     description: "Writing craft, AI tools for novelists, and the thinking behind Xvault Studio.",
+    url: "https://xvault.dev/blog",
     type: "website",
   },
 };
