@@ -102,12 +102,12 @@ export default async function DashboardPage() {
       <div className="max-w-[900px] mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
         {/* ── Header ── */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex items-start justify-between gap-4 min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold text-[#A1A1AA] dark:text-white/30 uppercase tracking-widest mb-1">
               {greeting}
             </p>
-            <h1 className="text-[22px] font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight leading-tight">
+            <h1 className="text-[22px] font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight leading-tight truncate">
               {name}
             </h1>
             <p className="text-[13px] text-[#71717A] dark:text-white/40 mt-1">
@@ -116,10 +116,12 @@ export default async function DashboardPage() {
                 : `${projects.length} project${projects.length !== 1 ? "s" : ""} · ${formatWords(totalWords)} words written`}
             </p>
           </div>
-          <DashboardClient
-            needsOnboarding={needsOnboarding}
-            isBeta={process.env.BETA_MODE === "true"}
-          />
+          <div className="flex-shrink-0">
+            <DashboardClient
+              needsOnboarding={needsOnboarding}
+              isBeta={process.env.BETA_MODE === "true"}
+            />
+          </div>
         </div>
 
         {/* ── Trial banner ── */}

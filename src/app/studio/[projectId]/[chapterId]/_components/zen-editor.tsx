@@ -21,7 +21,7 @@ interface CursorContext {
   selectedText: string;    // selected text, empty if no selection
 }
 import { createClient } from "@/lib/supabase";
-import { Loader2, Wand2 } from "lucide-react";
+import { Loader2, Wand2, X } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
 import CoauthorSetup from "@/app/studio/[projectId]/_components/coauthor-setup";
@@ -293,6 +293,7 @@ interface CoAuthorPluginProps {
   ghostOriginalText:    string;   // original selected text for rewrite accept
   onGhostAccepted:      () => void;
   onGhostDismissed:     () => void;
+  acceptTrigger:        number;   // increment from outside to trigger accept (mobile)
 }
 
 function CoAuthorPlugin({
@@ -307,6 +308,7 @@ function CoAuthorPlugin({
   ghostOriginalText,
   onGhostAccepted,
   onGhostDismissed,
+  acceptTrigger,
 }: CoAuthorPluginProps) {
   const [editor] = useLexicalComposerContext();
 
@@ -334,6 +336,59 @@ function CoAuthorPlugin({
   onGhostAcceptedRef.current = onGhostAccepted;
   const onGhostDismissedRef  = useRef(onGhostDismissed);
   onGhostDismissedRef.current = onGhostDismissed;
+
+  const acceptTriggerSeenRef = useRef(0);
+
+  // Shared accept logic — called from keyboard (Tab) and mobile button
+  const doAcceptRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    doAcceptRef.current = () => {
+      const suggestion = ghostSuggestionRef.current;
+      if (!suggestion) return;
+      const mode = ghostModeRef.current;
+      const originalText = ghostOriginalTextRef.current;
+
+      editor.update(() => {
+        if (mode === "rewrite" && originalText) {
+          const root = $getRoot();
+          function replaceInNode(node: ReturnType<typeof $getRoot>): boolean {
+            const type = (node as { getType: () => string }).getType?.();
+            if (type === "text") {
+              const textNode = node as unknown as { getTextContent: () => string; setTextContent: (t: string) => void; getKey: () => string };
+              const text = textNode.getTextContent();
+              const idx = text.indexOf(originalText);
+              if (idx !== -1) {
+                textNode.setTextContent(text.slice(0, idx) + suggestion + text.slice(idx + originalText.length));
+                return true;
+              }
+            }
+            if ("getChildren" in node) {
+              for (const child of (node as { getChildren: () => ReturnType<typeof $getRoot>[] }).getChildren()) {
+                if (replaceInNode(child)) return true;
+              }
+            }
+            return false;
+          }
+          const replaced = replaceInNode(root as ReturnType<typeof $getRoot>);
+          if (!replaced) {
+            const sel = $getSelection();
+            if ($isRangeSelection(sel)) sel.insertText(suggestion);
+          }
+        } else {
+          const sel = $getSelection();
+          if ($isRangeSelection(sel)) sel.insertText(suggestion);
+        }
+      });
+      onGhostAcceptedRef.current();
+    };
+  }, [editor]);
+
+  // Watch accept trigger from parent (mobile button)
+  useEffect(() => {
+    if (acceptTrigger === 0 || acceptTrigger === acceptTriggerSeenRef.current) return;
+    acceptTriggerSeenRef.current = acceptTrigger;
+    doAcceptRef.current();
+  }, [acceptTrigger]);
 
   // Track recent text + proactive observer
   useEffect(() => {
@@ -470,47 +525,7 @@ function CoAuthorPlugin({
         if (e.key === "Tab" && ghostSuggestionRef.current) {
           e.preventDefault();
           e.stopPropagation();
-          const suggestion = ghostSuggestionRef.current;
-          const mode = ghostModeRef.current;
-          const originalText = ghostOriginalTextRef.current;
-
-          editor.update(() => {
-            if (mode === "rewrite" && originalText) {
-              // Find and replace the original selected text in the document
-              const root = $getRoot();
-              function replaceInNode(node: ReturnType<typeof $getRoot>): boolean {
-                const type = (node as { getType: () => string }).getType?.();
-                if (type === "text") {
-                  const textNode = node as unknown as { getTextContent: () => string; setTextContent: (t: string) => void; getKey: () => string };
-                  const text = textNode.getTextContent();
-                  const idx = text.indexOf(originalText);
-                  if (idx !== -1) {
-                    textNode.setTextContent(
-                      text.slice(0, idx) + suggestion + text.slice(idx + originalText.length)
-                    );
-                    return true;
-                  }
-                }
-                if ("getChildren" in node) {
-                  for (const child of (node as { getChildren: () => ReturnType<typeof $getRoot>[] }).getChildren()) {
-                    if (replaceInNode(child)) return true;
-                  }
-                }
-                return false;
-              }
-              const replaced = replaceInNode(root as ReturnType<typeof $getRoot>);
-              if (!replaced) {
-                // Fallback: insert at cursor
-                const sel = $getSelection();
-                if ($isRangeSelection(sel)) sel.insertText(suggestion);
-              }
-            } else {
-              // write / continue: insert at current cursor
-              const sel = $getSelection();
-              if ($isRangeSelection(sel)) sel.insertText(suggestion);
-            }
-          });
-          onGhostAcceptedRef.current();
+          doAcceptRef.current();
           return;
         }
 
@@ -636,6 +651,7 @@ export default function ZenEditor({
   const [ghostMode,         setGhostMode]         = useState<GhostMode>("write");
   const [ghostOriginalText, setGhostOriginalText] = useState("");
   const [ghostLoading,      setGhostLoading]      = useState(false);
+  const [triggerAcceptGhost, setTriggerAcceptGhost] = useState(0);
 
   const handleCreditUpdate = useCallback((remaining: number) => {
     setCredits(remaining);
@@ -703,6 +719,13 @@ export default function ZenEditor({
       setShowCoauthorSetup(true);
       return;
     }
+    if (!coauthorSlim) {
+      // Already open — toggle closed
+      setCoauthorSlim(true);
+      userClosedPanel.current = true;
+      localStorage.setItem("xv_coauthor_slim", "true");
+      return;
+    }
     userClosedPanel.current = false;
     setCoauthorSlim(false);
     localStorage.setItem("xv_coauthor_slim", "false");
@@ -735,7 +758,7 @@ export default function ZenEditor({
             <button
               onClick={openCoauthorPanel}
               title={coauthor ? `${coauthor.name} (co-author)` : "Set up co-author"}
-              className={`w-6 h-6 flex items-center justify-center rounded-lg transition-colors ${
+              className={`hidden md:flex w-6 h-6 items-center justify-center rounded-lg transition-colors ${
                 coauthor && !coauthorSlim
                   ? "bg-amber-100 text-amber-600"
                   : "text-[#1A1A1A]/30 hover:text-[#1A1A1A]/60 hover:bg-black/[0.05]"
@@ -787,6 +810,7 @@ export default function ZenEditor({
                 originalText={ghostOriginalText}
                 coauthorName={coauthor?.name ?? "Alex"}
                 onDismiss={() => setGhostSuggestion(null)}
+                onAccept={() => setTriggerAcceptGhost(t => t + 1)}
               />
             )}
           </div>
@@ -832,6 +856,7 @@ export default function ZenEditor({
             ghostOriginalText={ghostOriginalText}
             onGhostAccepted={() => { setGhostSuggestion(null); setGhostOriginalText(""); }}
             onGhostDismissed={() => { setGhostSuggestion(null); setGhostOriginalText(""); }}
+            acceptTrigger={triggerAcceptGhost}
           />
           <ContentReloadPlugin
             pendingContent={pendingReloadContent}
@@ -867,7 +892,7 @@ export default function ZenEditor({
                 {credits <= 0 ? "No credits · Upgrade" : `${credits} credit${credits !== 1 ? "s" : ""}${credits <= 20 ? " · Low" : ""}`}
               </span>
             </button>
-            <span className="text-xs text-[#1A1A1A]/40 font-mono">
+            <span className="hidden md:inline text-xs text-[#1A1A1A]/40 font-mono">
               Ctrl+K write · Tab accept · Esc dismiss
             </span>
           </div>
@@ -896,6 +921,18 @@ export default function ZenEditor({
           </div>
         )}
       </div>
+
+      {/* ── Mobile: Write FAB (✦) — stacked above the co-author bubble ── */}
+      {(!coauthor || coauthorSlim) && (
+        <button
+          id="tutorial-write-fab"
+          className={`md:hidden fixed ${coauthor ? "bottom-[7.5rem]" : "bottom-16"} right-4 z-40 w-12 h-12 rounded-full bg-white border border-neutral-200 shadow-lg flex items-center justify-center active:scale-95 transition-transform`}
+          onClick={() => handleCtrlK({ beforeCursor: "", afterCursor: "", selectedText: "" })}
+          aria-label="Write with AI"
+        >
+          <Wand2 size={18} className="text-[#1A1A1A]" />
+        </button>
+      )}
 
       {/* ── Co-Author panel — always present when configured, just collapsible ── */}
       {coauthor && (
@@ -994,16 +1031,24 @@ function InlineCommandBar({
       <div className="rounded-xl border border-neutral-300 bg-white shadow-2xl overflow-hidden">
         {/* Context badge */}
         <div className="px-3.5 py-1.5 border-b border-neutral-100 bg-neutral-50 flex items-center gap-2">
-          <span className="text-[11px] text-neutral-400 font-mono">
+          <span className="text-[11px] text-neutral-400 font-mono flex-1">
             {hasSelection
               ? `✦ Rewriting ${selWordCount} word${selWordCount !== 1 ? "s" : ""}`
               : "✦ Write at cursor"}
           </span>
           {hasSelection && (
-            <span className="text-[11px] text-neutral-300 italic truncate max-w-[300px]">
+            <span className="hidden md:inline text-[11px] text-neutral-300 italic truncate max-w-[300px]">
               "{context.selectedText.trim().slice(0, 60)}{context.selectedText.length > 60 ? "…" : ""}"
             </span>
           )}
+          {/* Mobile: close button */}
+          <button
+            onClick={onCancel}
+            className="md:hidden flex-shrink-0 p-0.5 text-neutral-400 hover:text-neutral-700 transition-colors"
+            aria-label="Cancel"
+          >
+            <X size={14} />
+          </button>
         </div>
 
         {/* Input row */}
@@ -1021,7 +1066,8 @@ function InlineCommandBar({
             }
             className="flex-1 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-transparent"
           />
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Desktop: keyboard hints */}
+          <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
             <kbd className="text-[10px] font-mono bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">
               ↵ write
             </kbd>
@@ -1029,6 +1075,14 @@ function InlineCommandBar({
               Esc
             </kbd>
           </div>
+          {/* Mobile: submit button */}
+          <button
+            onClick={() => { const v = input.trim(); if (v) onSubmit(v); }}
+            disabled={!input.trim()}
+            className="md:hidden flex-shrink-0 px-3 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-semibold disabled:opacity-30 transition-opacity"
+          >
+            Write
+          </button>
         </div>
       </div>
     </div>
@@ -1044,6 +1098,7 @@ function GhostTextOverlay({
   originalText,
   coauthorName,
   onDismiss,
+  onAccept,
 }: {
   loading: boolean;
   suggestion: string | null;
@@ -1051,6 +1106,7 @@ function GhostTextOverlay({
   originalText: string;
   coauthorName: string;
   onDismiss: () => void;
+  onAccept?: () => void;
 }) {
   const wordCount = suggestion ? suggestion.trim().split(/\s+/).length : 0;
   const modeLabel =
@@ -1116,17 +1172,35 @@ function GhostTextOverlay({
 
         {/* Actions */}
         {suggestion && !loading && (
-          <div className="flex items-center gap-2 px-4 py-2.5 border-t border-neutral-100 bg-neutral-50">
-            <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Tab</kbd>
-            <span className="text-xs text-neutral-500">
-              {mode === "rewrite" ? "to replace" : "to insert"}
-            </span>
-            <span className="text-neutral-300 mx-1">·</span>
-            <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Esc</kbd>
-            <span className="text-xs text-neutral-500">to dismiss</span>
-            <span className="text-neutral-300 mx-1">·</span>
-            <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Ctrl+K</kbd>
-            <span className="text-xs text-neutral-500">to refine</span>
+          <div className="border-t border-neutral-100 bg-neutral-50">
+            {/* Desktop: keyboard hints */}
+            <div className="hidden md:flex items-center gap-2 px-4 py-2.5">
+              <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Tab</kbd>
+              <span className="text-xs text-neutral-500">
+                {mode === "rewrite" ? "to replace" : "to insert"}
+              </span>
+              <span className="text-neutral-300 mx-1">·</span>
+              <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Esc</kbd>
+              <span className="text-xs text-neutral-500">to dismiss</span>
+              <span className="text-neutral-300 mx-1">·</span>
+              <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Ctrl+K</kbd>
+              <span className="text-xs text-neutral-500">to refine</span>
+            </div>
+            {/* Mobile: touch buttons */}
+            <div className="md:hidden flex gap-2 px-4 py-2.5">
+              <button
+                onClick={onAccept}
+                className="flex-1 py-2 rounded-lg bg-neutral-900 text-white text-sm font-semibold active:bg-neutral-700 transition-colors"
+              >
+                {mode === "rewrite" ? "Replace" : "Insert"}
+              </button>
+              <button
+                onClick={onDismiss}
+                className="flex-1 py-2 rounded-lg bg-neutral-100 text-neutral-700 text-sm font-semibold active:bg-neutral-200 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
       </div>

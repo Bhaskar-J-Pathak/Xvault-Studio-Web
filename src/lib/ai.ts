@@ -3,40 +3,75 @@
  * Never import this file in client components.
  */
 
+import { GoogleAuth } from "google-auth-library";
+
 // ---------------------------------------------------------------------------
-// Gemini
+// Vertex AI — auth & base URL
 // ---------------------------------------------------------------------------
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY!;
+const PROJECT  = process.env.GOOGLE_CLOUD_PROJECT!;
+const LOCATION = process.env.VERTEX_LOCATION ?? "us-central1";
+const VERTEX   = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/${LOCATION}/publishers/google/models`;
+
+// Module-level singleton — reused across warm Vercel invocations.
+let _auth: GoogleAuth | null = null;
+
+function getAuth(): GoogleAuth {
+  if (!_auth) {
+    _auth = new GoogleAuth({
+      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!),
+      scopes: "https://www.googleapis.com/auth/cloud-platform",
+    });
+  }
+  return _auth;
+}
+
+async function getBearerToken(): Promise<string> {
+  const client = await getAuth().getClient();
+  const t = await client.getAccessToken();
+  return t.token!;
+}
+
+// ---------------------------------------------------------------------------
+// Gemini — Embedding
+// ---------------------------------------------------------------------------
 
 /**
- * Embed a text string using gemini-embedding-001 (768-dim).
+ * Embed a text string using text-embedding-005 (768-dim) via Vertex AI.
  * Used for Story Bible semantic search.
+ *
+ * NOTE: Switched from gemini-embedding-001 (AI Studio) to text-embedding-005
+ * (Vertex AI). Both are 768-dim but different vector spaces — existing story
+ * bible embeddings in Supabase must be re-generated via embed-project.
  */
 export async function geminiEmbed(text: string): Promise<number[]> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${GEMINI_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "models/gemini-embedding-001",
-        content: { parts: [{ text }] },
-      }),
-    }
-  );
+  const tok = await getBearerToken();
+  const res = await fetch(`${VERTEX}/text-embedding-005:predict`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${tok}`,
+    },
+    body: JSON.stringify({
+      instances: [{ content: text, task_type: "RETRIEVAL_DOCUMENT" }],
+    }),
+  });
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Gemini embed failed (${res.status}): ${body.slice(0, 200)}`);
+    throw new Error(`Vertex embed failed (${res.status}): ${body.slice(0, 200)}`);
   }
 
   const data = await res.json();
-  return data.embedding.values as number[];
+  return data.predictions[0].embeddings.values as number[];
 }
 
+// ---------------------------------------------------------------------------
+// Gemini — Generation
+// ---------------------------------------------------------------------------
+
 /**
- * Stream a Gemini response (gemini-2.5-flash).
+ * Stream a Gemini response (gemini-2.5-flash) via Vertex AI.
  * Returns the raw SSE ReadableStream — pipe it directly to the client.
  */
 export async function geminiStream(
@@ -44,12 +79,11 @@ export async function geminiStream(
   systemPrompt?: string,
   maxTokens = 512
 ): Promise<ReadableStream<Uint8Array>> {
+  const tok = await getBearerToken();
+
   const body: Record<string, unknown> = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: {
-      maxOutputTokens: maxTokens,
-      temperature: 0.85,
-    },
+    generationConfig: { maxOutputTokens: maxTokens, temperature: 0.85 },
   };
 
   if (systemPrompt) {
@@ -57,24 +91,27 @@ export async function geminiStream(
   }
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?key=${GEMINI_KEY}&alt=sse`,
+    `${VERTEX}/gemini-2.5-flash:streamGenerateContent?alt=sse`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tok}`,
+      },
       body: JSON.stringify(body),
     }
   );
 
   if (!res.ok || !res.body) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Gemini stream failed (${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(`Vertex stream failed (${res.status}): ${text.slice(0, 200)}`);
   }
 
   return res.body;
 }
 
 /**
- * Single-shot (non-streaming) Gemini call.
+ * Single-shot (non-streaming) Gemini call via Vertex AI.
  */
 export async function geminiGenerate(
   prompt: string,
@@ -83,6 +120,8 @@ export async function geminiGenerate(
   jsonMode = false,
   model = "gemini-2.5-flash"
 ): Promise<string> {
+  const tok = await getBearerToken();
+
   const generationConfig: Record<string, unknown> = {
     maxOutputTokens: maxTokens,
     temperature: 0.7,
@@ -109,18 +148,18 @@ export async function geminiGenerate(
     body.system_instruction = { parts: [{ text: systemPrompt }] };
   }
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }
-  );
+  const res = await fetch(`${VERTEX}/${model}:generateContent`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${tok}`,
+    },
+    body: JSON.stringify(body),
+  });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Gemini generate [${model}] failed (${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(`Vertex generate [${model}] failed (${res.status}): ${text.slice(0, 200)}`);
   }
 
   const data = await res.json();
@@ -138,6 +177,8 @@ export async function geminiChat(
   maxTokens = 600,
   model = "gemini-2.5-flash"
 ): Promise<string> {
+  const tok = await getBearerToken();
+
   const generationConfig: Record<string, unknown> = {
     maxOutputTokens: maxTokens,
     temperature: 0.85,
@@ -176,18 +217,18 @@ export async function geminiChat(
     body.system_instruction = { parts: [{ text: systemPrompt }] };
   }
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }
-  );
+  const res = await fetch(`${VERTEX}/${model}:generateContent`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${tok}`,
+    },
+    body: JSON.stringify(body),
+  });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Gemini chat [${model}] failed (${res.status}): ${text.slice(0, 200)}`);
+    throw new Error(`Vertex chat [${model}] failed (${res.status}): ${text.slice(0, 200)}`);
   }
 
   const data = await res.json();

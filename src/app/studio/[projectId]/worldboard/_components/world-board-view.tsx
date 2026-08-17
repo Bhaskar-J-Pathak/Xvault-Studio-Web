@@ -200,7 +200,7 @@ export default function WorldBoardView({
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Add entity
+              <span className="hidden md:inline">Add entity</span>
             </button>
           )}
 
@@ -230,7 +230,7 @@ export default function WorldBoardView({
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                     <path d="M3 3v5h5" />
                   </svg>
-                  Re-extract chapter
+                  <span className="hidden md:inline">Re-extract chapter</span>
                 </button>
               )}
             </div>
@@ -249,7 +249,7 @@ export default function WorldBoardView({
                 <path d="M10 11v6M14 11v6" />
                 <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
               </svg>
-              Reset all
+              <span className="hidden md:inline">Reset all</span>
             </button>
           )}
         </div>

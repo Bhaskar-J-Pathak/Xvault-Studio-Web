@@ -58,6 +58,14 @@ const STEP_TARGET_ID: Record<number, string | null> = {
   8: null,
 };
 
+const MOBILE_STEP_TARGET_ID: Record<number, string | null> = {
+  1: null,
+  2: "tutorial-editor",
+  3: "tutorial-coauthor",
+  4: "tutorial-write-fab",
+  8: null,
+};
+
 // ── DB sync ───────────────────────────────────────────────────────────────────
 
 async function syncStep(step: number, done = false) {
@@ -85,6 +93,9 @@ export default function TutorialOverlay({
   const pathname = usePathname();
   const ph       = usePostHog();
 
+  // Mobile detection — stable per session (no resize handling needed)
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
   // ALL hooks first
   const [step, setStep]             = useState(initialStep);
   const [done, setDone]             = useState(initialDone);
@@ -100,8 +111,9 @@ export default function TutorialOverlay({
   // navigation needed, so we clear the target highlight ring.
   const onBiblePage     = pathname?.includes("/bible") ?? false;
   const onWorldboardPage = pathname?.includes("/worldboard") ?? false;
-  const effectiveTargetId =
-    step === 6 && onBiblePage ? null : STEP_TARGET_ID[step] ?? null;
+  const effectiveTargetId = isMobile
+    ? (MOBILE_STEP_TARGET_ID[step] ?? null)
+    : (step === 6 && onBiblePage ? null : STEP_TARGET_ID[step] ?? null);
 
   // Measure target element
   const measureTarget = useCallback(() => {
@@ -127,10 +139,10 @@ export default function TutorialOverlay({
     return () => clearTimeout(t);
   }, [step]);
 
-  // Step 3: expand co-author; auto-skip if panel never appears
+  // Step 3: expand co-author on desktop; on mobile keep slim (user taps the bubble themselves)
   useEffect(() => {
     if (step !== 3) return;
-    if (onExpandCoauthor) onExpandCoauthor();
+    if (!isMobile && onExpandCoauthor) onExpandCoauthor();
     const t1 = setTimeout(measureTarget, 350);
     const t2 = setTimeout(() => {
       if (!document.getElementById("tutorial-coauthor")) advance(4);
@@ -154,16 +166,24 @@ export default function TutorialOverlay({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatResponseReceived, step]);
 
-  // Step 4: advance only after the user has received AND dismissed/accepted a suggestion
+  // Step 4: advance only after the user has received AND dismissed/accepted a suggestion.
+  // On mobile → jump to done (8), skipping desktop-only steps 5-7.
   useEffect(() => {
     if (step !== 4) return;
     if (ghostSuggestion) {
       ghostWasShown.current = true;
     } else if (ghostWasShown.current) {
-      advance(6);
+      advance(isMobile ? 8 : 6);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ghostSuggestion, step]);
+
+  // Mobile: skip desktop-only steps 5-7 → jump straight to done (step 8)
+  useEffect(() => {
+    if (!isMobile || step < 5 || step >= 8) return;
+    advance(8);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   // (Step 5 is Global Change — no auto-advance, user clicks Next manually)
 
@@ -218,8 +238,97 @@ export default function TutorialOverlay({
 
   // ── Early exit — AFTER all hooks ──────────────────────────────────────────
   if (done || step === 0 || step >= 9) return null;
-  if (typeof window !== "undefined" && window.innerWidth < 768) return null;
 
+  // ── Mobile tutorial ────────────────────────────────────────────────────────
+  if (isMobile) {
+    const mobileContent = getMobileStepContent(step);
+    if (!mobileContent) return null;
+
+    // Step 8 (done) — full overlay modal
+    if (step === 8) {
+      return (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center pb-8 px-4 bg-black/30">
+          <div className={`bg-white rounded-2xl shadow-2xl w-full overflow-hidden transition-all duration-300 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+            <div className="h-[3px] bg-violet-500" />
+            <div className="p-6 text-center">
+              <div className="text-3xl mb-3">✦</div>
+              <h3 className="text-base font-semibold text-[#1A1A1A] mb-2">{mobileContent.title}</h3>
+              <p className="text-sm text-[#1A1A1A]/55 leading-relaxed mb-5">{mobileContent.body}</p>
+              <div className="flex flex-col gap-2">
+                <button onClick={handleStartOwnStory} className="w-full py-3 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold">
+                  Start my own story →
+                </button>
+                <button onClick={handleKeepExploring} className="w-full py-3 rounded-xl border border-black/[0.08] text-[#1A1A1A]/55 text-sm">
+                  Keep exploring the sample
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Steps 1-4 — compact card at bottom-left, FABs on bottom-right
+    return (
+      <>
+        {/* Pulsing highlight ring */}
+        {targetRect && (
+          <div
+            aria-hidden
+            className="fixed z-[99] pointer-events-none"
+            style={{
+              top: targetRect.top - 4, left: targetRect.left - 4,
+              width: targetRect.width + 8, height: targetRect.height + 8,
+              borderRadius: 10,
+              boxShadow: "0 0 0 3px rgba(139, 92, 246, 0.7), 0 0 0 6px rgba(139, 92, 246, 0.2)",
+              animation: "tutorial-pulse 2s ease-in-out infinite",
+            }}
+          />
+        )}
+        {/* Guide card — bottom-left, leaves room for FABs on right */}
+        <div className={`fixed bottom-16 left-4 right-20 z-[100] transition-all duration-300 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+          <div className="bg-white rounded-2xl shadow-xl border border-black/[0.08] overflow-hidden">
+            <div className="h-[3px] bg-black/[0.05]">
+              <div className="h-full bg-violet-500 transition-all duration-500" style={{ width: `${(step / 4) * 100}%` }} />
+            </div>
+            <div className="p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30 mb-1">Step {step} of 4</p>
+              <h3 className="text-sm font-semibold text-[#1A1A1A] leading-tight mb-1">{mobileContent.title}</h3>
+              <p className="text-[11px] text-[#1A1A1A]/55 leading-relaxed">{mobileContent.body}</p>
+              {mobileContent.hint && (
+                <div className="mt-2 px-2.5 py-1.5 bg-violet-50 border border-violet-100 rounded-lg">
+                  <p className="text-[11px] text-violet-700 font-medium">{mobileContent.hint}</p>
+                </div>
+              )}
+              {mobileContent.waiting && (
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
+                  <p className="text-[10px] text-[#1A1A1A]/40">{mobileContent.waiting}</p>
+                </div>
+              )}
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => advance(mobileContent.nextStep!)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#1A1A1A] text-white text-xs font-semibold"
+                >
+                  {mobileContent.ctaLabel ?? "Skip →"}
+                  <ArrowRight size={10} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <style>{`
+          @keyframes tutorial-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.45; }
+          }
+        `}</style>
+      </>
+    );
+  }
+
+  // ── Desktop tutorial ───────────────────────────────────────────────────────
   const content = getStepContent(step, onBiblePage, onWorldboardPage);
   if (!content) return null;
 
@@ -333,7 +442,56 @@ export default function TutorialOverlay({
   );
 }
 
-// ── Step content ───────────────────────────────────────────────────────────────
+// ── Mobile step content (4-step flow) ─────────────────────────────────────────
+
+function getMobileStepContent(step: number): StepContent | null {
+  switch (step) {
+    case 1:
+      return {
+        title: "Welcome to your sample project.",
+        body: "The Glass Meridian — 3 chapters, a full story world, and an AI co-author. Let's take a quick look.",
+        ctaLabel: "Let's go",
+        nextStep: 2,
+      };
+    case 2:
+      return {
+        title: "Tap the story to start writing.",
+        body: "Everything auto-saves as you type. Word count shows at the bottom.",
+        hint: "Tap anywhere in the story ↓",
+        waiting: "Tap anywhere in the story…",
+        ctaLabel: "Next →",
+        nextStep: 3,
+      };
+    case 3:
+      return {
+        title: "Chat with your co-author.",
+        body: "Tap the bubble (bottom-right) to open Alex — your AI co-author. Type a message and tap Send.",
+        hint: "Tap the bubble → then send a message",
+        waiting: "Waiting for Alex's reply…",
+        ctaLabel: "Next →",
+        nextStep: 4,
+      };
+    case 4:
+      return {
+        title: "AI ghostwriter — tap ✦.",
+        body: "Tap the ✦ button above the bubble, type an instruction, then tap Insert to add the text.",
+        hint: "Tap ✦ (above the co-author bubble) →",
+        waiting: "Waiting for you to try it…",
+        ctaLabel: "Next →",
+        nextStep: 8,
+      };
+    case 8:
+      return {
+        title: "You're ready to write.",
+        body: "14 days, 100 AI credits. Alex is reading everything you write. Your world builds itself.",
+        nextStep: 9,
+      };
+    default:
+      return null;
+  }
+}
+
+// ── Desktop step content ───────────────────────────────────────────────────────
 
 interface StepContent {
   title: string;

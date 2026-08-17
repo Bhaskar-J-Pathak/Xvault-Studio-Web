@@ -208,8 +208,8 @@ export default function BibleView({
       { project_id: projectId, ...patch, updated_at: new Date().toISOString() },
       { onConflict: "project_id" }
     );
-    if (error) console.error("[bible] upsert failed:", error);
-    return !error;
+    if (error?.message) console.error("[bible] upsert failed:", error);
+    return !error?.message;
   }, [projectId]);
 
   // ── Save All ──────────────────────────────────────────────────────────────

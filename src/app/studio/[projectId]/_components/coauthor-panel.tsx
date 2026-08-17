@@ -318,7 +318,7 @@ export default function CoauthorPanel({
         <button
           id={id}
           onClick={() => onSlimChange(false)}
-          className="md:hidden fixed bottom-5 right-4 z-40 w-12 h-12 rounded-full bg-[#1A1A1A] text-white shadow-lg flex items-center justify-center transition-transform active:scale-95"
+          className="md:hidden fixed bottom-16 right-4 z-40 w-12 h-12 rounded-full bg-[#1A1A1A] text-white shadow-lg flex items-center justify-center transition-transform active:scale-95"
           aria-label={`Open ${coauthor.name}`}
         >
           <span className="text-sm font-semibold">{coauthor.name.charAt(0).toUpperCase()}</span>
@@ -332,11 +332,18 @@ export default function CoauthorPanel({
 
   // ─── Full panel ─────────────────────────────────────────────────────────────
   return (
-    <div id={id} className="
-      flex flex-col border-l border-neutral-200 bg-[#FAFAF8]
-      fixed inset-x-0 bottom-0 z-50 h-[78dvh] rounded-t-2xl shadow-2xl
-      md:relative md:inset-auto md:h-full md:rounded-none md:shadow-none md:w-[360px] md:flex-shrink-0
-    ">
+    <>
+      {/* Mobile backdrop — blocks click-through and closes panel on tap outside */}
+      <div
+        className="md:hidden fixed inset-0 z-40 bg-black/20"
+        onClick={() => onSlimChange(true)}
+        aria-hidden="true"
+      />
+      <div id={id} className="
+        flex flex-col border-l border-neutral-200 bg-[#FAFAF8]
+        fixed inset-x-0 bottom-0 z-50 h-[78dvh] rounded-t-2xl shadow-2xl
+        md:relative md:inset-auto md:h-full md:rounded-none md:shadow-none md:w-[360px] md:flex-shrink-0
+      ">
       {/* Mobile drag handle */}
       <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
         <div className="w-8 h-1 rounded-full bg-neutral-200" />
@@ -524,7 +531,8 @@ export default function CoauthorPanel({
           onCancel={() => setGlobalChangePlan(null)}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
