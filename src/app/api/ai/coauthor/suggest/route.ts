@@ -134,6 +134,7 @@ INSTRUCTION: ${instruction.trim()}
 
 Rewrite ONLY the selected text according to the instruction. Match the writer's voice, POV, tense, and style exactly.
 Craft rules: no em-dashes, no AI-cliché phrases (see system rules), no bare emotion labels — show through action or detail, no adverbs on dialogue tags, write specific not vague.
+If the passage contains dialogue: every line must sound spoken not written. Characters deflect, trail off, give fragments. Use contractions. No character is too articulate for their situation.
 Output ONLY the rewritten passage — no preamble, no labels, no explanation. Aim for roughly the same length as the original unless the instruction asks for more or less.`;
 
     maxTokens = Math.max(512, Math.ceil(selectedText.split(/\s+/).length * 1.5 * 1.4));
@@ -164,6 +165,7 @@ INSTRUCTION: ${instruction.trim()}
 
 Write ${wordTarget} words of story prose to be inserted at the cursor. Match the writer's voice, POV, tense, sentence rhythm, and style exactly.
 Craft rules: no em-dashes, no AI-cliché phrases (see system rules), no bare emotion labels — ground them in action or sensation, no adverbs on dialogue tags, write specific and concrete not vague. Vary sentence length and structure.
+If the passage includes dialogue: make every line sound spoken not written. Characters deflect, trail off, give non-answers, use fragments and contractions. No one is too eloquent for their situation. Use "said" or "asked" for tags, and action beats over adverbs.
 Output ONLY the story text — no preamble, no labels, no commentary. Do not repeat the text before the cursor. Pick up naturally from it.`;
 
   } else {
@@ -218,6 +220,22 @@ ANTI-CLICHÉ RULES (strictly enforced — these are the marks of AI-generated sl
 - Avoid starting consecutive sentences with the same subject pronoun (He/She/They three times in a row is flat).
 - No filler intensifiers: "truly," "deeply," "utterly," "profoundly," "incredibly" — cut them.
 - Write specific and concrete, never vague: "the smell of diesel and wet asphalt" beats "the smell of the city."
+
+DIALOGUE RULES (enforced whenever dialogue appears):
+- Read every line of dialogue aloud in your head. If it sounds like someone writing, rewrite it until it sounds like someone speaking.
+- Real people do not finish their thoughts in neat complete sentences. They trail off with ellipses, get interrupted, change direction mid-sentence.
+- Characters almost never directly answer the question they were asked. They deflect, pivot, answer a different question, or go quiet.
+- Subtext over text. Anger is not "I'm angry." It's "Fine." followed by silence, or a suddenly very careful choice of words.
+- Every character must sound different: their vocabulary, rhythm, and sentence length should reflect their age, education, mood, and relationship to the person they are speaking to.
+- Contractions are mandatory in casual speech. "Don't" not "do not." "It's" not "it is." Only use full forms for deliberate emphasis.
+- Fragments are good dialogue. "Yeah." "No." "Tomorrow, maybe." "Forget it." These are natural.
+- Use "said" or "asked" for dialogue tags 90% of the time. Reserve other tags (whispered, snapped, called) only when the manner of delivery is genuinely surprising and cannot be shown another way.
+- Never use these hollow dialogue openers repeatedly: "Well," "Look," "Listen," "So," "Anyway," "I mean" — vary them or cut them entirely.
+- No "As you know, Bob" exposition. Characters do not explain facts to each other that both of them already know. Find another way to get information to the reader.
+- Silence is dialogue. A beat too long before answering says more than most lines.
+- Interruptions: instead of an em-dash mid-sentence, use an action beat. Show the interruption through the other character's movement or speech, then continue.
+- Avoid characters who are too eloquent under pressure. Someone terrified, furious, or grieving does not speak in well-constructed paragraphs.
+- No mirroring: if Character A says "I love you," Character B does not immediately say "I love you too" unless that irony or echo is the point.
 
 OUTPUT RULE: Output ONLY the story prose — zero preamble, zero labels, zero meta-commentary. The output will be inserted directly into the manuscript.`;
 

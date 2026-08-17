@@ -644,6 +644,51 @@ export default function ZenEditor({
     }
   }, [chapterId]);
 
+  // Share modal
+  const [showShareModal,   setShowShareModal]   = useState(false);
+  const [shareLoading,     setShareLoading]     = useState(false);
+  const [shareUrl,         setShareUrl]         = useState<string | null>(null);
+  const [shareTitle,       setShareTitle]       = useState("");
+  const [shareAuthor,      setShareAuthor]      = useState("");
+  const [shareCopied,      setShareCopied]      = useState(false);
+
+  function openShareModal() {
+    setShareTitle(`Chapter ${chapterNumber} · ${chapterTitle}`);
+    setShareUrl(null);
+    setShareCopied(false);
+    setShowShareModal(true);
+  }
+
+  async function handleCreateShare() {
+    setShareLoading(true);
+    try {
+      const res = await fetch("/api/studio/share", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          projectId,
+          chapterId,
+          excerptTitle:       shareTitle.trim() || undefined,
+          authorDisplayName:  shareAuthor.trim() || undefined,
+        }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (data.url) setShareUrl(data.url);
+    } catch {
+      // silently ignore
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  function handleCopyShareUrl() {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    });
+  }
+
   // Ghost writer (Ctrl+K)
   const [commandBarOpen,    setCommandBarOpen]    = useState(false);
   const [cursorContext,     setCursorContext]      = useState<CursorContext | null>(null);
@@ -753,6 +798,19 @@ export default function ZenEditor({
           </h1>
           <div className="flex items-center gap-2">
             <SaveIndicator status={saveStatus} />
+
+            {/* Share button */}
+            <button
+              onClick={openShareModal}
+              title="Share this chapter"
+              className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[#1A1A1A]/40 hover:text-[#1A1A1A]/70 hover:bg-black/[0.05] transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+              Share
+            </button>
 
             {/* Co-author toggle */}
             <button
@@ -965,6 +1023,122 @@ export default function ZenEditor({
           onClose={() => setShowCoauthorSetup(false)}
           initial={coauthor ? { name: coauthor.name, personality: coauthor.personality } : undefined}
         />
+      )}
+
+      {/* ── Share modal ────────────────────────────────────────────────────── */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-[min(440px,92%)] overflow-hidden">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.06]">
+              <div>
+                <h2 className="text-sm font-semibold text-[#1A1A1A]">Share this chapter</h2>
+                <p className="text-[11px] text-[#1A1A1A]/40 mt-0.5">
+                  Anyone with the link can read it. No login required.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="text-[#1A1A1A]/30 hover:text-[#1A1A1A]/60 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 flex flex-col gap-4">
+              {!shareUrl ? (
+                <>
+                  {/* Title field */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#1A1A1A]/50 mb-1.5 uppercase tracking-wide">
+                      Title shown on the page
+                    </label>
+                    <input
+                      type="text"
+                      value={shareTitle}
+                      onChange={(e) => setShareTitle(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-black/[0.10] text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-violet-200 bg-white"
+                      placeholder={`Chapter ${chapterNumber} · ${chapterTitle}`}
+                    />
+                  </div>
+
+                  {/* Author field */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#1A1A1A]/50 mb-1.5 uppercase tracking-wide">
+                      Author name <span className="normal-case text-[#1A1A1A]/30">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={shareAuthor}
+                      onChange={(e) => setShareAuthor(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-black/[0.10] text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-violet-200 bg-white"
+                      placeholder="Your pen name or real name"
+                    />
+                  </div>
+
+                  <p className="text-[11px] text-[#1A1A1A]/35">
+                    The latest saved version of this chapter will be shared.
+                  </p>
+
+                  <button
+                    onClick={handleCreateShare}
+                    disabled={shareLoading}
+                    className="w-full py-2.5 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold hover:bg-[#1A1A1A]/80 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {shareLoading ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Creating link…
+                      </>
+                    ) : (
+                      "Create share link"
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Success state */}
+                  <div className="flex flex-col items-center gap-3 py-2">
+                    <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-[#1A1A1A]">Your link is ready</p>
+                      <p className="text-[11px] text-[#1A1A1A]/40 mt-0.5">Anyone with this link can read your excerpt.</p>
+                    </div>
+                  </div>
+
+                  {/* Link display */}
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[#FAFAF8] border border-black/[0.07]">
+                    <span className="flex-1 text-[12px] font-mono text-[#1A1A1A]/60 truncate">
+                      {shareUrl}
+                    </span>
+                    <button
+                      onClick={handleCopyShareUrl}
+                      className={`shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${
+                        shareCopied
+                          ? "bg-green-500 text-white"
+                          : "bg-[#1A1A1A] text-white hover:bg-[#1A1A1A]/80"
+                      }`}
+                    >
+                      {shareCopied ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => setShowShareModal(false)}
+                    className="w-full py-2 rounded-xl text-sm text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60 transition-colors"
+                  >
+                    Done
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Tutorial overlay (steps 1-5, 8) ───────────────────────────────── */}
