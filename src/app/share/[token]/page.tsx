@@ -51,7 +51,7 @@ export default async function SharePage({ params }: Props) {
   const excerpt = await getExcerpt(token);
   if (!excerpt) notFound();
 
-  const paragraphs = excerpt.content
+  const paragraphs = (excerpt.content as string)
     .split(/\n+/)
     .map((p) => p.trim())
     .filter(Boolean);
