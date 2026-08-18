@@ -21,3 +21,7 @@ Thumbs.db
 # Editor
 .vscode/
 *.swp
+
+# Secrets — NEVER commit these
+public/gen-lang-client-*.json
+public/google*.html
