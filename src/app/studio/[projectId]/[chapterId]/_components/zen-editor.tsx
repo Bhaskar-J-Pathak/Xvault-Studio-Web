@@ -20,7 +20,8 @@ interface CursorContext {
   afterCursor: string;     // all text after cursor position
   selectedText: string;    // selected text, empty if no selection
 }
-import { createClient } from "@/lib/supabase";
+import { createClient, creditsRemaining } from "@/lib/supabase";
+import type { Profile } from "@/lib/supabase";
 import { Loader2, Wand2, X } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
@@ -612,6 +613,31 @@ export default function ZenEditor({
   const [credits,          setCredits]          = useState(initialCredits);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
+  // Keep credits in sync with server via Supabase Realtime
+  useEffect(() => {
+    const supabase = createClient();
+    let cleanup: (() => void) | undefined;
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const channel = supabase
+        .channel(`profile-credits-${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+          (payload) => {
+            const updated = payload.new as Profile;
+            const remaining = creditsRemaining(updated);
+            setCredits(remaining);
+            if (remaining <= 0) setShowUpgradeModal(true);
+          }
+        )
+        .subscribe();
+      cleanup = () => { supabase.removeChannel(channel); };
+    });
+
+    return () => { cleanup?.(); };
+  }, []);
 
   // Co-author
   const [coauthor,           setCoauthor]           = useState<DbCoauthor | null>(initialCoauthor);
