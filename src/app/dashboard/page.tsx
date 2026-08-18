@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FileText, BookOpen, Zap, ArrowRight, Clock } from "lucide-react";
+import Image from "next/image";
+import DefaultCover from "./_components/default-cover";
 import { getUser, getProfile, createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { isInTrial, creditsRemaining, creditsCap, TRIAL_CREDITS } from "@/lib/supabase";
 import { sendWelcomeEmail } from "@/lib/email";
@@ -45,7 +47,13 @@ const GENRE_LABELS: Record<string, string> = {
   literary: "Literary", other: "Other",
 };
 
-type ProjectWithStats = DbProject & { total_words: number; chapter_count: number };
+type ProjectWithStats = DbProject & {
+  total_words:      number;
+  chapter_count:    number;
+  cover_image_url?: string | null;
+  synopsis?:        string | null;
+  writing_status?:  string | null;
+};
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -264,51 +272,103 @@ function EmptyState() {
   );
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  drafting:  "Drafting",
+  paused:    "Paused",
+  completed: "Completed",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  drafting:  "bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-700/30",
+  paused:    "bg-amber-50  dark:bg-amber-900/20  text-amber-600  dark:text-amber-400  border-amber-200  dark:border-amber-700/30",
+  completed: "bg-green-50  dark:bg-green-900/20  text-green-600  dark:text-green-400  border-green-200  dark:border-green-700/30",
+};
+
 function ProjectCard({ project }: { project: ProjectWithStats }) {
-  const pillClass  = project.genre ? (GENRE_PILLS[project.genre]  ?? GENRE_PILLS.other)  : null;
-  const genreLabel = project.genre ? (GENRE_LABELS[project.genre] ?? project.genre)        : null;
+  const genreLabel    = project.genre ? (GENRE_LABELS[project.genre] ?? project.genre) : null;
+  const statusLabel   = project.writing_status ? (STATUS_LABELS[project.writing_status] ?? null) : null;
+  const statusClass   = project.writing_status ? (STATUS_COLORS[project.writing_status] ?? STATUS_COLORS.drafting) : null;
 
   return (
-    <div className="group bg-white dark:bg-[#161329] rounded-2xl ring-1 ring-black/[0.06] dark:ring-white/[0.07] hover:ring-black/[0.11] dark:hover:ring-white/[0.13] p-5 flex flex-col gap-4 transition-all duration-150">
-      {/* Top row */}
-      <div className="flex items-center justify-between">
-        {genreLabel ? (
-          <span className={`inline-flex items-center px-2 py-[3px] rounded-md text-[11px] font-medium border ${pillClass}`}>
-            {genreLabel}
-          </span>
+    <div className="group bg-white dark:bg-[#161329] rounded-2xl ring-1 ring-black/[0.06] dark:ring-white/[0.07] hover:ring-black/[0.11] dark:hover:ring-white/[0.13] flex flex-col transition-all duration-150 overflow-hidden">
+
+      {/* Cover image */}
+      <div className="relative h-[160px] w-full shrink-0 bg-[#F4F4F5] dark:bg-white/[0.04]">
+        {project.cover_image_url ? (
+          <Image
+            src={project.cover_image_url}
+            alt={project.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
         ) : (
-          <span className="inline-flex items-center px-2 py-[3px] rounded-md text-[11px] font-medium border bg-[#F4F4F5] dark:bg-white/[0.05] text-[#A1A1AA] dark:text-white/25 border-[#E4E4E7] dark:border-white/[0.07]">
-            —
-          </span>
+          <DefaultCover genre={project.genre} title={project.title} />
         )}
-        <div className="flex items-center gap-1.5">
-          <span className="flex items-center gap-1 text-[11px] text-[#A1A1AA] dark:text-white/25">
-            <Clock size={10} />
-            {relativeDate(project.updated_at)}
-          </span>
-          <ProjectCardActions projectId={project.id} projectTitle={project.title} />
+
+        {/* Actions overlay */}
+        <div className="absolute top-2 right-2">
+          <ProjectCardActions
+            project={{
+              id:             project.id,
+              title:          project.title,
+              genre:          project.genre ?? null,
+              synopsis:       project.synopsis ?? null,
+              writing_status: project.writing_status ?? null,
+              cover_image_url: project.cover_image_url ?? null,
+            }}
+          />
         </div>
       </div>
 
-      {/* Title + meta */}
-      <div className="flex-1">
-        <h3 className="text-[14px] font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] leading-snug line-clamp-2">
-          {project.title}
-        </h3>
-        <p className="text-[12px] text-[#A1A1AA] dark:text-white/30 mt-1.5">
-          {formatWords(project.total_words)} words
-          {project.chapter_count > 0 && ` · ${project.chapter_count} ch.`}
-        </p>
-      </div>
+      {/* Card body */}
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        {/* Badges row */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {genreLabel && (
+            <span className={`inline-flex items-center px-2 py-[3px] rounded-md text-[10px] font-medium border ${GENRE_PILLS[project.genre!] ?? GENRE_PILLS.other}`}>
+              {genreLabel}
+            </span>
+          )}
+          {statusLabel && statusClass && (
+            <span className={`inline-flex items-center px-2 py-[3px] rounded-md text-[10px] font-medium border ${statusClass}`}>
+              {statusLabel}
+            </span>
+          )}
+        </div>
 
-      {/* CTA */}
-      <Link
-        href={`/studio/${project.id}`}
-        className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#F4F4F5] dark:bg-white/[0.05] hover:bg-[#0F0F0F] dark:hover:bg-white text-[#71717A] dark:text-white/40 hover:text-white dark:hover:text-[#0E0C1B] text-[12px] font-medium transition-all duration-150 group/btn"
-      >
-        Open in Studio
-        <ArrowRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform duration-150" />
-      </Link>
+        {/* Title + meta */}
+        <div className="flex-1">
+          <h3 className="text-[14px] font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] leading-snug line-clamp-2">
+            {project.title}
+          </h3>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="text-[11px] text-[#A1A1AA] dark:text-white/30">
+              {formatWords(project.total_words)} words
+              {project.chapter_count > 0 && ` · ${project.chapter_count} ch.`}
+            </span>
+            <span className="text-[#E4E4E7] dark:text-white/10">·</span>
+            <span className="flex items-center gap-1 text-[11px] text-[#A1A1AA] dark:text-white/25">
+              <Clock size={9} />
+              {relativeDate(project.updated_at)}
+            </span>
+          </div>
+          {project.synopsis && (
+            <p className="text-[11px] text-[#A1A1AA] dark:text-white/30 mt-2 line-clamp-2 leading-relaxed">
+              {project.synopsis}
+            </p>
+          )}
+        </div>
+
+        {/* CTA */}
+        <Link
+          href={`/studio/${project.id}`}
+          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#F4F4F5] dark:bg-white/[0.05] hover:bg-[#0F0F0F] dark:hover:bg-white text-[#71717A] dark:text-white/40 hover:text-white dark:hover:text-[#0E0C1B] text-[12px] font-medium transition-all duration-150 group/btn"
+        >
+          Open in Studio
+          <ArrowRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform duration-150" />
+        </Link>
+      </div>
     </div>
   );
 }

@@ -64,7 +64,7 @@ const PLANS: Plan[] = [
     id: "founder_circle",
     title: "FOUNDER'S CIRCLE",
     tagline: "Limited Lifetime Access",
-    desc: "Everything in Pro + direct 1:1 access to the founder for life.",
+    desc: "Everything you need to write + direct 1:1 access to the founder for life.",
     lifetimePrice: 49,
     credits: 500,
     buttonText: "Claim Lifetime Seat",

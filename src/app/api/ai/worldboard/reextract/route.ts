@@ -76,16 +76,6 @@ export async function POST(request: NextRequest) {
 
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
-  let rateLimitResult: { block: Response | null; remaining: number };
-  try {
-    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), 10);
-  } catch (err) {
-    console.error("[reextract] Rate limit check failed:", err);
-    return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });
-  }
-  const { block, remaining } = rateLimitResult;
-  if (block) return block;
-
   // Fetch chapters to process
   let query = supabase
     .from("chapters")
@@ -99,21 +89,50 @@ export async function POST(request: NextRequest) {
 
   const { data: chapters } = await query;
   if (!chapters?.length) {
-    return Response.json({ ok: true, chaptersProcessed: 0, remaining });
+    return Response.json({ ok: true, chaptersProcessed: 0, remaining: 0 });
   }
 
-  let chaptersProcessed = 0;
-  let totalEntities     = 0;
+  // ── Count total chunks so we can deduct the correct number of credits ────────
+  // (4 credits per Gemini 2.5 Pro call = per 5000-word chunk)
+  const CREDITS_PER_CHUNK = 4;
+  let totalChunks = 0;
+  const chapterTexts: Map<string, string> = new Map();
+
+  for (const chapter of chapters) {
+    const text = lexicalToText(chapter.content);
+    if (!text || text.split(/\s+/).length < 50) continue;
+    chapterTexts.set(chapter.id, text);
+    totalChunks += Math.ceil(text.trim().split(/\s+/).length / CHUNK_SIZE);
+  }
+
+  if (totalChunks === 0) {
+    return Response.json({ ok: true, chaptersProcessed: 0, remaining: 0 });
+  }
+
+  const totalCredits = totalChunks * CREDITS_PER_CHUNK;
+
+  let rateLimitResult: { block: Response | null; remaining: number };
+  try {
+    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), totalCredits);
+  } catch (err) {
+    console.error("[reextract] Rate limit check failed:", err);
+    return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });
+  }
+  const { block, remaining } = rateLimitResult;
+  if (block) return block;
+
+  let chaptersProcessed  = 0;
+  let totalEntities      = 0;
   let totalRelationships = 0;
 
   // Process each chapter sequentially
   for (const chapter of chapters) {
-    const text = lexicalToText(chapter.content);
-    if (!text || text.split(/\s+/).length < 50) continue;
+    const text = chapterTexts.get(chapter.id);
+    if (!text) continue;
 
-    const words       = text.trim().split(/\s+/);
-    const chapterNum  = (chapter.position ?? 0) + 1;
-    let wordOffset    = 0;
+    const words      = text.trim().split(/\s+/);
+    const chapterNum = (chapter.position ?? 0) + 1;
+    let wordOffset   = 0;
 
     // Process chapter in chunks
     while (wordOffset < words.length) {

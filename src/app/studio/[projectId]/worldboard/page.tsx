@@ -42,7 +42,7 @@ export default async function WorldBoardPage({
       .eq("project_id", projectId),
     supabase
       .from("chapters")
-      .select("id, title, position")
+      .select("id, title, position, word_count")
       .eq("project_id", projectId)
       .order("position"),
   ]);

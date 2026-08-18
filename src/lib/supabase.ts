@@ -45,8 +45,13 @@ export const CREDITS = {
   suggestShort: 1,
   suggestLong: 2,
   globalChange: 3,
-  worldboardAuto: 4,
-  worldboardManual: 10,
+  /**
+   * World board extraction: 4 credits per AI call.
+   * One call processes up to 5000 words (one chunk).
+   * Both the auto delta pass and manual re-extraction use this rate.
+   * Total cost = Math.ceil(totalWords / 5000) × 4
+   */
+  worldboardPerChunk: 4,
 } as const;
 
 /** User is in trial if trial_ends_at exists and hasn't passed. */

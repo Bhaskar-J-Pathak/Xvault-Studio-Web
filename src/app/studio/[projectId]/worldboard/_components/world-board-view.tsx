@@ -2,23 +2,17 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import WorldBoardCanvas, { type WorldBoardCanvasHandle, type DBEntity } from "./world-board-canvas";
+import WorldBoardCanvas, { type WorldBoardCanvasHandle, type DBEntity, type DBRelationship } from "./world-board-canvas";
 import ExtractionDebugger from "./extraction-debugger";
 import EntityEditPanel from "./entity-edit-panel";
 
-// ── Exported types (used by page.tsx) ─────────────────────────────────────────
+// ── Exported types ─────────────────────────────────────────────────────────────
 
 export interface Chapter {
-  id:       string;
-  title:    string;
-  position: number;
-}
-
-interface DBRelationship {
-  id:        string;
-  source_id: string;
-  target_id: string;
-  label:     string;
+  id:         string;
+  title:      string;
+  position:   number;
+  word_count: number | null;
 }
 
 interface Props {
@@ -41,6 +35,7 @@ export default function WorldBoardView({
   const router       = useRouter();
   const searchParams = useSearchParams();
   const showDebug    = searchParams.get("debug") === "1";
+
   const [tab,               setTab]               = useState<Tab>("canvas");
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [resetting,         setResetting]         = useState(false);
@@ -49,8 +44,14 @@ export default function WorldBoardView({
   const [reExtractProgress, setReExtractProgress] = useState<string | null>(null);
   const [resetScope,        setResetScope]        = useState<"project" | string>("project");
 
-  // Entity state — managed client-side for instant updates
-  const [entities,         setEntities]         = useState<DBEntity[]>(initialEntities);
+  // Dedup state
+  const [deduping,  setDeduping]  = useState(false);
+  const [dedupDone, setDedupDone] = useState<number | null>(null);
+
+  // Entity + relationship state — managed client-side for instant updates
+  const [entities,      setEntities]      = useState<DBEntity[]>(initialEntities);
+  const [relationships, setRelationships] = useState<DBRelationship[]>(initialRelationships);
+
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [creatingNew,      setCreatingNew]      = useState(false);
 
@@ -65,12 +66,10 @@ export default function WorldBoardView({
   const visibleIds = new Set(visibleEntities.map((e) => e.id));
 
   const visibleRelationships = selectedChapterId
-    ? initialRelationships.filter(
-        (r) => visibleIds.has(r.source_id) && visibleIds.has(r.target_id)
-      )
-    : initialRelationships;
+    ? relationships.filter((r) => visibleIds.has(r.source_id) && visibleIds.has(r.target_id))
+    : relationships;
 
-  // ── Entity edit callbacks ────────────────────────────────────────────────────
+  // ── Entity callbacks ─────────────────────────────────────────────────────────
 
   const handleEntityClick = useCallback((id: string) => {
     setCreatingNew(false);
@@ -91,6 +90,7 @@ export default function WorldBoardView({
 
   const handleDeleted = useCallback((id: string) => {
     setEntities((prev) => prev.filter((e) => e.id !== id));
+    setRelationships((prev) => prev.filter((r) => r.source_id !== id && r.target_id !== id));
     canvasRef.current?.deleteEntity(id);
     setSelectedEntityId(null);
   }, []);
@@ -100,6 +100,25 @@ export default function WorldBoardView({
     setCreatingNew(false);
   }, []);
 
+  // ── Relationship callbacks ───────────────────────────────────────────────────
+
+  const handleRelationshipCreated = useCallback((rel: DBRelationship) => {
+    setRelationships((prev) => [...prev, rel]);
+    canvasRef.current?.addRelationship(rel);
+  }, []);
+
+  const handleRelationshipUpdated = useCallback((id: string, label: string) => {
+    setRelationships((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, label } : r))
+    );
+    canvasRef.current?.updateRelationshipLabel(id, label);
+  }, []);
+
+  const handleRelationshipDeleted = useCallback((id: string) => {
+    setRelationships((prev) => prev.filter((r) => r.id !== id));
+    canvasRef.current?.deleteRelationship(id);
+  }, []);
+
   // ── Derived: entity for panel ────────────────────────────────────────────────
 
   const panelEntity = selectedEntityId
@@ -107,6 +126,48 @@ export default function WorldBoardView({
     : null;
 
   const panelOpen = selectedEntityId !== null || creatingNew;
+
+  // ── Dedup handler ────────────────────────────────────────────────────────────
+
+  async function handleDedup() {
+    setDeduping(true);
+    setDedupDone(null);
+    try {
+      const res = await fetch("/api/ai/worldboard/dedup", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ projectId }),
+      });
+      const data = await res.json() as { merged?: number; deletedIds?: string[]; error?: string };
+
+      if (!res.ok) {
+        console.error("[dedup] API error:", data.error);
+        setDedupDone(0);
+        return;
+      }
+
+      const deleted = new Set(data.deletedIds ?? []);
+      const mergedCount = data.merged ?? 0;
+
+      if (mergedCount > 0 && deleted.size > 0) {
+        // Remove deleted entities from local state
+        setEntities((prev) => prev.filter((e) => !deleted.has(e.id)));
+        // Remove relationships that referenced deleted entities
+        setRelationships((prev) =>
+          prev.filter((r) => !deleted.has(r.source_id) && !deleted.has(r.target_id))
+        );
+        // Remove nodes from canvas
+        deleted.forEach((id) => canvasRef.current?.deleteEntity(id));
+      }
+
+      setDedupDone(mergedCount);
+    } catch (err) {
+      console.error("[dedup] request failed:", err);
+      setDedupDone(0);
+    } finally {
+      setDeduping(false);
+    }
+  }
 
   // ── Reset handler ────────────────────────────────────────────────────────────
 
@@ -155,12 +216,28 @@ export default function WorldBoardView({
     setConfirmOpen(true);
   }
 
-  // ── Confirmation modal scope label ───────────────────────────────────────────
-
   const scopeLabel =
     resetScope === "project"
       ? "the entire project"
       : `"${chapters.find((c) => c.id === resetScope)?.title ?? "this chapter"}"`;
+
+  /**
+   * Estimate credit cost for re-extraction.
+   * 4 credits per Gemini 2.5 Pro call; each call processes up to 5000 words.
+   */
+  function estimateReextractCredits(scope: "project" | string): number {
+    const CHUNK_WORDS    = 5000;
+    const CREDITS_CHUNK  = 4;
+    let totalWords = 0;
+    if (scope === "project") {
+      totalWords = chapters.reduce((sum, ch) => sum + (ch.word_count ?? 0), 0);
+    } else {
+      totalWords = chapters.find((c) => c.id === scope)?.word_count ?? 0;
+    }
+    return Math.max(1, Math.ceil(totalWords / CHUNK_WORDS)) * CREDITS_CHUNK;
+  }
+
+  const estimatedCredits = estimateReextractCredits(resetScope);
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
@@ -169,7 +246,6 @@ export default function WorldBoardView({
       {/* Tab bar + controls */}
       <div className="shrink-0 flex items-center gap-1 px-4 pt-1.5 pb-0 border-b border-black/[0.06] bg-white">
 
-        {/* Tabs */}
         <TabButton active={tab === "canvas"} onClick={() => setTab("canvas")}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-60">
             <circle cx="12" cy="5"  r="2" /><circle cx="5"  cy="19" r="2" /><circle cx="19" cy="19" r="2" />
@@ -191,7 +267,7 @@ export default function WorldBoardView({
         {/* Right-side controls */}
         <div className="ml-auto flex items-center gap-2 pb-1.5">
 
-          {/* Add entity button — canvas tab only */}
+          {/* Add entity */}
           {tab === "canvas" && (
             <button
               onClick={() => { setSelectedEntityId(null); setCreatingNew(true); }}
@@ -204,7 +280,7 @@ export default function WorldBoardView({
             </button>
           )}
 
-          {/* Chapter filter — canvas tab only */}
+          {/* Chapter filter */}
           {tab === "canvas" && chapters.length > 0 && (
             <div className="flex items-center gap-1.5">
               <select
@@ -234,6 +310,31 @@ export default function WorldBoardView({
                 </button>
               )}
             </div>
+          )}
+
+          {/* Fix duplicates */}
+          {tab === "canvas" && (
+            <button
+              onClick={handleDedup}
+              disabled={deduping}
+              title="Merge duplicate entities"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 transition-colors"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+                <path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                <path d="M12 8v8" /><path d="M8 12h8" />
+              </svg>
+              <span className="hidden md:inline">
+                {deduping
+                  ? "Merging…"
+                  : dedupDone !== null && dedupDone > 0
+                    ? `Merged ${dedupDone} ✓`
+                    : dedupDone === 0
+                      ? "No duplicates"
+                      : "Fix duplicates"}
+              </span>
+            </button>
           )}
 
           {/* Full project reset */}
@@ -275,9 +376,14 @@ export default function WorldBoardView({
           <EntityEditPanel
             projectId={projectId}
             entity={creatingNew ? null : panelEntity}
+            allEntities={entities}
+            relationships={relationships}
             onSaved={handleSaved}
             onDeleted={handleDeleted}
             onClose={handlePanelClose}
+            onRelationshipCreated={handleRelationshipCreated}
+            onRelationshipUpdated={handleRelationshipUpdated}
+            onRelationshipDeleted={handleRelationshipDeleted}
           />
         )}
       </div>
@@ -289,11 +395,23 @@ export default function WorldBoardView({
             <h2 className="text-sm font-semibold text-[#1A1A1A] mb-1">
               {resetScope === "project" ? "Reset entire World Board?" : "Re-extract this chapter?"}
             </h2>
-            <p className="text-[12px] text-[#1A1A1A]/50 mb-5 leading-relaxed">
+            <p className="text-[12px] text-[#1A1A1A]/50 mb-3 leading-relaxed">
               This will clear all entities, relationships and plot threads for{" "}
               <span className="font-medium text-[#1A1A1A]/70">{scopeLabel}</span>{" "}
-              and immediately re-extract them from the manuscript. This may take a minute.
+              and immediately re-extract them from the manuscript.
             </p>
+            <div className="flex items-center gap-2 mb-5 px-3 py-2 rounded-xl bg-violet-50 border border-violet-100">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" className="shrink-0">
+                <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+              </svg>
+              <p className="text-[11px] text-violet-700 leading-snug">
+                Costs{" "}
+                <span className="font-semibold">~{estimatedCredits} credits</span>
+                {" "}·{" "}
+                {estimatedCredits / 4} AI {estimatedCredits / 4 === 1 ? "call" : "calls"} × 4 credits each
+                {" "}(Gemini Pro)
+              </p>
+            </div>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setConfirmOpen(false)}

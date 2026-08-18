@@ -180,7 +180,7 @@ export interface DBEntity {
   first_seen_chapter_id: string | null;
 }
 
-interface DBRelationship {
+export interface DBRelationship {
   id:        string;
   source_id: string;
   target_id: string;
@@ -195,18 +195,21 @@ interface Props {
 }
 
 export interface WorldBoardCanvasHandle {
-  updateEntity: (entity: DBEntity) => void;
-  deleteEntity: (id: string) => void;
-  addEntity:    (entity: DBEntity) => void;
+  updateEntity:            (entity: DBEntity) => void;
+  deleteEntity:            (id: string) => void;
+  addEntity:               (entity: DBEntity) => void;
+  addRelationship:         (rel: DBRelationship) => void;
+  deleteRelationship:      (id: string) => void;
+  updateRelationshipLabel: (id: string, label: string) => void;
 }
 
 // ── Converters ────────────────────────────────────────────────────────────────
 
-function toNode(e: DBEntity, i: number, onEntityClick: (id: string) => void): Node {
+function toNode(e: DBEntity, fallbackPos: { x: number; y: number }, onEntityClick: (id: string) => void): Node {
   return {
     id:       e.id,
     type:     "entity",
-    position: e.position ?? { x: 120 + (i % 5) * 220, y: 100 + Math.floor(i / 5) * 180 },
+    position: e.position ?? fallbackPos,
     data: {
       id:           e.id,
       name:         e.name,
@@ -218,8 +221,45 @@ function toNode(e: DBEntity, i: number, onEntityClick: (id: string) => void): No
   };
 }
 
+/**
+ * Each entity type occupies a zone of the canvas arranged in a 2×3 grid:
+ *   Characters  |  Locations
+ *   Factions    |  Items
+ *   Events      |  Lore
+ * Within each zone nodes are placed in a 4-column wrap grid.
+ */
+const ZONE_ORIGINS: Record<string, { x: number; y: number }> = {
+  character: { x:  80, y:   80 },
+  location:  { x: 960, y:   80 },
+  faction:   { x:  80, y:  560 },
+  item:      { x: 960, y:  560 },
+  event:     { x:  80, y: 1040 },
+  lore:      { x: 960, y: 1040 },
+};
+const ZONE_COLS    = 4;
+const ZONE_COL_GAP = 210;
+const ZONE_ROW_GAP = 170;
+
+function computeLayout(entities: Pick<DBEntity, "id" | "type">[]): Map<string, { x: number; y: number }> {
+  const counters: Record<string, number> = {};
+  const layout = new Map<string, { x: number; y: number }>();
+  for (const e of entities) {
+    const origin = ZONE_ORIGINS[e.type] ?? ZONE_ORIGINS.lore;
+    const i = counters[e.type] ?? 0;
+    counters[e.type] = i + 1;
+    layout.set(e.id, {
+      x: origin.x + (i % ZONE_COLS) * ZONE_COL_GAP,
+      y: origin.y + Math.floor(i / ZONE_COLS) * ZONE_ROW_GAP,
+    });
+  }
+  return layout;
+}
+
 function toNodes(entities: DBEntity[], onEntityClick: (id: string) => void): Node[] {
-  return entities.map((e, i) => toNode(e, i, onEntityClick));
+  const layout = computeLayout(entities);
+  return entities.map((e) =>
+    toNode(e, layout.get(e.id) ?? { x: 80, y: 80 }, onEntityClick)
+  );
 }
 
 function toEdges(rels: DBRelationship[]): Edge[] {
@@ -244,10 +284,11 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
   ref
 ) {
   const [nodes, setNodes, onNodesChange] = useNodesState(toNodes(initialEntities, onEntityClick));
-  const [edges, ,          onEdgesChange] = useEdgesState(toEdges(initialRelationships));
+  const [edges, setEdges, onEdgesChange] = useEdgesState(toEdges(initialRelationships));
 
   // Type visibility filter
   const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set(ALL_TYPES));
+  const [rearranging, setRearranging]   = useState(false);
 
   const toggleType = useCallback((type: string) => {
     setVisibleTypes((prev) => {
@@ -265,6 +306,40 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
     () => nodes.filter((n) => visibleTypes.has((n.data as EntityData).type)),
     [nodes, visibleTypes]
   );
+
+  // Auto-arrange: reset all nodes to type-grouped grid layout and persist positions
+  const handleReArrange = useCallback(async () => {
+    setRearranging(true);
+    const byType: Record<string, Node[]> = {};
+    for (const n of nodes) {
+      const type = (n.data as EntityData).type;
+      if (!byType[type]) byType[type] = [];
+      byType[type].push(n);
+    }
+
+    const updates: Array<{ id: string; pos: { x: number; y: number } }> = [];
+    const updatedNodes: Node[] = [];
+
+    for (const [type, nodesArr] of Object.entries(byType)) {
+      const origin = ZONE_ORIGINS[type] ?? ZONE_ORIGINS.lore;
+      for (let i = 0; i < nodesArr.length; i++) {
+        const n = nodesArr[i];
+        const pos = {
+          x: origin.x + (i % ZONE_COLS) * ZONE_COL_GAP,
+          y: origin.y + Math.floor(i / ZONE_COLS) * ZONE_ROW_GAP,
+        };
+        updatedNodes.push({ ...n, position: pos });
+        updates.push({ id: n.id, pos });
+      }
+    }
+
+    setNodes(updatedNodes);
+    const supabase = createClient();
+    await Promise.all(updates.map(({ id, pos }) =>
+      supabase.from("entities").update({ position: pos }).eq("id", id)
+    ));
+    setRearranging(false);
+  }, [nodes, setNodes]);
 
   // Debounced position save
   const positionTimers = useRef<Record<string, NodeJS.Timeout>>({});
@@ -311,9 +386,38 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
       setNodes((prev) => prev.filter((n) => n.id !== id));
     },
     addEntity(entity: DBEntity) {
-      setNodes((prev) => [...prev, toNode(entity, prev.length, onEntityClick)]);
+      setNodes((prev) => {
+        const origin = ZONE_ORIGINS[entity.type] ?? ZONE_ORIGINS.lore;
+        const i = prev.filter((n) => (n.data as EntityData).type === entity.type).length;
+        const fallbackPos = {
+          x: origin.x + (i % ZONE_COLS) * ZONE_COL_GAP,
+          y: origin.y + Math.floor(i / ZONE_COLS) * ZONE_ROW_GAP,
+        };
+        return [...prev, toNode(entity, fallbackPos, onEntityClick)];
+      });
     },
-  }), [onEntityClick, setNodes]);
+    addRelationship(rel: DBRelationship) {
+      setEdges((prev) => [
+        ...prev,
+        {
+          id:        rel.id,
+          source:    rel.source_id,
+          target:    rel.target_id,
+          type:      "relationship",
+          markerEnd: { type: MarkerType.ArrowClosed, color: "#94a3b8", width: 14, height: 14 },
+          data:      { label: rel.label },
+        },
+      ]);
+    },
+    deleteRelationship(id: string) {
+      setEdges((prev) => prev.filter((e) => e.id !== id));
+    },
+    updateRelationshipLabel(id: string, label: string) {
+      setEdges((prev) =>
+        prev.map((e) => e.id === id ? { ...e, data: { ...e.data, label } } : e)
+      );
+    },
+  }), [onEntityClick, setNodes, setEdges]);
 
   // ── Empty state ─────────────────────────────────────────────────────────────
 
@@ -372,6 +476,13 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
             </button>
           );
         })}
+        <button
+          onClick={handleReArrange}
+          disabled={rearranging}
+          className="ml-auto shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border border-black/[0.08] text-[#1A1A1A]/40 hover:text-[#1A1A1A]/60 hover:border-black/15 transition-all disabled:opacity-40"
+        >
+          {rearranging ? "Arranging…" : "Auto-arrange"}
+        </button>
       </div>
 
       {/* React Flow canvas */}

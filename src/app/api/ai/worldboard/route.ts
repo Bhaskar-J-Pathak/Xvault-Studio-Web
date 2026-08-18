@@ -17,6 +17,7 @@ import {
   mergeExtractionIntoGraph,
 } from "@/lib/extraction";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { CREDITS } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   // ── Auth ────────────────────────────────────────────────────────────────────
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   let rateLimitResult: { block: Response | null; remaining: number };
   try {
-    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), 4);
+    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk);
   } catch (err) {
     console.error("[worldboard] Rate limit check failed:", err);
     return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });

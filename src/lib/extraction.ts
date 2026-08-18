@@ -251,13 +251,13 @@ const TITLES = new Set([
   "the", "a", "an",
 ]);
 
-/** Strip titles and return significant tokens (4+ chars, not a title). */
+/** Strip titles and return significant tokens (3+ chars, not a title). */
 function significantTokens(name: string): string[] {
   return name
     .toLowerCase()
     .trim()
     .split(/[\s_-]+/)
-    .filter((t) => t.length >= 4 && !TITLES.has(t));
+    .filter((t) => t.length >= 3 && !TITLES.has(t));
 }
 
 /**
@@ -308,12 +308,28 @@ export async function mergeExtractionIntoGraph(
   client:          SupabaseClient
 ): Promise<ExtractedInconsistency[]> {
   // Use existId as the sole authority — model's is_update flag is unreliable
-  const nameToId      = buildNameMap(existingEntities);
-  const existingCount = existingEntities.length;
+  const nameToId = buildNameMap(existingEntities);
+
+  // ── Layout tracking: 2×3 zone grid matching world-board-canvas.tsx ──────────
+  const ZONE_ORIGINS: Record<string, { x: number; y: number }> = {
+    character: { x:  80, y:   80 },
+    location:  { x: 960, y:   80 },
+    faction:   { x:  80, y:  560 },
+    item:      { x: 960, y:  560 },
+    event:     { x:  80, y: 1040 },
+    lore:      { x: 960, y: 1040 },
+  };
+  const ZONE_COLS    = 4;
+  const ZONE_COL_GAP = 210;
+  const ZONE_ROW_GAP = 170;
+
+  const typeCountForLayout: Record<string, number> = {};
+  for (const ex of existingEntities) {
+    typeCountForLayout[ex.type] = (typeCountForLayout[ex.type] ?? 0) + 1;
+  }
 
   // ── Entities ────────────────────────────────────────────────
-  for (let i = 0; i < result.entities.length; i++) {
-    const e       = result.entities[i];
+  for (const e of result.entities) {
     const existId = lookupId(e.name, nameToId);
 
     if (existId) {
@@ -329,12 +345,32 @@ export async function mergeExtractionIntoGraph(
         .update({ last_seen_word: chapterNumber, confidence: e.confidence })
         .eq("id", existId);
     } else {
-      // New entity — assign a reasonable initial canvas position
-      const angle  = (i / Math.max(result.entities.length, 1)) * 2 * Math.PI;
-      const radius = 220 + Math.floor((existingCount + i) / 8) * 160;
-      const pos    = {
-        x: Math.round(500 + radius * Math.cos(angle)),
-        y: Math.round(400 + radius * Math.sin(angle)),
+      // DB safety check: prevent concurrent-extraction duplicates
+      const { data: dbDupe } = await client
+        .from("entities")
+        .select("id")
+        .eq("project_id", projectId)
+        .ilike("name", e.name)
+        .maybeSingle();
+
+      if (dbDupe) {
+        if (Object.keys(e.attributes).length > 0) {
+          await client.rpc("merge_entity_attributes", {
+            p_entity_id: dbDupe.id,
+            p_attributes: e.attributes,
+          });
+        }
+        nameToId.set(e.name.toLowerCase(), dbDupe.id);
+        continue;
+      }
+
+      // New entity — place in type's canvas zone (matches world-board-canvas layout)
+      const origin = ZONE_ORIGINS[e.type] ?? ZONE_ORIGINS.lore;
+      const i      = typeCountForLayout[e.type] ?? 0;
+      typeCountForLayout[e.type] = i + 1;
+      const pos = {
+        x: origin.x + (i % ZONE_COLS) * ZONE_COL_GAP,
+        y: origin.y + Math.floor(i / ZONE_COLS) * ZONE_ROW_GAP,
       };
 
       const { data: inserted } = await client

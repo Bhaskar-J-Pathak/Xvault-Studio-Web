@@ -2,20 +2,15 @@
 
 import { useState } from "react";
 import { Plus, Upload } from "lucide-react";
-import NewProjectModal from "./new-project-modal";
+import EditProjectModal from "./edit-project-modal";
 import ImportModal from "./import-modal";
 import GenrePicker from "./genre-picker";
-
 
 interface Props {
   needsOnboarding?: boolean;
   isBeta?: boolean;
 }
 
-/**
- * Thin client shell that lives in the server-rendered dashboard page.
- * Owns modal open/close state and genre picker for first-time users.
- */
 export default function DashboardClient({ needsOnboarding = false, isBeta = false }: Props) {
   const [newOpen,    setNewOpen]    = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -45,10 +40,14 @@ export default function DashboardClient({ needsOnboarding = false, isBeta = fals
         </button>
       </div>
 
-      {/* Genre picker auto-shows on first login (onboarding_step === 0) */}
       <GenrePicker open={needsOnboarding} />
 
-      <NewProjectModal open={newOpen}    onClose={() => setNewOpen(false)} />
+      {/* New project uses EditProjectModal with project=null */}
+      <EditProjectModal
+        project={null}
+        open={newOpen}
+        onClose={() => setNewOpen(false)}
+      />
       {importOpen && <ImportModal onClose={() => setImportOpen(false)} />}
     </>
   );
