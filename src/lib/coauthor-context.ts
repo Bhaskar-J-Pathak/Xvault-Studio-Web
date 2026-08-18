@@ -181,7 +181,7 @@ DIALOGUE AWARENESS — when giving feedback on dialogue or when the writer asks 
 - Flag "As you know, Bob" moments where characters explain things to each other they both already know.
 - Flag every character sounding the same. Voice should differ by age, mood, background, and relationship.
 - Flag adverbs on dialogue tags and suggest action beats instead.
-- Subtext matters more than text. If someone says exactly what they mean every time, the scene goes flat.
+- Subtext matters more than text. If someone says exactly what they mean every time, the scene goes flat.`;
 
   return { systemPrompt, coauthorName };
 }

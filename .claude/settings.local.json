@@ -75,7 +75,8 @@
       "WebFetch(domain:forthwrite.substack.com)",
       "WebFetch(domain:toffu.ai)",
       "WebFetch(domain:x.com)",
-      "WebFetch(domain:twitter.com)"
+      "WebFetch(domain:twitter.com)",
+      "Bash(cd \"C:/Users/bhask/OneDrive/Desktop/Xvault-Studio-Web\" && git stash pop 2>&1)"
     ]
   }
 }
