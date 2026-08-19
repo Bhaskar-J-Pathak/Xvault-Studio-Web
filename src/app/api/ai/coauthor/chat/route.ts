@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiChat } from "@/lib/ai";
 import { assembleCoauthorContext, saveCoauthorMessages } from "@/lib/coauthor-context";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
 interface HistoryMessage {
   role: "user" | "assistant";
@@ -175,6 +175,8 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
     console.error("[coauthor/chat] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
+
+  await commitRateLimit(user.id, createServiceClient(), 1);
 
   reply = reply.trim();
   if (!reply) return Response.json({ error: "Empty response" }, { status: 500 });

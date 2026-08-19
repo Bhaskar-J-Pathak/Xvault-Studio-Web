@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalToText } from "@/lib/chunking";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -51,6 +51,12 @@ export async function POST(request: NextRequest) {
   // Skip if summary exists and not forced
   if (chapter.summary && !force) {
     return Response.json({ ok: true, summary: chapter.summary, skipped: true });
+  }
+
+  // Forced regenerations cost 1 credit — check quota before calling AI
+  if (force) {
+    const { block } = await checkRateLimit(user.id, createServiceClient(), 1);
+    if (block) return block;
   }
 
   const text = lexicalToText(chapter.content);
@@ -96,11 +102,8 @@ Rules: specific and factual, past tense, no editorializing, no spoilers framing.
   summary = summary.trim();
   if (!summary) return Response.json({ error: "Empty summary" }, { status: 500 });
 
-  // Deduct credit only after AI succeeds — forced regenerations cost 1 credit.
-  // First-time auto-summaries (force=false) are free.
   if (force) {
-    const { block } = await checkRateLimit(user.id, createServiceClient(), 1);
-    if (block) return block;
+    await commitRateLimit(user.id, createServiceClient(), 1);
   }
 
   await supabase

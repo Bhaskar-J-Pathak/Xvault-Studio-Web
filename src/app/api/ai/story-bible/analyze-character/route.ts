@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalToText } from "@/lib/chunking";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -136,6 +136,8 @@ Analyze only from evidence in the text. Be specific and concrete — avoid vague
     console.error("[analyze-character] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
+
+  await commitRateLimit(user.id, createServiceClient(), 2);
 
   let profile: {
     personality: string;

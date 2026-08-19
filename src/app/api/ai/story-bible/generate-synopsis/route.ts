@@ -10,7 +10,7 @@
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -99,6 +99,8 @@ Be specific — use character names and concrete events. Present tense. No edito
     console.error("[generate-synopsis] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
+
+  await commitRateLimit(user.id, createServiceClient(), 2);
 
   synopsis = synopsis.trim();
   if (!synopsis) return Response.json({ error: "Empty response" }, { status: 500 });

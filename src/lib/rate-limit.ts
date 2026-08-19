@@ -1,58 +1,79 @@
 /**
  * Server-side rate limiting utilities.
  * All functions require the SERVICE-ROLE client — never call from the browser.
+ *
+ * Usage pattern (Option B — check then commit):
+ *   1. checkRateLimit() before the AI call — validates quota, no deduction yet.
+ *   2. commitRateLimit() after a successful AI response — deducts the credits.
+ *
+ * If the AI call fails, commitRateLimit is never called and no credits are lost.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RateLimitResult } from "@/types/database";
 
 /**
- * Atomically checks if the user is within their AI credit quota and
- * deducts the credit cost if they are.
- *
- * Uses a row-level FOR UPDATE lock inside a Postgres transaction so
- * concurrent requests from the same user cannot double-spend.
- *
- * @param userId  - The authenticated user's UUID
- * @param client  - Supabase service-role client (from createServiceClient())
- * @param credits - How many credits this operation costs (default 1)
- * @returns RateLimitResult — { allowed: true, remaining } or { allowed: false, reason }
- * @throws  If the DB call itself fails (network error, missing profile, etc.)
+ * Read-only quota check. No credits are deducted.
+ * Returns RateLimitResult — { allowed: true, remaining } or { allowed: false, reason }.
  */
-export async function consumeAiRequest(
+export async function checkAiQuota(
   userId: string,
   client: SupabaseClient,
   credits = 1
 ): Promise<RateLimitResult> {
-  const { data, error } = await client.rpc("consume_ai_request", {
+  const { data, error } = await client.rpc("check_ai_quota", {
     p_user_id: userId,
     p_credits: credits,
   });
 
   if (error) {
-    throw new Error(`Rate limit RPC failed: ${error.message}`);
+    throw new Error(`Quota check RPC failed: ${error.message}`);
   }
 
   return data as RateLimitResult;
 }
 
 /**
- * Convenience wrapper for API route handlers.
+ * Deducts credits after a successful AI response.
+ * Should only be called once the AI has returned a valid result.
+ * Errors are logged but not re-thrown — the user already received their response.
+ */
+export async function commitAiRequest(
+  userId: string,
+  client: SupabaseClient,
+  credits = 1
+): Promise<void> {
+  const { error } = await client.rpc("commit_ai_request", {
+    p_user_id: userId,
+    p_credits: credits,
+  });
+
+  if (error) {
+    console.error("[rate-limit] commit_ai_request failed (credits not deducted):", error.message);
+  }
+}
+
+/**
+ * Convenience wrapper for API route handlers — quota check only.
  * Returns `{ block, remaining }`.
  * - `block` is a 429 Response if the user is over their limit, otherwise null.
- * - `remaining` is the credits left after this call (0 when blocked, real value when allowed).
+ * - `remaining` is the credits left after this operation (based on the check).
  *
- * Usage in an API route:
+ * Call commitRateLimit() after a successful AI response to finalize the deduction.
+ *
+ * Usage:
  *   const { block, remaining } = await checkRateLimit(userId, serviceClient, 2);
  *   if (block) return block;
- *   // ... proceed with AI call, then include `remaining` in the success response
+ *   const result = await aiCall();           // credits NOT yet deducted
+ *   await commitRateLimit(userId, serviceClient, 2); // deduct now that it worked
+ *   return Response.json({ result, remaining });
  */
 export async function checkRateLimit(
   userId: string,
   client: SupabaseClient,
   credits = 1
 ): Promise<{ block: Response | null; remaining: number }> {
-  const result = await consumeAiRequest(userId, client, credits);
+  const result = await checkAiQuota(userId, client, credits);
 
   if (!result.allowed) {
     const message =
@@ -69,4 +90,16 @@ export async function checkRateLimit(
   }
 
   return { block: null, remaining: result.remaining };
+}
+
+/**
+ * Convenience wrapper to commit credits after a successful AI call.
+ * Errors are swallowed and logged — never fails the request.
+ */
+export async function commitRateLimit(
+  userId: string,
+  client: SupabaseClient,
+  credits = 1
+): Promise<void> {
+  await commitAiRequest(userId, client, credits);
 }

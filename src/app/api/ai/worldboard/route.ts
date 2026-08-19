@@ -16,7 +16,7 @@ import {
   parseExtractionResponse,
   mergeExtractionIntoGraph,
 } from "@/lib/extraction";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 import { CREDITS } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
     console.error("[worldboard] AI extraction failed:", err);
     return Response.json({ error: "AI extraction failed" }, { status: 502 });
   }
+
+  await commitRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk);
 
   // ── Parse ───────────────────────────────────────────────────────────────────
   const extracted = parseExtractionResponse(rawResponse);

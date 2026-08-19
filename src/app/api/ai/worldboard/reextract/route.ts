@@ -24,7 +24,7 @@ import {
   parseExtractionResponse,
   mergeExtractionIntoGraph,
 } from "@/lib/extraction";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
 const CHUNK_SIZE = 5000; // words per extraction pass
 
@@ -161,6 +161,9 @@ export async function POST(request: NextRequest) {
         console.error(`[reextract] AI failed on chapter "${chapter.title}" offset ${wordOffset}:`, err);
         break;
       }
+
+      // Commit credits for this chunk only after AI succeeds
+      await commitRateLimit(user.id, createServiceClient(), CREDITS_PER_CHUNK);
 
       const extracted = parseExtractionResponse(rawResponse);
       if (!extracted) {

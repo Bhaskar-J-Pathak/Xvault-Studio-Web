@@ -21,7 +21,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { assembleCoauthorContext } from "@/lib/coauthor-context";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -252,6 +252,8 @@ OUTPUT RULE: Output ONLY the story prose — zero preamble, zero labels, zero me
     console.error("[coauthor/suggest] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
+
+  await commitRateLimit(user.id, createServiceClient(), isLongWrite ? 2 : 1);
 
   suggestion = suggestion.trim();
   if (!suggestion) return Response.json({ error: "Empty suggestion" }, { status: 500 });

@@ -15,7 +15,7 @@ import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalToText } from "@/lib/chunking";
 import { phraseExistsInLexical } from "@/lib/lexical-replace";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
 export interface ChangeItem {
   chapterId: string;
@@ -150,6 +150,8 @@ If nothing needs changing, return empty arrays and explain in summary.`;
     console.error("[global-change] AI failed:", err);
     return Response.json({ error: "AI analysis failed" }, { status: 502 });
   }
+
+  await commitRateLimit(user.id, createServiceClient(), 3);
 
   let plan: {
     subject: string;
