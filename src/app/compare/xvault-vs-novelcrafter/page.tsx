@@ -74,6 +74,53 @@ const comparisonSchema = {
   ],
 };
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Does Xvault Studio require an API key like NovelCrafter?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "No. Xvault Studio requires no API keys. NovelCrafter requires writers to create and manage separate accounts with AI providers like OpenAI, Anthropic, or Google, and pay API costs on top of the subscription fee. Xvault charges a single predictable price with no external accounts needed.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How much does Xvault cost compared to NovelCrafter?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Xvault Studio costs $11.99 per month or $119 per year. NovelCrafter's subscription starts at $4 per month, but active writers typically pay an additional $15 to $25 per month in API costs, bringing the effective cost to $24 to $44 per month. Xvault's pricing is fully inclusive with no API billing.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What is the difference between Xvault's World Board and NovelCrafter's Codex?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Xvault's World Board is built automatically from your manuscript. It reads what you have written and extracts every character, location, and faction introduced in the prose. NovelCrafter's Codex is built manually. You enter what you want the AI to know, and anything you do not enter is unknown to it.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Xvault read the full manuscript automatically?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Xvault's AI co-author Alex reads your complete manuscript before generating any response. NovelCrafter uses a manually maintained Codex for world context, which means it only knows about your story what you have explicitly entered into that system.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Xvault Studio have a lifetime plan?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Xvault offers a Founder's Circle lifetime access for a one-time payment of $49, which includes 500 AI credits per month. NovelCrafter does not offer a lifetime option.",
+      },
+    },
+  ],
+};
+
 const breadcrumbSchema = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -94,6 +141,10 @@ export default function VsNovelCrafterPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(comparisonSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <header className="border-b border-black/[0.06] bg-[#FAFAF8]">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">

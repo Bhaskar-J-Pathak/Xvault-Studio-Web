@@ -60,6 +60,40 @@ const orgSchema = {
   sameAs: [],
 };
 
+const howToSchema = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name: "How to write your novel with Xvault Studio",
+  description: "Start writing your novel with an AI co-author that reads your entire manuscript. No download or configuration required.",
+  totalTime: "PT10M",
+  step: [
+    {
+      "@type": "HowToStep",
+      position: 1,
+      name: "Sign Up",
+      text: "Create a free account in under 10 seconds. No credit card required. You get 100 AI credits and 14 days of full access.",
+    },
+    {
+      "@type": "HowToStep",
+      position: 2,
+      name: "Start your story",
+      text: "Give your project a title and open the studio. Alex reads everything you write from the first sentence. A short tutorial walks you through the co-author, Ghost Writing, World Board, and Story Bible as you go.",
+    },
+    {
+      "@type": "HowToStep",
+      position: 3,
+      name: "Write",
+      text: "Write on the canvas while Alex lives in a panel alongside it, loaded with your entire manuscript. Press Ctrl+K anywhere in your text for an inline prose suggestion. No switching tabs or copy-pasting context.",
+    },
+    {
+      "@type": "HowToStep",
+      position: 4,
+      name: "Finish your draft",
+      text: "Your manuscript is auto-saved to the cloud every 2 seconds and accessible on any device. When done, export as a Word document from the sidebar.",
+    },
+  ],
+};
+
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -133,6 +167,10 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
       <script
         type="application/ld+json"

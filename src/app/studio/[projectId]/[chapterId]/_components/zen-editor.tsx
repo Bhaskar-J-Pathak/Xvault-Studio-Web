@@ -1167,21 +1167,12 @@ export default function ZenEditor({
         </div>
       )}
 
-      {/* ── Tutorial overlay (steps 1-5, 8) ───────────────────────────────── */}
-      {!onboardingDone && onboardingStep >= 1 && onboardingStep <= 8 && (
+      {/* ── Tutorial overlay (steps 0-5) ───────────────────────────────────── */}
+      {!onboardingDone && onboardingStep <= 5 && (
         <TutorialOverlay
           projectId={projectId}
           initialStep={onboardingStep}
           initialDone={onboardingDone}
-          commandBarOpen={commandBarOpen}
-          ghostSuggestion={ghostSuggestion}
-          ghostLoading={ghostLoading}
-          chatResponseReceived={chatResponseReceived}
-          editorFocused={editorFocused}
-          onExpandCoauthor={() => {
-            userClosedPanel.current = false;
-            setCoauthorSlim(false);
-          }}
         />
       )}
 

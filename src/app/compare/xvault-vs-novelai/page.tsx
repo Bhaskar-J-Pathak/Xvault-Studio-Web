@@ -75,6 +75,53 @@ const comparisonSchema = {
   ],
 };
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Does Xvault Studio allow uncensored dark fiction like NovelAI?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Xvault Studio does not apply blanket content restrictions to dark fiction, horror, grimdark, or mature narrative content. Writers can explore morally complex, violent, or dark themes without their account being flagged.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is Xvault's prose quality better than NovelAI?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Xvault's Ghost Writing feature generates prose scored against your existing manuscript for voice match. Writers consistently report that NovelAI's output is competent at the plot level but flat in emotional register and character interiority. Xvault aims to produce suggestions that require less rewriting because they sound like you, not like a generic AI tool.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Xvault have plot thread tracking that NovelAI lacks?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Xvault's Story Bible tracks every open and resolved plot thread across your manuscript and surfaces threads that were introduced but never resolved. NovelAI has no plot tracking or continuity checking features.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does Xvault's manuscript context compare to NovelAI's Lorebook?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Xvault reads your entire written manuscript and builds context automatically from the prose itself. NovelAI's Lorebook requires manual entry of world facts, characters, and locations. If you do not enter something into the Lorebook, NovelAI does not know it exists regardless of what is written in your manuscript.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Which is better for dark fantasy writers, Xvault Studio or NovelAI?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Both allow dark fantasy content, but Xvault Studio provides features NovelAI lacks for long-form work: automatic continuity checking, plot thread tracking, voice-matched prose generation, and a World Board that builds itself from your manuscript. NovelAI suits writers who prioritise content freedom and high-volume drafting without project management tools.",
+      },
+    },
+  ],
+};
+
 const breadcrumbSchema = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -95,6 +142,10 @@ export default function VsNovelAIPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(comparisonSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <header className="border-b border-black/[0.06] bg-[#FAFAF8]">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">

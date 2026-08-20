@@ -4,14 +4,12 @@ import { useState } from "react";
 import { Plus, Upload } from "lucide-react";
 import EditProjectModal from "./edit-project-modal";
 import ImportModal from "./import-modal";
-import GenrePicker from "./genre-picker";
 
 interface Props {
-  needsOnboarding?: boolean;
   isBeta?: boolean;
 }
 
-export default function DashboardClient({ needsOnboarding = false, isBeta = false }: Props) {
+export default function DashboardClient({ isBeta = false }: Props) {
   const [newOpen,    setNewOpen]    = useState(false);
   const [importOpen, setImportOpen] = useState(false);
 
@@ -39,8 +37,6 @@ export default function DashboardClient({ needsOnboarding = false, isBeta = fals
           New project
         </button>
       </div>
-
-      <GenrePicker open={needsOnboarding} />
 
       {/* New project uses EditProjectModal with project=null */}
       <EditProjectModal

@@ -144,8 +144,12 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
         setUploading(false);
       }
 
-      onClose();
-      router.refresh();
+      if (isNew && projectId) {
+        router.push(`/studio/${projectId}`);
+      } else {
+        onClose();
+        router.refresh();
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {

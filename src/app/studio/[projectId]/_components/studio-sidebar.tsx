@@ -176,7 +176,6 @@ export default function StudioSidebar({
       {/* Views */}
       <div className="px-2 pb-2 space-y-0.5">
         <Link
-          id="tutorial-worldboard-link"
           href={`/studio/${projectId}/worldboard`}
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/worldboard`
@@ -188,7 +187,6 @@ export default function StudioSidebar({
           World Board
         </Link>
         <Link
-          id="tutorial-bible-link"
           href={`/studio/${projectId}/bible`}
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/bible`

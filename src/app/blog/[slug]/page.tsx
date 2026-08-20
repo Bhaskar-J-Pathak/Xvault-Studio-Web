@@ -79,9 +79,14 @@ export default async function BlogPostPage({ params }: Props) {
     datePublished: post.date,
     dateModified: post.date,
     author: {
-      "@type": "Organization",
-      name: "Xvault Team",
-      url: "https://xvault.dev",
+      "@type": "Person",
+      name: "Bhaskar",
+      jobTitle: "Founder",
+      worksFor: {
+        "@type": "Organization",
+        name: "Xvault Studio",
+        url: "https://xvault.dev",
+      },
     },
     publisher: {
       "@type": "Organization",
@@ -145,7 +150,7 @@ export default async function BlogPostPage({ params }: Props) {
           <div className="flex items-center gap-3 text-xs text-stone-400 pb-10 border-b border-stone-200">
             <span>{post.author}</span>
             <span>·</span>
-            <span>{formatDate(post.date)}</span>
+            <span>Last updated {formatDate(post.date)}</span>
             <span>·</span>
             <span>{post.readTime} min read</span>
           </div>

@@ -1,70 +1,98 @@
 "use client";
 
 /**
- * TutorialOverlay — interactive 8-step guide for new users.
+ * TutorialOverlay — lightweight 5-step feature tour for new users.
  *
  * Steps:
- *  1 — Welcome
- *  2 — Editor (auto-advance: click)
- *  3 — Ask Alex (auto-advance: response received)
- *  4 — Ctrl+K ghostwriter (auto-advance: suggestion accepted/dismissed)
- *  5 — Global Change (manual advance — explain the flagship feature)
- *  6 — Full Story Bible page (content-aware: editor vs. bible page)
- *  7 — World Board
- *  8 — Done / CTA
+ *  0 → on mount, immediately syncs to step 1 then shows step 1 card
+ *  1 — Co-author intro
+ *  2 — Ctrl+K / ✦ ghostwriter
+ *  3 — Global Change
+ *  4 — World Board
+ *  5 — Story Bible → on Done: done=true, step=9
+ *  9 — Complete (hidden)
  *
- * Design principles:
- * - NEVER blocks interaction. No dark backdrop with pointer-events.
- * - Guide card is draggable by the header grip.
- * - Steps 2-4 auto-advance when the user performs the real action.
- * - Every step has a manual Skip so users are never stuck.
- * - All hooks run before any conditional returns (React rules compliance).
+ * Desktop: fixed bottom-left card, 300 px wide, non-blocking.
+ * Mobile:  same card but higher up (above FABs), narrower text, touch-friendly copy.
+ * No spotlight rings. No dragging. All manual (except step-0 auto-advance).
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { ArrowRight, GripHorizontal } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { usePostHog } from "posthog-js/react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface TargetRect {
-  top: number; left: number; width: number; height: number;
-}
-interface DragPos { x: number; y: number; }
 
 interface Props {
   projectId: string;
   initialStep: number;
   initialDone: boolean;
-  editorFocused?: boolean;
-  chatResponseReceived?: boolean;
-  commandBarOpen?: boolean;
-  ghostSuggestion?: string | null;
-  ghostLoading?: boolean;
-  onExpandCoauthor?: () => void;
 }
 
-// ── Step target IDs ────────────────────────────────────────────────────────────
+interface StepContent {
+  icon: string;
+  title: string;
+  body: string;
+}
 
-const STEP_TARGET_ID: Record<number, string | null> = {
-  1: null,
-  2: "tutorial-editor",
-  3: "tutorial-coauthor",
-  4: "tutorial-editor",
-  5: "tutorial-coauthor",
-  6: "tutorial-bible-link",
-  7: "tutorial-worldboard-link",
-  8: null,
+// ── Step content ──────────────────────────────────────────────────────────────
+
+const STEPS_DESKTOP: Record<number, StepContent> = {
+  1: {
+    icon: "💬",
+    title: "Meet Alex, your co-author",
+    body: "Alex has read everything you've written. Ask questions, get feedback, or brainstorm ideas in the chat panel on the right.",
+  },
+  2: {
+    icon: "⌨️",
+    title: "Press Ctrl+K to generate prose",
+    body: "Click anywhere in the editor and press Ctrl+K. Give Alex an instruction and it writes directly at your cursor. Tab to accept, Esc to dismiss.",
+  },
+  3: {
+    icon: "🔄",
+    title: "Rename or change anything manuscript-wide",
+    body: "In the chat, tell Alex to \"rename Marcus to Viktor everywhere\" or change any detail across all chapters. Alex shows you a diff before touching anything.",
+  },
+  4: {
+    icon: "🌍",
+    title: "Your World Board builds itself",
+    body: "As you write, Alex automatically extracts characters, locations, and plot threads. Find it in the sidebar — no tagging needed.",
+  },
+  5: {
+    icon: "📖",
+    title: "Story Bible = Alex's memory",
+    body: "Add your genre, style notes, and character details in the Story Bible. The more you fill in, the better Alex writes in your voice.",
+  },
 };
 
-const MOBILE_STEP_TARGET_ID: Record<number, string | null> = {
-  1: null,
-  2: "tutorial-editor",
-  3: "tutorial-coauthor",
-  4: "tutorial-write-fab",
-  8: null,
+const STEPS_MOBILE: Record<number, StepContent> = {
+  1: {
+    icon: "💬",
+    title: "Meet Alex, your co-author",
+    body: "Alex has read everything you've written. Tap the chat bubble at the bottom-right to ask questions, get feedback, or brainstorm.",
+  },
+  2: {
+    icon: "✦",
+    title: "Tap ✦ to generate prose",
+    body: "Tap the ✦ button above the chat bubble, give Alex an instruction, and it writes directly into your story. Tap Insert to accept.",
+  },
+  3: {
+    icon: "🔄",
+    title: "Rename or change anything manuscript-wide",
+    body: "In the chat, tell Alex to \"rename Marcus to Viktor everywhere\" or change any detail across all chapters. Alex shows you a diff before touching anything.",
+  },
+  4: {
+    icon: "🌍",
+    title: "Your World Board builds itself",
+    body: "As you write, Alex automatically extracts characters, locations, and plot threads. Tap the menu icon (top-left) → World Board.",
+  },
+  5: {
+    icon: "📖",
+    title: "Story Bible = Alex's memory",
+    body: "Add your genre, style notes, and character details in the Story Bible. Tap the menu icon (top-left) → Story Bible.",
+  },
 };
+
+const TOTAL_STEPS = 5;
 
 // ── DB sync ───────────────────────────────────────────────────────────────────
 
@@ -78,522 +106,126 @@ async function syncStep(step: number, done = false) {
   } catch { /* non-critical */ }
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
-export default function TutorialOverlay({
-  projectId,
-  initialStep,
-  initialDone,
-  editorFocused = false,
-  chatResponseReceived = false,
-  ghostSuggestion = null,
-  onExpandCoauthor,
-}: Props) {
-  const router   = useRouter();
-  const pathname = usePathname();
-  const ph       = usePostHog();
+export default function TutorialOverlay({ initialStep, initialDone }: Props) {
+  const ph = usePostHog();
 
-  // Mobile detection — stable per session (no resize handling needed)
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const [step, setStep]       = useState(initialStep);
+  const [done, setDone]       = useState(initialDone);
+  const [visible, setVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const advanceRef            = useRef(false);
 
-  // ALL hooks first
-  const [step, setStep]             = useState(initialStep);
-  const [done, setDone]             = useState(initialDone);
-  const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
-  const [visible, setVisible]       = useState(false);
-  const [dragPos, setDragPos]       = useState<DragPos | null>(null);
-  const autoTimer                   = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const advanceInProgress           = useRef(false);
-  const cardRef                     = useRef<HTMLDivElement>(null);
-  const ghostWasShown               = useRef(false);
-
-  // On the full Story Bible page, step 6 acts as an "explore" step — no
-  // navigation needed, so we clear the target highlight ring.
-  const onBiblePage     = pathname?.includes("/bible") ?? false;
-  const onWorldboardPage = pathname?.includes("/worldboard") ?? false;
-  const effectiveTargetId = isMobile
-    ? (MOBILE_STEP_TARGET_ID[step] ?? null)
-    : (step === 6 && onBiblePage ? null : STEP_TARGET_ID[step] ?? null);
-
-  // Measure target element
-  const measureTarget = useCallback(() => {
-    if (!effectiveTargetId) { setTargetRect(null); return; }
-    const el = document.getElementById(effectiveTargetId);
-    if (!el) { setTargetRect(null); return; }
-    const r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) { setTargetRect(null); return; }
-    setTargetRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-  }, [effectiveTargetId]);
-
+  // Detect mobile after mount (avoids SSR mismatch)
   useEffect(() => {
-    measureTarget();
-    const delayed = setTimeout(measureTarget, 400);
-    window.addEventListener("resize", measureTarget);
-    return () => { clearTimeout(delayed); window.removeEventListener("resize", measureTarget); };
-  }, [measureTarget]);
-
-  // Re-animate on step change
-  useEffect(() => { setVisible(false); }, [step]);
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 80);
-    return () => clearTimeout(t);
-  }, [step]);
-
-  // Step 3: expand co-author on desktop; on mobile keep slim (user taps the bubble themselves)
-  useEffect(() => {
-    if (step !== 3) return;
-    if (!isMobile && onExpandCoauthor) onExpandCoauthor();
-    const t1 = setTimeout(measureTarget, 350);
-    const t2 = setTimeout(() => {
-      if (!document.getElementById("tutorial-coauthor")) advance(4);
-    }, 2000);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
-
-  // Step 6: if the user is already on the bible page, swap content to "explore" mode
-  // (no auto-advance — they click Got it themselves)
-
-  // ── Auto-advance signals ──────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (step === 2 && editorFocused) advance(3);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editorFocused, step]);
-
-  useEffect(() => {
-    if (step === 3 && chatResponseReceived) advance(4);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatResponseReceived, step]);
-
-  // Step 4: advance only after the user has received AND dismissed/accepted a suggestion.
-  // On mobile → jump to done (8), skipping desktop-only steps 5-7.
-  useEffect(() => {
-    if (step !== 4) return;
-    if (ghostSuggestion) {
-      ghostWasShown.current = true;
-    } else if (ghostWasShown.current) {
-      advance(isMobile ? 8 : 6);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ghostSuggestion, step]);
-
-  // Mobile: skip desktop-only steps 5-7 → jump straight to done (step 8)
-  useEffect(() => {
-    if (!isMobile || step < 5 || step >= 8) return;
-    advance(8);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
-
-  // (Step 5 is Global Change — no auto-advance, user clicks Next manually)
-
-  // ── Drag handling ─────────────────────────────────────────────────────────
-
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const startMouseX = e.clientX, startMouseY = e.clientY;
-    const startCardX  = rect.left,  startCardY  = rect.top;
-    const rectWidth   = rect.width;
-
-    function onMove(e: MouseEvent) {
-      const cardW = rectWidth;
-      const cardH = cardRef.current?.offsetHeight ?? 260;
-      setDragPos({
-        x: Math.max(8, Math.min(window.innerWidth  - cardW - 8, startCardX + (e.clientX - startMouseX))),
-        y: Math.max(8, Math.min(window.innerHeight - cardH - 8, startCardY + (e.clientY - startMouseY))),
-      });
-    }
-    function onUp() {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup",   onUp);
-    }
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup",   onUp);
+    setIsMobile(window.innerWidth < 768);
   }, []);
 
-  // ── Navigation helpers ────────────────────────────────────────────────────
+  // Step 0: immediately advance to step 1 to mark tour as in-progress
+  useEffect(() => {
+    if (step !== 0 || done) return;
+    syncStep(1).then(() => {
+      setStep(1);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  async function advance(nextStep: number) {
-    if (advanceInProgress.current) return;
-    advanceInProgress.current = true;
-    ph?.capture("tutorial_step_reached", { step: nextStep, from_step: step });
-    setStep(nextStep);
-    await syncStep(nextStep);
-    advanceInProgress.current = false;
-  }
+  // Fade-in animation on step change
+  useEffect(() => {
+    if (done || step === 0 || step >= 9) return;
+    setVisible(false);
+    const t = setTimeout(() => setVisible(true), 80);
+    return () => clearTimeout(t);
+  }, [step, done]);
 
-  async function dismiss() { setDone(true); await syncStep(9, true); }
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
-  async function handleStartOwnStory() {
-    ph?.capture("tutorial_completed", { action: "start_own_story" });
-    setDone(true); await syncStep(9, true); router.push("/dashboard");
-  }
+  async function handleNext() {
+    if (advanceRef.current) return;
+    advanceRef.current = true;
 
-  async function handleKeepExploring() {
-    ph?.capture("tutorial_completed", { action: "keep_exploring" });
-    setDone(true); await syncStep(9, true);
-  }
-
-  // ── Early exit — AFTER all hooks ──────────────────────────────────────────
-  if (done || step === 0 || step >= 9) return null;
-
-  // ── Mobile tutorial ────────────────────────────────────────────────────────
-  if (isMobile) {
-    const mobileContent = getMobileStepContent(step);
-    if (!mobileContent) return null;
-
-    // Step 8 (done) — full overlay modal
-    if (step === 8) {
-      return (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center pb-8 px-4 bg-black/30">
-          <div className={`bg-white rounded-2xl shadow-2xl w-full overflow-hidden transition-all duration-300 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            <div className="h-[3px] bg-violet-500" />
-            <div className="p-6 text-center">
-              <div className="text-3xl mb-3">✦</div>
-              <h3 className="text-base font-semibold text-[#1A1A1A] mb-2">{mobileContent.title}</h3>
-              <p className="text-sm text-[#1A1A1A]/55 leading-relaxed mb-5">{mobileContent.body}</p>
-              <div className="flex flex-col gap-2">
-                <button onClick={handleStartOwnStory} className="w-full py-3 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold">
-                  Start my own story →
-                </button>
-                <button onClick={handleKeepExploring} className="w-full py-3 rounded-xl border border-black/[0.08] text-[#1A1A1A]/55 text-sm">
-                  Keep exploring the sample
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+    if (step >= TOTAL_STEPS) {
+      ph?.capture("tutorial_completed", { action: "done" });
+      setDone(true);
+      await syncStep(9, true);
+    } else {
+      const next = step + 1;
+      ph?.capture("tutorial_step_reached", { step: next, from_step: step });
+      setStep(next);
+      await syncStep(next);
     }
 
-    // Steps 1-4 — compact card at bottom-left, FABs on bottom-right
-    return (
-      <>
-        {/* Pulsing highlight ring */}
-        {targetRect && (
-          <div
-            aria-hidden
-            className="fixed z-[99] pointer-events-none"
-            style={{
-              top: targetRect.top - 4, left: targetRect.left - 4,
-              width: targetRect.width + 8, height: targetRect.height + 8,
-              borderRadius: 10,
-              boxShadow: "0 0 0 3px rgba(139, 92, 246, 0.7), 0 0 0 6px rgba(139, 92, 246, 0.2)",
-              animation: "tutorial-pulse 2s ease-in-out infinite",
-            }}
-          />
-        )}
-        {/* Guide card — bottom-left, leaves room for FABs on right */}
-        <div className={`fixed bottom-16 left-4 right-20 z-[100] transition-all duration-300 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
-          <div className="bg-white rounded-2xl shadow-xl border border-black/[0.08] overflow-hidden">
-            <div className="h-[3px] bg-black/[0.05]">
-              <div className="h-full bg-violet-500 transition-all duration-500" style={{ width: `${(step / 4) * 100}%` }} />
-            </div>
-            <div className="p-3.5">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30 mb-1">Step {step} of 4</p>
-              <h3 className="text-sm font-semibold text-[#1A1A1A] leading-tight mb-1">{mobileContent.title}</h3>
-              <p className="text-[11px] text-[#1A1A1A]/55 leading-relaxed">{mobileContent.body}</p>
-              {mobileContent.hint && (
-                <div className="mt-2 px-2.5 py-1.5 bg-violet-50 border border-violet-100 rounded-lg">
-                  <p className="text-[11px] text-violet-700 font-medium">{mobileContent.hint}</p>
-                </div>
-              )}
-              {mobileContent.waiting && (
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
-                  <p className="text-[10px] text-[#1A1A1A]/40">{mobileContent.waiting}</p>
-                </div>
-              )}
-              <div className="mt-3 flex justify-end">
-                <button
-                  onClick={() => advance(mobileContent.nextStep!)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#1A1A1A] text-white text-xs font-semibold"
-                >
-                  {mobileContent.ctaLabel ?? "Skip →"}
-                  <ArrowRight size={10} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <style>{`
-          @keyframes tutorial-pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.45; }
-          }
-        `}</style>
-      </>
-    );
+    advanceRef.current = false;
   }
 
-  // ── Desktop tutorial ───────────────────────────────────────────────────────
-  const content = getStepContent(step, onBiblePage, onWorldboardPage);
+  async function handleSkip() {
+    if (advanceRef.current) return;
+    advanceRef.current = true;
+    ph?.capture("tutorial_skipped", { at_step: step });
+    setDone(true);
+    await syncStep(9, true);
+    advanceRef.current = false;
+  }
+
+  // ── Render guard ────────────────────────────────────────────────────────────
+
+  if (done || step === 0 || step >= 9) return null;
+
+  const steps = isMobile ? STEPS_MOBILE : STEPS_DESKTOP;
+  const content = steps[step];
   if (!content) return null;
 
-  const cardStyle: React.CSSProperties = dragPos
-    ? { top: dragPos.y, left: dragPos.x, width: "min(300px, calc(100vw - 32px))" }
-    : { bottom: 80, right: 24, width: "min(300px, calc(100vw - 32px))" };
+  const isFinal = step === TOTAL_STEPS;
 
   return (
-    <>
-      {/* Pulsing highlight ring */}
-      {targetRect && (
-        <div
-          aria-hidden
-          className="fixed z-[99] pointer-events-none"
-          style={{
-            top:    targetRect.top    - 4,
-            left:   targetRect.left   - 4,
-            width:  targetRect.width  + 8,
-            height: targetRect.height + 8,
-            borderRadius: 10,
-            boxShadow: "0 0 0 3px rgba(139, 92, 246, 0.7), 0 0 0 6px rgba(139, 92, 246, 0.2)",
-            animation: "tutorial-pulse 2s ease-in-out infinite",
-          }}
-        />
-      )}
+    <div
+      className={`fixed z-[100] transition-all duration-300 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      } ${
+        // On mobile: sit above the FABs (bottom-[5.5rem] ≈ 88px clears the 64px FAB + 16px gap)
+        // On desktop: sit at bottom-6 (24px)
+        isMobile
+          ? "bottom-[5.5rem] left-3 right-3"
+          : "bottom-6 left-6 w-[300px]"
+      }`}
+    >
+      <div className="bg-white dark:bg-[#1a1829] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden">
 
-      {/* Guide card — draggable */}
-      <div ref={cardRef} className="fixed z-[100] pointer-events-none" style={cardStyle}>
-        <div
-          className={`pointer-events-auto bg-white rounded-2xl shadow-2xl border border-black/[0.08] overflow-hidden transition-all duration-300 ${
-            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-          }`}
-        >
-          {/* Progress bar */}
-          <div className="h-[3px] bg-black/[0.05]">
-            <div
-              className="h-full bg-violet-500 transition-all duration-500"
-              style={{ width: `${(step / 8) * 100}%` }}
-            />
-          </div>
-
-          {/* Drag handle row */}
-          <div
-            onMouseDown={handleDragStart}
-            className="flex items-center justify-between px-4 pt-3 pb-0 cursor-grab active:cursor-grabbing select-none"
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30 dark:text-white/25">
+            Getting started · {step}/{TOTAL_STEPS}
+          </span>
+          <button
+            onClick={handleSkip}
+            className="text-[11px] text-[#A1A1AA] dark:text-white/30 hover:text-[#71717A] dark:hover:text-white/60 transition-colors"
           >
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30">
-              Step {step} of 8
-            </span>
-            <GripHorizontal size={12} className="text-[#1A1A1A]/20" />
-          </div>
+            Skip
+          </button>
+        </div>
 
-          <div className="p-4 pt-2">
-            <h3 className="text-sm font-semibold text-[#1A1A1A] tracking-tight mb-1.5">
-              {content.title}
-            </h3>
-            <p className="text-xs text-[#1A1A1A]/55 leading-relaxed">
-              {content.body}
-            </p>
+        {/* Body */}
+        <div className="px-4 pt-3 pb-4">
+          <div className="text-xl mb-2">{content.icon}</div>
+          <h3 className="text-sm font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight leading-snug mb-1.5">
+            {content.title}
+          </h3>
+          <p className="text-[12px] text-[#71717A] dark:text-white/45 leading-relaxed">
+            {content.body}
+          </p>
+        </div>
 
-            {content.hint && (
-              <div className="mt-2.5 px-3 py-2 bg-violet-50 border border-violet-100 rounded-xl">
-                <p className="text-[11px] text-violet-700 font-medium">{content.hint}</p>
-              </div>
-            )}
-
-            {content.waiting && (
-              <div className="mt-2.5 flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-                <p className="text-[11px] text-[#1A1A1A]/40">{content.waiting}</p>
-              </div>
-            )}
-
-            <div className="mt-4 flex gap-2">
-              {step === 8 ? (
-                <div className="flex flex-col gap-2 w-full">
-                  <button
-                    onClick={handleStartOwnStory}
-                    className="w-full py-2 rounded-xl bg-[#1A1A1A] text-white text-xs font-semibold hover:bg-[#2A2A2A] transition-colors"
-                  >
-                    Start my own story →
-                  </button>
-                  <button
-                    onClick={handleKeepExploring}
-                    className="w-full py-2 rounded-xl border border-black/[0.08] text-[#1A1A1A]/55 text-xs font-medium hover:border-black/20 hover:text-[#1A1A1A]/80 transition-colors"
-                  >
-                    Keep exploring the sample
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => advance(content.nextStep!)}
-                  className="flex items-center gap-1.5 ml-auto px-3.5 py-2 rounded-xl bg-[#1A1A1A] text-white text-xs font-semibold hover:bg-[#2A2A2A] transition-colors"
-                >
-                  {content.ctaLabel ?? "Skip →"}
-                  <ArrowRight size={11} />
-                </button>
-              )}
-            </div>
-          </div>
+        {/* Footer */}
+        <div className="px-4 pb-4">
+          <button
+            onClick={handleNext}
+            className="w-full py-2.5 rounded-xl bg-[#0F0F0F] dark:bg-violet-600 text-white text-[12px] font-semibold hover:bg-[#2A2A2A] dark:hover:bg-violet-500 transition-colors"
+          >
+            {isFinal ? "Done ✓" : "Next →"}
+          </button>
         </div>
       </div>
-
-      <style>{`
-        @keyframes tutorial-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.45; }
-        }
-      `}</style>
-    </>
+    </div>
   );
-}
-
-// ── Mobile step content (4-step flow) ─────────────────────────────────────────
-
-function getMobileStepContent(step: number): StepContent | null {
-  switch (step) {
-    case 1:
-      return {
-        title: "Welcome to your sample project.",
-        body: "The Glass Meridian — 3 chapters, a full story world, and an AI co-author. Let's take a quick look.",
-        ctaLabel: "Let's go",
-        nextStep: 2,
-      };
-    case 2:
-      return {
-        title: "Tap the story to start writing.",
-        body: "Everything auto-saves as you type. Word count shows at the bottom.",
-        hint: "Tap anywhere in the story ↓",
-        waiting: "Tap anywhere in the story…",
-        ctaLabel: "Next →",
-        nextStep: 3,
-      };
-    case 3:
-      return {
-        title: "Chat with your co-author.",
-        body: "Tap the bubble (bottom-right) to open Alex — your AI co-author. Type a message and tap Send.",
-        hint: "Tap the bubble → then send a message",
-        waiting: "Waiting for Alex's reply…",
-        ctaLabel: "Next →",
-        nextStep: 4,
-      };
-    case 4:
-      return {
-        title: "AI ghostwriter — tap ✦.",
-        body: "Tap the ✦ button above the bubble, type an instruction, then tap Insert to add the text.",
-        hint: "Tap ✦ (above the co-author bubble) →",
-        waiting: "Waiting for you to try it…",
-        ctaLabel: "Next →",
-        nextStep: 8,
-      };
-    case 8:
-      return {
-        title: "You're ready to write.",
-        body: "14 days, 100 AI credits. Alex is reading everything you write. Your world builds itself.",
-        nextStep: 9,
-      };
-    default:
-      return null;
-  }
-}
-
-// ── Desktop step content ───────────────────────────────────────────────────────
-
-interface StepContent {
-  title: string;
-  body: string;
-  hint?: string;
-  waiting?: string;
-  ctaLabel?: string;
-  nextStep: number;
-}
-
-function getStepContent(
-  step: number,
-  onBiblePage: boolean,
-  onWorldboardPage: boolean
-): StepContent | null {
-  switch (step) {
-    case 1:
-      return {
-        title: "Welcome to your sample project.",
-        body: "The Glass Meridian: 3 chapters, a full World Board, and a Story Bible. Your AI co-author Alex has already read all of it. Let's take a quick tour.",
-        ctaLabel: "Let's go",
-        nextStep: 2,
-      };
-
-    case 2:
-      return {
-        title: "Your editor. Click inside to start.",
-        body: "Everything auto-saves as you write. Word count is bottom-left. Click anywhere in the story text to continue.",
-        hint: "← Click anywhere in the story",
-        waiting: "Waiting for you to click in the editor…",
-        ctaLabel: "Next →",
-        nextStep: 3,
-      };
-
-    case 3:
-      return {
-        title: "Ask Alex something.",
-        body: "Alex has read Chapter 1 and left you a note. Type a message in the chat and hit Enter to see what comes back.",
-        hint: "Try: \"What do you think of the opening?\"",
-        waiting: "Waiting for Alex's reply…",
-        ctaLabel: "Next →",
-        nextStep: 4,
-      };
-
-    case 4:
-      return {
-        title: "AI ghostwriter: press Ctrl+K.",
-        body: "Click anywhere in the text, press Ctrl+K, and give Alex an instruction. Press Tab to accept, Esc to dismiss.",
-        hint: "Try: \"What does Nadia find in the diner?\"",
-        waiting: "Waiting for you to try it and check the result…",
-        ctaLabel: "Next →",
-        nextStep: 5,
-      };
-
-    case 5:
-      return {
-        title: "Global Change: rewrite across every chapter.",
-        body: "This is the big one. Tell Alex to rename a character, shift a plot detail, or change something about the writing. It scans every chapter at once, shows you a diff of every planned edit, and waits for your approval before touching anything.",
-        hint: "Try in the chat: \"Rename Marcus to Viktor everywhere\"",
-        ctaLabel: "Next →",
-        nextStep: 6,
-      };
-
-    case 6:
-      // Context-aware: different content on the bible page vs. the editor
-      if (onBiblePage) {
-        return {
-          title: "This is Alex's brain.",
-          body: "Every section feeds your co-author before every reply:\n\n• Braindump: freewrite your premise, themes, anything unformed. Alex reads it raw.\n• Genre: sets the lens Alex uses for suggestions.\n• Style & Voice: prose rhythm, POV, tense. Alex imitates what you describe here.\n• Chapter Summaries: auto-generated; power the Synopsis. Edit them to correct AI drift.\n• Characters & World: hit Analyze on any character to build a deep profile from your manuscript.\n• Plot Threads: open story debts Alex tracks automatically.\n\nThe more you keep this updated, the smarter and more on-voice Alex becomes.",
-          hint: "Explore each section, then click Got it.",
-          ctaLabel: "Got it",
-          nextStep: 7,
-        };
-      }
-      return {
-        title: "Full Story Bible: Alex's long-term memory.",
-        body: "Click Story Bible in the sidebar. Every section feeds Alex before every reply: braindump, genre, style notes, AI chapter summaries, character profiles, and tracked plot threads. The more you fill it in, the better Alex writes in your voice.",
-        hint: "← Click Story Bible in the sidebar",
-        waiting: "Waiting for you to open the Story Bible…",
-        ctaLabel: "Next →",
-        nextStep: 7,
-      };
-
-    case 7:
-      return {
-        title: "World Board: your characters and places.",
-        body: "Click World Board in the sidebar. Every character, location, and faction was extracted from the manuscript automatically, no tagging needed. You can edit entities, add relationships, or re-index after big rewrites.",
-        hint: onWorldboardPage
-          ? "You're here. Explore, then click Got it."
-          : "← Click World Board in the sidebar",
-        ctaLabel: "Got it",
-        nextStep: 8,
-      };
-
-    case 8:
-      return {
-        title: "You're ready to write.",
-        body: "14 days, 100 AI credits. Alex is reading everything you write. Your world builds itself. Nothing gets lost.",
-        nextStep: 9,
-      };
-
-    default:
-      return null;
-  }
 }

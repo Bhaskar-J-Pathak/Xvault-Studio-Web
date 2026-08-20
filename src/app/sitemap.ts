@@ -25,6 +25,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "xvault-vs-sudowrite",
     "xvault-vs-novelcrafter",
     "xvault-vs-novelai",
+    "xvault-vs-inkfluence-ai",
+    "xvault-vs-chatgpt",
   ].map((slug) => ({
     url: `${BASE}/compare/${slug}`,
     lastModified: now,

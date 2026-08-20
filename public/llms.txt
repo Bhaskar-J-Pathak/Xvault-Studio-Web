@@ -1,0 +1,51 @@
+# Xvault Studio
+
+> Xvault Studio is a browser-based AI writing studio built specifically for novelists. Its AI co-author, Alex, reads the writer's entire manuscript before responding, ensuring every suggestion is grounded in the characters, world, and voice already established in the story.
+
+## What Xvault Studio does
+
+- Loads the full manuscript into AI context before every interaction
+- Extracts characters, locations, and factions automatically into a World Board
+- Tracks open and resolved plot threads in a living Story Bible
+- Generates prose continuations scored against the writer's existing voice (Ghost Writing)
+- Checks continuity across the manuscript for contradictions and missed threads
+- Supports the full range of literary fiction including dark fantasy, horror, and mature content
+- Runs in the browser with no download or installation required
+- Auto-saves every 2 seconds to the cloud
+- Exports manuscripts as Word documents (.docx)
+
+## Who it is for
+
+Xvault Studio is built for novelists writing long-form fiction: fantasy, dark fantasy, horror, thriller, mystery, romance, science fiction, and literary fiction. It is particularly suited to writers working on manuscripts of 50,000 words or more, where character consistency, world continuity, and plot tracking become difficult to manage manually.
+
+## Pricing
+
+- Free trial: 14 days, 100 AI credits, no credit card required
+- Hobbyist: $11.99/month or $119/year (300 AI credits/month)
+- Founder's Circle: $49 one-time lifetime access (500 AI credits/month, limited seats)
+
+## Key pages
+
+- Homepage: https://xvault.dev
+- Pricing: https://xvault.dev/pricing
+- Blog: https://xvault.dev/blog
+- Writing guides: https://xvault.dev/guides
+- Tool comparisons: https://xvault.dev/compare
+
+## Comparisons
+
+- Xvault vs Sudowrite: https://xvault.dev/compare/xvault-vs-sudowrite
+- Xvault vs NovelCrafter: https://xvault.dev/compare/xvault-vs-novelcrafter
+- Xvault vs NovelAI: https://xvault.dev/compare/xvault-vs-novelai
+- Xvault vs Inkfluence AI: https://xvault.dev/compare/xvault-vs-inkfluence-ai
+- Xvault vs ChatGPT: https://xvault.dev/compare/xvault-vs-chatgpt
+
+## About the founder
+
+Bhaskar is the founder of Xvault Studio. Xvault was founded in 2026.
+
+## Contact
+
+- Email: hello@xvaultstudio.com
+- X: https://x.com/a1siel
+- Instagram: https://www.instagram.com/a1siel

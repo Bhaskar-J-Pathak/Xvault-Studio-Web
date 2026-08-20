@@ -99,7 +99,6 @@ export default async function DashboardPage() {
     }
   }
 
-  const needsOnboarding = !profile || (profile.onboarding_step === 0 && !profile.onboarding_done);
   const hour    = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const name    = user.email?.split("@")[0] ?? "writer";
@@ -126,7 +125,6 @@ export default async function DashboardPage() {
           </div>
           <div className="flex-shrink-0">
             <DashboardClient
-              needsOnboarding={needsOnboarding}
               isBeta={process.env.BETA_MODE === "true"}
             />
           </div>

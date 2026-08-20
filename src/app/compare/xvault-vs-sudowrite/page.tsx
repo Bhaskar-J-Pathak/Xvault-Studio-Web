@@ -73,6 +73,53 @@ const comparisonSchema = {
   ],
 };
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is Xvault Studio cheaper than Sudowrite?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Xvault Studio costs $11.99 per month or $119 per year. Sudowrite starts at $19 per month and goes up to $59 per month. Xvault also offers a $49 one-time lifetime access option that Sudowrite does not have.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Xvault Studio allow dark fiction and mature content?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Xvault Studio is built for the full range of literary fiction, including horror, dark fantasy, grimdark, and mature content. Sudowrite, after migrating to Claude-based models, began restricting dark content and has issued account warnings to writers for content within the range of published commercial fiction.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Xvault read the entire manuscript unlike Sudowrite?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Xvault's AI co-author Alex reads your complete manuscript before every response. Sudowrite has context window limitations that cause it to lose track of character details and world facts in longer manuscripts, leading to suggestions that contradict things established in earlier chapters.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Which is better for horror and dark fantasy writers, Xvault or Sudowrite?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Xvault Studio is the better choice for horror and dark fantasy writers. Sudowrite now restricts dark content after its move to Claude-based models, with writers receiving account warnings for morally dark scenarios. Xvault does not apply content restrictions that would make it unusable for dark genres.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Xvault Studio have a story bible?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes, and it builds itself automatically. Xvault's Story Bible extracts characters, locations, factions, and plot threads from your manuscript as you write. Sudowrite requires manual entry into its Story Bible, meaning anything you forget to add is not tracked.",
+      },
+    },
+  ],
+};
+
 const breadcrumbSchema = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -93,6 +140,10 @@ export default function VsSudowritePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(comparisonSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <header className="border-b border-black/[0.06] bg-[#FAFAF8]">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">

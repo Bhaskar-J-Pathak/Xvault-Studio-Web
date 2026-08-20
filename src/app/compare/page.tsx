@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Xvault vs Other AI Writing Tools: Honest Comparisons",
-  description: "How does Xvault Studio compare to Sudowrite, NovelCrafter, and NovelAI? Honest side-by-side comparisons of pricing, features, and manuscript memory.",
+  description: "How does Xvault Studio compare to Sudowrite, NovelCrafter, NovelAI, Inkfluence AI, and ChatGPT? Honest side-by-side comparisons of pricing, features, and manuscript memory.",
   alternates: { canonical: "https://xvault.dev/compare" },
   openGraph: {
     title: "Xvault vs Other AI Writing Tools: Honest Comparisons",
@@ -35,6 +35,20 @@ const comparisons = [
     tagline: "The uncensored option: strong on freedom, weaker on prose quality and project management.",
     xvaultWins: ["Voice matching keeps your prose sounding like you", "Auto story bible and plot thread tracking", "Full project management built in"],
     opponentWins: ["Minimal content filtering", "Established fiction-trained models"],
+  },
+  {
+    slug: "xvault-vs-inkfluence-ai",
+    opponent: "Inkfluence AI",
+    tagline: "A content creation tool built for marketers. Not built for novelists writing long manuscripts.",
+    xvaultWins: ["Reads full manuscript before every response", "Auto story bible, world board, and continuity checking", "Dark fiction and mature content supported"],
+    opponentWins: ["Social media and marketing copy tools", "Content calendar and scheduling features"],
+  },
+  {
+    slug: "xvault-vs-chatgpt",
+    opponent: "ChatGPT",
+    tagline: "The most capable general assistant available. Still not a novel-writing tool.",
+    xvaultWins: ["Manuscript loaded automatically before every response", "Plot thread tracking and continuity checking built in", "Voice match scoring on every prose suggestion"],
+    opponentWins: ["General purpose: research, emails, coding, everything else", "Web search and real-time information access"],
   },
 ];
 

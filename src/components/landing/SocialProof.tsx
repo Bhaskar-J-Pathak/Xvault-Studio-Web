@@ -9,16 +9,28 @@ const SENTIMENTS = [
   {
     text: "The AI matches my voice very well.",
     tag: "Voice matching",
+    name: "Sacha Ken",
+    role: "Fantasy",
   },
   {
     text: "Helps me brainstorm in ways I didn't expect.",
     tag: "Co-author",
+    name: "Tamera Johnson",
+    role: "Dark fantasy",
   },
   {
-    text: "I haven't found another tool that does this.",
-    tag: "Differentiation",
+    text: "Six months in, 90,000 words, a cast of twenty. It hasn't lost a single character yet.",
+    tag: "Long-form",
+    name: "Davis",
+    role: "Dark fantasy",
   },
 ];
+
+const FEATURED_TESTIMONIAL = {
+  text: "It could recall the character I wanted to know about with just a description, across the entire manuscript. That level of intelligence surprised me.",
+  name: "Tamera Johnson",
+  genre: "Dark fantasy",
+};
 
 export default function SocialProof() {
   const ref = useRef<HTMLDivElement>(null);
@@ -101,14 +113,43 @@ export default function SocialProof() {
               </span>
               {/* Quote */}
               <p
-                className="font-display text-[#1A0A3C]/80 italic"
+                className="font-display text-[#1A0A3C]/80 italic mb-4"
                 style={{ fontSize: "clamp(1rem, 1.4vw, 1.125rem)", lineHeight: 1.55, fontWeight: 300 }}
               >
                 &ldquo;{s.text}&rdquo;
               </p>
+              {/* Attribution */}
+              <div className="flex items-center gap-2">
+                <span className="text-[0.72rem] font-semibold text-[#1A0A3C]/60">{s.name}</span>
+                <span className="text-[0.72rem] text-violet-900/25">·</span>
+                <span className="text-[0.72rem] text-violet-900/40">{s.role}</span>
+              </div>
             </motion.div>
           ))}
         </div>
+
+        {/* Featured testimonial */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.95, duration: 0.65, ease }}
+          className="mt-5 rounded-2xl border border-violet-200/80 bg-white px-8 py-6 shadow-sm"
+        >
+          <span className="mb-3 block text-[0.6rem] font-bold uppercase tracking-[0.2em] text-violet-400">
+            Manuscript memory
+          </span>
+          <p
+            className="font-display text-[#1A0A3C]/80 italic mb-4"
+            style={{ fontSize: "clamp(1rem, 1.4vw, 1.125rem)", lineHeight: 1.55, fontWeight: 300 }}
+          >
+            &ldquo;{FEATURED_TESTIMONIAL.text}&rdquo;
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-[0.72rem] font-semibold text-[#1A0A3C]/60">{FEATURED_TESTIMONIAL.name}</span>
+            <span className="text-[0.72rem] text-violet-900/25">·</span>
+            <span className="text-[0.72rem] text-violet-900/40">{FEATURED_TESTIMONIAL.genre}</span>
+          </div>
+        </motion.div>
 
         {/* Google Cloud for Startups */}
         <motion.div
