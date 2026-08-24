@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getUser, getProfile } from "@/lib/auth";
 import { isInTrial, trialDaysLeft, PLAN_LABELS, PLAN_LIMITS } from "@/lib/supabase";
 import AccountSignOut from "./_components/account-sign-out";
+import ReferralCard from "@/app/dashboard/_components/referral-card";
 
 export default async function AccountPage() {
   const user = await getUser();
@@ -27,7 +28,7 @@ export default async function AccountPage() {
       <section className="bg-white rounded-2xl border border-black/[0.07] divide-y divide-black/[0.05]">
         <div className="px-6 py-5">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A]/35 mb-4">Profile</p>
-          <Row label="Email" value={user.email ?? "—"} />
+          <Row label="Email" value={user.email ?? "-"} />
           <Row label="Plan" value={planLabel} highlight={inTrial} />
           {inTrial && profile.trial_ends_at && (
             <Row
@@ -67,6 +68,17 @@ export default async function AccountPage() {
           <AccountSignOut />
         </div>
       </section>
+
+      {/* Referral */}
+      {profile.referral_code && (
+        <div className="mt-6">
+          <ReferralCard
+            referralCode={profile.referral_code}
+            referralCount={profile.referral_count ?? 0}
+            bonusCredits={profile.bonus_credits ?? 0}
+          />
+        </div>
+      )}
     </div>
   );
 }

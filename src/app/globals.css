@@ -383,7 +383,8 @@ body::before {
 
 .zen-paragraph {
   margin: 0 0 1em;
-  line-height: 1.8;
+  line-height: var(--zen-line-height, 1.8);
+  text-indent: var(--zen-text-indent, 0);
 }
 
 .zen-h1 {
@@ -430,6 +431,224 @@ body::before {
 
 .zen-ul, .zen-ol { padding-left: 1.5em; margin: 0.5em 0; }
 .zen-listitem     { margin: 0.25em 0; }
+
+/* ── Editor chrome: theme-adaptive buttons and labels ────────── */
+.xv-chrome-btn {
+  color: color-mix(in srgb, var(--zen-text, #1A1A1A) 62%, transparent);
+}
+.xv-chrome-btn:hover {
+  color: color-mix(in srgb, var(--zen-text, #1A1A1A) 88%, transparent);
+  background-color: color-mix(in srgb, var(--zen-text, #1A1A1A) 7%, transparent);
+}
+.xv-chrome-btn.xv-chrome-btn-active {
+  color: color-mix(in srgb, var(--zen-text, #1A1A1A) 88%, transparent);
+  background-color: color-mix(in srgb, var(--zen-text, #1A1A1A) 8%, transparent);
+}
+.xv-chrome-label {
+  color: color-mix(in srgb, var(--zen-text, #1A1A1A) 62%, transparent);
+}
+
+/* ── Studio shell: mobile top bar theming ────────────────────── */
+html[data-editor-theme="dark"] .studio-shell-bg {
+  background-color: #111111;
+}
+html[data-editor-theme="dark"] .studio-mobile-bar {
+  background-color: #1C1C1C;
+  border-bottom-color: rgba(255,255,255,0.07);
+}
+html[data-editor-theme="dark"] .studio-mobile-bar span {
+  color: rgba(224,221,213,0.80);
+}
+html[data-editor-theme="dark"] .studio-mobile-bar button {
+  color: rgba(224,221,213,0.50);
+}
+html[data-editor-theme="dark"] .studio-mobile-bar button:hover {
+  color: rgba(224,221,213,0.85);
+  background-color: rgba(255,255,255,0.07);
+}
+
+html[data-editor-theme="sepia"] .studio-shell-bg {
+  background-color: #DDD0AF;
+}
+html[data-editor-theme="sepia"] .studio-mobile-bar {
+  background-color: #EDE8D5;
+  border-bottom-color: rgba(107,62,26,0.09);
+}
+html[data-editor-theme="sepia"] .studio-mobile-bar span {
+  color: rgba(107,62,26,0.80);
+}
+html[data-editor-theme="sepia"] .studio-mobile-bar button {
+  color: rgba(107,62,26,0.45);
+}
+html[data-editor-theme="sepia"] .studio-mobile-bar button:hover {
+  color: rgba(107,62,26,0.80);
+  background-color: rgba(107,62,26,0.05);
+}
+
+/* ── Studio sidebar: whole-studio theming ────────────────────── */
+
+/* Sepia */
+html[data-editor-theme="sepia"] .studio-sidebar {
+  background-color: #EDE8D5;
+  border-right-color: rgba(107,62,26,0.09);
+}
+html[data-editor-theme="sepia"] .studio-sidebar .sb-divider {
+  background-color: rgba(107,62,26,0.09);
+}
+html[data-editor-theme="sepia"] .studio-sidebar a,
+html[data-editor-theme="sepia"] .studio-sidebar p,
+html[data-editor-theme="sepia"] .studio-sidebar span:not(.text-green-600):not(.text-red-500) {
+  color: rgba(107,62,26,0.65);
+}
+html[data-editor-theme="sepia"] .studio-sidebar .sb-active {
+  background-color: #6B3E1A;
+  color: #F8F4E8;
+}
+/* Inner <p> and <span> inside active items would otherwise inherit the general
+   sidebar text color (dark sepia) from a more specific direct-rule, making the
+   chapter title invisible against the dark-brown active background. */
+html[data-editor-theme="sepia"] .studio-sidebar .sb-active p,
+html[data-editor-theme="sepia"] .studio-sidebar .sb-active span,
+html[data-editor-theme="sepia"] .studio-sidebar .sb-active button {
+  color: #F8F4E8;
+}
+
+/* Dark */
+html[data-editor-theme="dark"] .studio-sidebar {
+  background-color: #1C1C1C;
+  border-right-color: rgba(255,255,255,0.07);
+}
+html[data-editor-theme="dark"] .studio-sidebar .sb-divider {
+  background-color: rgba(255,255,255,0.07);
+}
+html[data-editor-theme="dark"] .studio-sidebar a,
+html[data-editor-theme="dark"] .studio-sidebar p,
+html[data-editor-theme="dark"] .studio-sidebar span:not(.text-green-600):not(.text-red-500),
+html[data-editor-theme="dark"] .studio-sidebar button {
+  color: rgba(224,221,213,0.65);
+}
+html[data-editor-theme="dark"] .studio-sidebar a:hover,
+html[data-editor-theme="dark"] .studio-sidebar button:hover {
+  color: rgba(224,221,213,0.90);
+  background-color: rgba(255,255,255,0.07);
+}
+html[data-editor-theme="dark"] .studio-sidebar .sb-active {
+  background-color: rgba(255,255,255,0.12);
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .studio-sidebar .sb-active:hover {
+  background-color: rgba(255,255,255,0.15);
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .studio-sidebar .sb-active p,
+html[data-editor-theme="dark"] .studio-sidebar .sb-active span,
+html[data-editor-theme="dark"] .studio-sidebar .sb-active button {
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .studio-sidebar input {
+  background-color: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.15);
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .studio-sidebar .export-dropdown {
+  background-color: #2A2A2A;
+  border-color: rgba(255,255,255,0.08);
+}
+html[data-editor-theme="dark"] .studio-sidebar .export-dropdown a {
+  color: rgba(224,221,213,0.70);
+}
+html[data-editor-theme="dark"] .studio-sidebar .export-dropdown a:hover {
+  background-color: rgba(255,255,255,0.07);
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .studio-sidebar .sb-footer {
+  border-top-color: rgba(255,255,255,0.07);
+}
+html[data-editor-theme="sepia"] .studio-sidebar .sb-footer {
+  border-top-color: rgba(107,62,26,0.09);
+}
+
+/* ── Co-author panel: whole-studio theming ───────────────────── */
+/* Override Tailwind 4's neutral color variables so every neutral-* utility
+   class inside the panel automatically adapts — no per-class selectors needed */
+
+html[data-editor-theme="dark"] .coauthor-panel {
+  /* Container */
+  background-color: #1A1A1A !important;
+  border-color:     rgba(255,255,255,0.07) !important;
+
+  /* Remap neutral palette used by child utility classes */
+  --color-neutral-50:  #252525;
+  --color-neutral-100: #2A2A2A;
+  --color-neutral-200: rgba(255,255,255,0.09);
+  --color-neutral-300: rgba(224,221,213,0.35);
+  --color-neutral-400: rgba(224,221,213,0.45);
+  --color-neutral-500: rgba(224,221,213,0.55);
+  --color-neutral-600: rgba(224,221,213,0.65);
+  --color-neutral-700: rgba(224,221,213,0.75);
+  --color-neutral-800: #E0DDD5;
+  --color-neutral-900: #E0DDD5;
+  --color-neutral-950: #FFFFFF;
+
+  /* bg-white inside panel */
+  --color-white: rgba(255,255,255,0.06);
+}
+/* Textarea text & placeholder */
+html[data-editor-theme="dark"] .coauthor-panel textarea {
+  color: #E0DDD5 !important;
+  background-color: transparent !important;
+}
+html[data-editor-theme="dark"] .coauthor-panel textarea::placeholder {
+  color: rgba(224,221,213,0.30) !important;
+}
+/* User bubble — keep dark-on-dark look with slightly lighter bg */
+html[data-editor-theme="dark"] .coauthor-panel .bg-neutral-900 {
+  background-color: rgba(255,255,255,0.13) !important;
+  color: #E0DDD5 !important;
+}
+/* bg-white elements inside panel (input wrapper, message bubbles, quick-reply chips) */
+html[data-editor-theme="dark"] .coauthor-panel .bg-white {
+  background-color: rgba(255,255,255,0.07) !important;
+}
+/* bg-[#FAFAF8] hardcoded on the panel itself */
+html[data-editor-theme="dark"] .coauthor-panel.bg-\[\#FAFAF8\] {
+  background-color: #1A1A1A !important;
+}
+
+/* Sepia */
+html[data-editor-theme="sepia"] .coauthor-panel {
+  background-color: #F0EAD6 !important;
+  border-color:     rgba(107,62,26,0.09) !important;
+
+  --color-neutral-50:  #EAE3CC;
+  --color-neutral-100: #E5DCCA;
+  --color-neutral-200: rgba(107,62,26,0.10);
+  --color-neutral-300: rgba(107,62,26,0.35);
+  --color-neutral-400: rgba(107,62,26,0.45);
+  --color-neutral-500: rgba(107,62,26,0.55);
+  --color-neutral-600: rgba(107,62,26,0.65);
+  --color-neutral-700: rgba(107,62,26,0.75);
+  --color-neutral-800: #6B3E1A;
+  --color-neutral-900: #6B3E1A;
+  --color-white: rgba(255,255,255,0.50);
+}
+/* Sepia: bg-white elements (input wrapper, message bubbles, quick-reply chips) */
+html[data-editor-theme="sepia"] .coauthor-panel .bg-white {
+  background-color: #FAF5E6 !important;
+}
+/* Sepia: user bubble */
+html[data-editor-theme="sepia"] .coauthor-panel .bg-neutral-900 {
+  background-color: #6B3E1A !important;
+  color: #F8F4E8 !important;
+}
+/* Sepia: textarea */
+html[data-editor-theme="sepia"] .coauthor-panel textarea {
+  color: #6B3E1A !important;
+  background-color: transparent !important;
+}
+html[data-editor-theme="sepia"] .coauthor-panel textarea::placeholder {
+  color: rgba(107,62,26,0.35) !important;
+}
 
 /* ── Smooth theme transitions ───────────────────────────────── */
 *,

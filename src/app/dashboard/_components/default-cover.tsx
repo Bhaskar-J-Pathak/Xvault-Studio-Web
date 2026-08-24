@@ -1,5 +1,5 @@
 /**
- * Genre-based gradient cover image — shown when no custom cover is uploaded.
+ * Genre-based gradient cover — portrait book format.
  */
 
 const GENRE_COVERS: Record<string, { from: string; to: string; accent: string }> = {
@@ -28,25 +28,24 @@ const GENRE_COVERS: Record<string, { from: string; to: string; accent: string }>
 const DEFAULT_COVER = { from: "#1e1b4b", to: "#4c1d95", accent: "#818cf8" };
 
 interface Props {
-  genre?:  string | null;
-  title:   string;
+  genre?:     string | null;
+  title:      string;
   className?: string;
 }
 
 export default function DefaultCover({ genre, title, className = "" }: Props) {
   const palette = (genre && GENRE_COVERS[genre]) ? GENRE_COVERS[genre] : DEFAULT_COVER;
 
-  // Show up to 3 words of the title
-  const words     = title.trim().split(/\s+/);
-  const line1     = words.slice(0, 2).join(" ");
-  const line2     = words.slice(2, 4).join(" ");
+  const words = title.trim().split(/\s+/);
+  const line1 = words.slice(0, 2).join(" ");
+  const line2 = words.slice(2, 4).join(" ");
 
   return (
     <div
       className={`relative w-full h-full flex flex-col items-center justify-center overflow-hidden select-none ${className}`}
       style={{ background: `linear-gradient(160deg, ${palette.from} 0%, ${palette.to} 100%)` }}
     >
-      {/* Subtle texture overlay */}
+      {/* Texture */}
       <div
         className="absolute inset-0 opacity-[0.06]"
         style={{
@@ -60,19 +59,19 @@ export default function DefaultCover({ genre, title, className = "" }: Props) {
         }}
       />
 
-      {/* Accent line */}
+      {/* Top accent line */}
       <div
         className="absolute top-0 left-0 right-0 h-[3px]"
-        style={{ background: palette.accent, opacity: 0.8 }}
+        style={{ background: palette.accent, opacity: 0.85 }}
       />
 
-      {/* Title text */}
-      <div className="relative px-3 text-center">
+      {/* Title text — larger for portrait format */}
+      <div className="relative px-4 text-center">
         <p
-          className="font-display font-semibold leading-tight text-white"
+          className="font-display font-bold leading-tight text-white"
           style={{
-            fontSize:    "clamp(10px, 3.5cqi, 15px)",
-            textShadow: "0 1px 8px rgba(0,0,0,0.6)",
+            fontSize:      "clamp(13px, 6cqi, 22px)",
+            textShadow:    "0 1px 12px rgba(0,0,0,0.55)",
             letterSpacing: "-0.01em",
           }}
         >
@@ -80,10 +79,10 @@ export default function DefaultCover({ genre, title, className = "" }: Props) {
         </p>
         {line2 && (
           <p
-            className="font-display font-semibold leading-tight text-white mt-0.5"
+            className="font-display font-bold leading-tight text-white mt-1"
             style={{
-              fontSize:    "clamp(10px, 3.5cqi, 15px)",
-              textShadow: "0 1px 8px rgba(0,0,0,0.6)",
+              fontSize:   "clamp(13px, 6cqi, 22px)",
+              textShadow: "0 1px 12px rgba(0,0,0,0.55)",
             }}
           >
             {line2}
@@ -91,10 +90,10 @@ export default function DefaultCover({ genre, title, className = "" }: Props) {
         )}
       </div>
 
-      {/* Bottom accent dot */}
+      {/* Bottom accent */}
       <div
-        className="absolute bottom-3 w-1 h-1 rounded-full"
-        style={{ background: palette.accent, opacity: 0.7 }}
+        className="absolute bottom-4 w-1.5 h-1.5 rounded-full"
+        style={{ background: palette.accent, opacity: 0.75 }}
       />
     </div>
   );

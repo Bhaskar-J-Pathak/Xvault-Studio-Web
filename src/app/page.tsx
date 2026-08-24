@@ -15,12 +15,12 @@ import Footer             from "@/components/landing/Footer";
 export const metadata: Metadata = {
   title: "Xvault Studio | AI Writing Studio for Novelists",
   description:
-    "Write your novel with AI that actually knows your story. Your AI co-author lives alongside your canvas, loaded with your entire manuscript. Free 14-day trial.",
+    "Write your novel with AI that actually knows your story. It reads your entire manuscript so continuity, what-ifs, and stuck scenes stay yours. Free 14-day trial.",
   alternates: { canonical: "https://xvault.dev" },
   openGraph: {
     title: "Xvault Studio | AI Writing Studio for Novelists",
     description:
-      "Write your novel with AI that actually knows your story. Your AI co-author lives alongside your canvas, loaded with your entire manuscript. Free 14-day trial.",
+      "Write your novel with AI that actually knows your story. It reads your entire manuscript so continuity, what-ifs, and stuck scenes stay yours. Free 14-day trial.",
     url: "https://xvault.dev",
     type: "website",
   },
@@ -34,7 +34,7 @@ const softwareSchema = {
   operatingSystem: "Web (Chrome, Firefox, Safari, Edge)",
   url: "https://xvault.dev",
   description:
-    "AI writing studio for novelists. Your AI co-author reads your entire manuscript before suggesting anything, so every suggestion fits your characters, world, and voice.",
+    "AI writing studio for novelists. Reads your entire manuscript before suggesting anything, so every suggestion fits your characters, world, and voice.",
   offers: {
     "@type": "Offer",
     price: "0",
@@ -51,7 +51,7 @@ const orgSchema = {
   url: "https://xvault.dev",
   logo: "https://xvault.dev/XVault.svg",
   description:
-    "AI writing studio for fiction novelists. Manuscript-aware co-author, automatic world board, story bible, and voice-matched prose generation.",
+    "AI writing studio for fiction novelists. Manuscript-aware story memory, automatic world board, story bible, and voice-matched prose generation.",
   contactPoint: {
     "@type": "ContactPoint",
     email: "hello@xvaultstudio.com",
@@ -64,7 +64,7 @@ const howToSchema = {
   "@context": "https://schema.org",
   "@type": "HowTo",
   name: "How to write your novel with Xvault Studio",
-  description: "Start writing your novel with an AI co-author that reads your entire manuscript. No download or configuration required.",
+  description: "Start writing your novel with an AI studio that reads your entire manuscript. No download or configuration required.",
   totalTime: "PT10M",
   step: [
     {
@@ -77,7 +77,7 @@ const howToSchema = {
       "@type": "HowToStep",
       position: 2,
       name: "Start your story",
-      text: "Give your project a title and open the studio. Alex reads everything you write from the first sentence. A short tutorial walks you through the co-author, Ghost Writing, World Board, and Story Bible as you go.",
+      text: "Give your project a title and open the studio. Alex reads everything you write from the first sentence. A short tutorial walks you through Alex, inline suggestions, World Board, and Story Bible as you go.",
     },
     {
       "@type": "HowToStep",

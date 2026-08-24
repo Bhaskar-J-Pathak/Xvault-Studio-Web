@@ -20,7 +20,7 @@ export default function AuthPage() {
 function AuthForm() {
   const router   = useRouter();
   const params   = useSearchParams();
-  const nextPath = params.get("next") ?? "/dashboard";
+  const nextPath = params.get("next") ?? "/start";
   const refCode  = params.get("ref");
 
   const [step,         setStep]         = useState<Step>("email");

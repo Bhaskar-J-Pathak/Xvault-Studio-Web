@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUser, getProfile } from "@/lib/auth";
-import AppSidebar from "@/app/dashboard/_components/app-sidebar";
+import DashboardShell from "@/app/dashboard/_components/dashboard-shell";
 
 export const metadata: Metadata = {
   title: "Account",
@@ -19,9 +19,12 @@ export default async function AccountLayout({
   const profile = await getProfile(user.id);
 
   return (
-    <div className="flex h-screen bg-[#FAFAF8] overflow-hidden">
-      <AppSidebar profile={profile} email={user.email ?? ""} />
-      <main className="flex-1 overflow-y-auto">{children}</main>
-    </div>
+    <DashboardShell
+      profile={profile}
+      email={user.email ?? ""}
+      isBeta={process.env.BETA_MODE === "true"}
+    >
+      {children}
+    </DashboardShell>
   );
 }

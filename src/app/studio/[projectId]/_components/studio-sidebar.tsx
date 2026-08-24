@@ -15,8 +15,11 @@ import {
   Network,
   ScrollText,
   Download,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { textToLexical } from "@/lib/text-to-lexical";
 import FeedbackButton from "@/components/feedback-button";
 
 interface Chapter {
@@ -136,7 +139,7 @@ export default function StudioSidebar({
   );
 
   return (
-    <aside className={`
+    <aside className={`studio-sidebar
       fixed inset-y-0 left-0 z-50 w-[210px] shrink-0 flex flex-col h-[100dvh]
       bg-[#F7F6F4] border-r border-black/[0.06]
       transition-transform duration-300 ease-in-out
@@ -171,7 +174,7 @@ export default function StudioSidebar({
         </div>
       </div>
 
-      <div className="mx-3 h-px bg-black/[0.06] mb-2" />
+      <div className="sb-divider mx-3 h-px bg-black/[0.06] mb-2" />
 
       {/* Views */}
       <div className="px-2 pb-2 space-y-0.5">
@@ -179,7 +182,7 @@ export default function StudioSidebar({
           href={`/studio/${projectId}/worldboard`}
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/worldboard`
-              ? "bg-[#1A1A1A] text-white"
+              ? "sb-active bg-[#1A1A1A] text-white"
               : "text-[#1A1A1A]/65 hover:bg-black/[0.05] hover:text-[#1A1A1A]"
           }`}
         >
@@ -190,7 +193,7 @@ export default function StudioSidebar({
           href={`/studio/${projectId}/bible`}
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/bible`
-              ? "bg-[#1A1A1A] text-white"
+              ? "sb-active bg-[#1A1A1A] text-white"
               : "text-[#1A1A1A]/65 hover:bg-black/[0.05] hover:text-[#1A1A1A]"
           }`}
         >
@@ -199,7 +202,7 @@ export default function StudioSidebar({
         </Link>
       </div>
 
-      <div className="mx-3 h-px bg-black/[0.06] mb-2" />
+      <div className="sb-divider mx-3 h-px bg-black/[0.06] mb-2" />
 
       {/* Chapter list */}
       <div className="flex-1 overflow-y-auto px-2 space-y-0.5">
@@ -238,7 +241,7 @@ export default function StudioSidebar({
                   onClick={() => setOpenMenuId(null)}
                   className={`flex items-center justify-between px-2 py-2 rounded-lg transition-colors ${
                     isActive
-                      ? "bg-[#1A1A1A] text-white"
+                      ? "sb-active bg-[#1A1A1A] text-white"
                       : "text-[#1A1A1A]/65 hover:bg-black/[0.05] hover:text-[#1A1A1A]"
                   }`}
                 >
@@ -316,8 +319,8 @@ export default function StudioSidebar({
         })}
       </div>
 
-      {/* Add chapter + Export + Feedback */}
-      <div className="px-3 py-3 border-t border-black/[0.06] space-y-0.5">
+      {/* Add chapter + Import + Export + Feedback */}
+      <div className="sb-footer px-3 py-3 border-t border-black/[0.06] space-y-0.5">
         <button
           onClick={handleAddChapter}
           disabled={addingChapter}
@@ -326,10 +329,221 @@ export default function StudioSidebar({
           <Plus size={14} />
           {addingChapter ? "Adding…" : "New chapter"}
         </button>
+        <ImportMenu
+          projectId={projectId}
+          chapters={chapters}
+          onChaptersAdded={(added) => {
+            setChapters((prev) => [...prev, ...added]);
+            router.push(`/studio/${projectId}/${added[0].id}`);
+          }}
+        />
         <ExportMenu projectId={projectId} />
         <FeedbackButton />
       </div>
     </aside>
+  );
+}
+
+// ── Import chapter picker ─────────────────────────────────────────────────────
+
+interface ParsedChapterPreview {
+  title:    string;
+  body:     string;
+  words:    number;
+  selected: boolean;
+}
+
+function ImportMenu({
+  projectId,
+  chapters: existingChapters,
+  onChaptersAdded,
+}: {
+  projectId: string;
+  chapters:  Chapter[];
+  onChaptersAdded: (added: Chapter[]) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const menuRef  = useRef<HTMLDivElement>(null);
+
+  type Stage = "idle" | "parsing" | "preview" | "importing";
+  const [stage,   setStage]   = useState<Stage>("idle");
+  const [preview, setPreview] = useState<ParsedChapterPreview[]>([]);
+  const [error,   setError]   = useState<string | null>(null);
+
+  // Close preview on outside click
+  useEffect(() => {
+    if (stage !== "preview") return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setStage("idle");
+        setPreview([]);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [stage]);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ""; // allow re-selecting same file
+    setError(null);
+    setStage("parsing");
+
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res  = await fetch("/api/studio/import", { method: "POST", body: fd });
+      const data = await res.json() as {
+        chapters?: { title: string; body: string; words: number }[];
+        error?: string;
+      };
+      if (!res.ok) { setError(data.error ?? "Failed to read file."); setStage("idle"); return; }
+
+      const chapters = data.chapters ?? [];
+      if (chapters.length === 0) { setError("No content found in file."); setStage("idle"); return; }
+
+      if (chapters.length === 1) {
+        // Single chapter — import straight away, no preview needed
+        await doImport(chapters);
+      } else {
+        setPreview(chapters.map((c) => ({ ...c, selected: true })));
+        setStage("preview");
+      }
+    } catch {
+      setError("Something went wrong. Try again.");
+      setStage("idle");
+    }
+  }
+
+  async function doImport(toImport: { title: string; body: string }[]) {
+    setStage("importing");
+    try {
+      const supabase = createClient();
+      const nextPos  = existingChapters.length > 0
+        ? Math.max(...existingChapters.map((c) => c.position)) + 1
+        : 0;
+
+      const rows = toImport.map((ch, i) => ({
+        project_id: projectId,
+        title:      ch.title,
+        position:   nextPos + i,
+        content:    textToLexical(ch.body),
+        word_count: ch.body.split(/\s+/).filter(Boolean).length,
+      }));
+
+      const { data, error: dbErr } = await supabase
+        .from("chapters")
+        .insert(rows)
+        .select("id, title, word_count, position");
+
+      if (dbErr || !data) throw dbErr;
+
+      setStage("idle");
+      setPreview([]);
+      onChaptersAdded(data as Chapter[]);
+    } catch {
+      setError("Import failed. Try again.");
+      setStage("idle");
+    }
+  }
+
+  const busy = stage === "parsing" || stage === "importing";
+  const selectedCount = preview.filter((c) => c.selected).length;
+
+  return (
+    <div ref={menuRef} className="relative">
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".txt,.docx"
+        className="hidden"
+        onChange={handleFile}
+      />
+
+      <button
+        onClick={() => { setError(null); inputRef.current?.click(); }}
+        disabled={busy}
+        className="w-full flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[#1A1A1A]/40 hover:text-[#1A1A1A]/70 hover:bg-black/[0.05] disabled:opacity-40 transition-colors"
+      >
+        {busy
+          ? <Loader2 size={14} className="animate-spin" />
+          : <Upload size={14} />
+        }
+        {stage === "parsing"   ? "Reading…"
+         : stage === "importing" ? "Importing…"
+         : "Import chapter"}
+      </button>
+
+      {error && (
+        <p className="px-3 pb-1 text-[10px] text-red-500 leading-tight">{error}</p>
+      )}
+
+      {stage === "preview" && preview.length > 0 && (
+        <div className="absolute bottom-full left-0 mb-1 w-64 rounded-xl border border-black/[0.08] bg-white shadow-xl z-50 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-black/[0.06]">
+            <span className="text-[10px] font-semibold text-[#A1A1AA] uppercase tracking-widest">
+              {preview.length} chapters detected
+            </span>
+            <button
+              onClick={() => {
+                const allSelected = preview.every((c) => c.selected);
+                setPreview((p) => p.map((c) => ({ ...c, selected: !allSelected })));
+              }}
+              className="text-[10px] text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors"
+            >
+              {preview.every((c) => c.selected) ? "Deselect all" : "Select all"}
+            </button>
+          </div>
+
+          {/* Chapter list */}
+          <div className="max-h-48 overflow-y-auto py-1">
+            {preview.map((ch, i) => (
+              <label
+                key={i}
+                className="flex items-start gap-2.5 px-3 py-1.5 hover:bg-black/[0.03] cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={ch.selected}
+                  onChange={() =>
+                    setPreview((p) =>
+                      p.map((c, j) => j === i ? { ...c, selected: !c.selected } : c)
+                    )
+                  }
+                  className="mt-0.5 shrink-0 accent-[#1A1A1A]"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[#1A1A1A] truncate leading-snug">{ch.title}</p>
+                  <p className="text-[10px] text-[#A1A1AA]">{ch.words.toLocaleString()} words</p>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="px-3 py-2.5 border-t border-black/[0.06] flex gap-2">
+            <button
+              onClick={() => {
+                const selected = preview.filter((c) => c.selected);
+                if (selected.length > 0) doImport(selected);
+              }}
+              disabled={selectedCount === 0}
+              className="flex-1 text-xs py-1.5 rounded-lg bg-[#1A1A1A] text-white hover:bg-[#333] disabled:opacity-40 transition-colors font-medium"
+            >
+              Import {selectedCount > 0 ? `${selectedCount} ` : ""}chapter{selectedCount !== 1 ? "s" : ""}
+            </button>
+            <button
+              onClick={() => { setStage("idle"); setPreview([]); }}
+              className="text-xs py-1.5 px-2.5 rounded-lg border border-black/[0.08] text-[#1A1A1A]/60 hover:bg-black/[0.04] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -367,7 +581,7 @@ function ExportMenu({ projectId }: { projectId: string }) {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-1 w-48 rounded-xl border border-black/[0.08] bg-white shadow-lg py-1 z-50">
+        <div className="export-dropdown absolute bottom-full left-0 mb-1 w-48 rounded-xl border border-black/[0.08] bg-white shadow-lg py-1 z-50">
           {FORMATS.map((fmt) => (
             <a
               key={fmt.mime}

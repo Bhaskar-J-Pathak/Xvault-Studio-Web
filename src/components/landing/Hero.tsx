@@ -8,7 +8,7 @@ import { MagneticButton } from "./MagneticButton";
 import { gsap, useGSAP } from "@/lib/gsap";
 
 const features = [
-  "Proactive Co-author",
+  "Story Memory",
   "Automatic Worldbuilder",
   "Global Editor",
   "Voice Matching",
@@ -150,7 +150,7 @@ export default function Hero() {
 
           {/* Headline */}
           <h1 className="font-display text-display text-[#1A0A3C]">
-            <span className="hero-line-1 block">The AI co-author that</span>
+            <span className="hero-line-1 block">It remembers the book</span>
             <em
               className="hero-line-2 not-italic block"
               style={{
@@ -160,14 +160,14 @@ export default function Hero() {
                 backgroundClip: "text",
               }}
             >
-              knows your whole story
+              so you don&apos;t have to.
             </em>
           </h1>
 
           {/* Subtext */}
           <p className="hero-sub max-w-[44ch] text-[1.0625rem] leading-[1.85] text-violet-900/50">
-            Xvault reads your entire manuscript before it says a word, so every
-            suggestion fits your characters, world, and voice.
+            Continuity, what-ifs, and stuck scenes. Without handing the book
+            to a chatbot.
           </p>
 
           {/* CTA */}

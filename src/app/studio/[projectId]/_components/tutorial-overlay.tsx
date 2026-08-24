@@ -55,7 +55,7 @@ const STEPS_DESKTOP: Record<number, StepContent> = {
   4: {
     icon: "🌍",
     title: "Your World Board builds itself",
-    body: "As you write, Alex automatically extracts characters, locations, and plot threads. Find it in the sidebar — no tagging needed.",
+    body: "As you write, Alex automatically extracts characters, locations, and plot threads. Find it in the sidebar. No tagging needed.",
   },
   5: {
     icon: "📖",
@@ -113,6 +113,7 @@ export default function TutorialOverlay({ initialStep, initialDone }: Props) {
 
   const [step, setStep]       = useState(initialStep);
   const [done, setDone]       = useState(initialDone);
+  const [open, setOpen]       = useState(false);
   const [visible, setVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const advanceRef            = useRef(false);
@@ -122,22 +123,20 @@ export default function TutorialOverlay({ initialStep, initialDone }: Props) {
     setIsMobile(window.innerWidth < 768);
   }, []);
 
-  // Step 0: immediately advance to step 1 to mark tour as in-progress
+  // Step 0: advance to step 1 in DB (mark tour started) but don't auto-open
   useEffect(() => {
     if (step !== 0 || done) return;
-    syncStep(1).then(() => {
-      setStep(1);
-    });
+    syncStep(1).then(() => setStep(1));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fade-in animation on step change
+  // Fade-in animation when overlay opens or step changes
   useEffect(() => {
-    if (done || step === 0 || step >= 9) return;
+    if (!open || done || step === 0 || step >= 9) return;
     setVisible(false);
     const t = setTimeout(() => setVisible(true), 80);
     return () => clearTimeout(t);
-  }, [step, done]);
+  }, [open, step, done]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -148,6 +147,7 @@ export default function TutorialOverlay({ initialStep, initialDone }: Props) {
     if (step >= TOTAL_STEPS) {
       ph?.capture("tutorial_completed", { action: "done" });
       setDone(true);
+      setOpen(false);
       await syncStep(9, true);
     } else {
       const next = step + 1;
@@ -164,68 +164,87 @@ export default function TutorialOverlay({ initialStep, initialDone }: Props) {
     advanceRef.current = true;
     ph?.capture("tutorial_skipped", { at_step: step });
     setDone(true);
+    setOpen(false);
     await syncStep(9, true);
     advanceRef.current = false;
   }
 
-  // ── Render guard ────────────────────────────────────────────────────────────
+  // ── "?" help button (always visible) ────────────────────────────────────────
 
-  if (done || step === 0 || step >= 9) return null;
+  const helpButton = (
+    <button
+      onClick={() => setOpen((v) => !v)}
+      aria-label="Open feature tour"
+      className="fixed z-[99] bottom-6 left-6 w-8 h-8 rounded-full bg-white dark:bg-[#1a1829] border border-black/[0.08] dark:border-white/[0.08] shadow-sm flex items-center justify-center text-[13px] font-semibold text-[#A1A1AA] dark:text-white/30 hover:text-[#71717A] dark:hover:text-white/60 transition-colors opacity-60 hover:opacity-100"
+    >
+      ?
+    </button>
+  );
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
+  // Once the tour is fully done, render nothing
+  if (done) return null;
 
   const steps = isMobile ? STEPS_MOBILE : STEPS_DESKTOP;
-  const content = steps[step];
-  if (!content) return null;
+  const currentStep = step === 0 ? 1 : step;
+  const content = steps[currentStep];
 
-  const isFinal = step === TOTAL_STEPS;
+  if (!content || currentStep >= 9) return helpButton;
+
+  const isFinal = currentStep === TOTAL_STEPS;
+
+  if (!open) return helpButton;
 
   return (
-    <div
-      className={`fixed z-[100] transition-all duration-300 ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-      } ${
-        // On mobile: sit above the FABs (bottom-[5.5rem] ≈ 88px clears the 64px FAB + 16px gap)
-        // On desktop: sit at bottom-6 (24px)
-        isMobile
-          ? "bottom-[5.5rem] left-3 right-3"
-          : "bottom-6 left-6 w-[300px]"
-      }`}
-    >
-      <div className="bg-white dark:bg-[#1a1829] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden">
+    <>
+      {helpButton}
+      <div
+        className={`fixed z-[100] transition-all duration-300 ${
+          visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+        } ${
+          isMobile
+            ? "bottom-[5.5rem] left-3 right-3"
+            : "bottom-16 left-6 w-[300px]"
+        }`}
+      >
+        <div className="bg-white dark:bg-[#1a1829] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden">
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30 dark:text-white/25">
-            Getting started · {step}/{TOTAL_STEPS}
-          </span>
-          <button
-            onClick={handleSkip}
-            className="text-[11px] text-[#A1A1AA] dark:text-white/30 hover:text-[#71717A] dark:hover:text-white/60 transition-colors"
-          >
-            Skip
-          </button>
-        </div>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/30 dark:text-white/25">
+              Getting started · {currentStep}/{TOTAL_STEPS}
+            </span>
+            <button
+              onClick={handleSkip}
+              className="text-[11px] text-[#A1A1AA] dark:text-white/30 hover:text-[#71717A] dark:hover:text-white/60 transition-colors"
+            >
+              Skip
+            </button>
+          </div>
 
-        {/* Body */}
-        <div className="px-4 pt-3 pb-4">
-          <div className="text-xl mb-2">{content.icon}</div>
-          <h3 className="text-sm font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight leading-snug mb-1.5">
-            {content.title}
-          </h3>
-          <p className="text-[12px] text-[#71717A] dark:text-white/45 leading-relaxed">
-            {content.body}
-          </p>
-        </div>
+          {/* Body */}
+          <div className="px-4 pt-3 pb-4">
+            <div className="text-xl mb-2">{content.icon}</div>
+            <h3 className="text-sm font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight leading-snug mb-1.5">
+              {content.title}
+            </h3>
+            <p className="text-[12px] text-[#71717A] dark:text-white/45 leading-relaxed">
+              {content.body}
+            </p>
+          </div>
 
-        {/* Footer */}
-        <div className="px-4 pb-4">
-          <button
-            onClick={handleNext}
-            className="w-full py-2.5 rounded-xl bg-[#0F0F0F] dark:bg-violet-600 text-white text-[12px] font-semibold hover:bg-[#2A2A2A] dark:hover:bg-violet-500 transition-colors"
-          >
-            {isFinal ? "Done ✓" : "Next →"}
-          </button>
+          {/* Footer */}
+          <div className="px-4 pb-4">
+            <button
+              onClick={handleNext}
+              className="w-full py-2.5 rounded-xl bg-[#0F0F0F] dark:bg-violet-600 text-white text-[12px] font-semibold hover:bg-[#2A2A2A] dark:hover:bg-violet-500 transition-colors"
+            >
+              {isFinal ? "Done ✓" : "Next →"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -75,10 +75,10 @@ export default function AppSidebar({ profile, email, isMobileOpen, onMobileClose
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-colors ${
+              className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] transition-colors ${
                 active
-                  ? "bg-[#0F0F0F] dark:bg-white/[0.09] text-white"
-                  : "text-[#71717A] dark:text-white/40 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-[#0F0F0F] dark:hover:text-white/80"
+                  ? "bg-black/[0.06] dark:bg-white/[0.07] text-[#0F0F0F] dark:text-white/90 font-semibold"
+                  : "font-medium text-[#71717A] dark:text-white/40 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-[#0F0F0F] dark:hover:text-white/80"
               }`}
             >
               <Icon size={14} strokeWidth={active ? 2 : 1.75} />

@@ -197,6 +197,7 @@ export default function CoauthorPanel({
 
         // Handle HTTP errors (especially 429 rate-limit) before treating as a reply
         if (!res.ok) {
+          ph?.capture("api_error", { feature: "coauthor_chat", status: res.status, error: data.error, reason: data.reason });
           const errorMsg = res.status === 429
             ? (data.error ?? "You've run out of AI credits. Upgrade to keep writing.")
             : (data.error ?? "Something went wrong. Try again.");
@@ -258,7 +259,8 @@ export default function CoauthorPanel({
             setGlobalChangeLoading(false);
           }
         }
-      } catch {
+      } catch (err) {
+        ph?.capture("api_error", { feature: "coauthor_chat", error: "network_error", detail: String(err) });
         setMessages((prev) =>
           prev.map((m) =>
             m.pending
@@ -299,7 +301,7 @@ export default function CoauthorPanel({
     return (
       <>
         {/* Desktop: collapsed strip */}
-        <div id={id} className="hidden md:flex flex-col h-full border-l border-neutral-200 bg-[#FAFAF8] w-[52px] items-center py-4 gap-3">
+        <div id={id} className="coauthor-panel hidden md:flex flex-col h-full border-l border-neutral-200 bg-[#FAFAF8] w-[52px] items-center py-4 gap-3">
           <button
             onClick={() => onSlimChange(false)}
             className="text-neutral-400 hover:text-neutral-700 transition-colors"
@@ -340,6 +342,7 @@ export default function CoauthorPanel({
         aria-hidden="true"
       />
       <div id={id} className="
+        coauthor-panel
         flex flex-col border-l border-neutral-200 bg-[#FAFAF8]
         fixed inset-x-0 bottom-0 z-50 h-[78dvh] rounded-t-2xl shadow-2xl
         md:relative md:inset-auto md:h-full md:rounded-none md:shadow-none md:w-[360px] md:flex-shrink-0

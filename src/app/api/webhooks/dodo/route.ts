@@ -83,6 +83,11 @@ export async function POST(req: NextRequest) {
           const profileUpdate: Record<string, unknown> = {
             plan: planPurchased,
             subscription_status: "active",
+            // Reset monthly usage so the user starts their new plan with a full
+            // credit allocation — without this, any credits used on a free/trial
+            // tier in the same calendar month would be deducted from the paid plan.
+            ai_requests_this_month: 0,
+            requests_reset_at: new Date().toISOString(),
           };
           // Lifetime plan: mark is_lifetime and store subscription_id if present
           if (planPurchased === "founder_circle") {
@@ -110,8 +115,36 @@ export async function POST(req: NextRequest) {
       }
 
       case "subscription.active":
-      case "subscription.plan_changed":
+      case "subscription.plan_changed": {
+        if (userId && planPurchased) {
+          const profileUpdate: Record<string, unknown> = {
+            plan: planPurchased,
+            subscription_status: "active",
+            // Reset monthly usage so the user gets their full new-plan allocation
+            // immediately (same reason as payment.succeeded above).
+            ai_requests_this_month: 0,
+            requests_reset_at: new Date().toISOString(),
+          };
+          if (planPurchased === "founder_circle") {
+            profileUpdate.is_lifetime = true;
+          }
+          if (subscriptionId) {
+            profileUpdate.dodo_subscription_id = subscriptionId;
+          }
+          await supabaseAdmin
+            .from("profiles")
+            .update(profileUpdate)
+            .eq("id", userId);
+        }
+        break;
+      }
+
       case "subscription.renewed": {
+        // Renewal fires at the start of a new billing period. The calendar-month
+        // reset in check_ai_quota / commit_ai_request handles credit refresh
+        // automatically, so we don't reset the counter here — doing so mid-month
+        // could otherwise double the allocation for users whose billing period
+        // doesn't align with the calendar month.
         if (userId && planPurchased) {
           const profileUpdate: Record<string, unknown> = {
             plan: planPurchased,

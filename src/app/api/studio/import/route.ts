@@ -9,6 +9,7 @@
 
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/auth";
+export { textToLexical } from "@/lib/text-to-lexical";
 
 // ── Chapter pattern for .txt ──────────────────────────────────────────────────
 
@@ -18,45 +19,6 @@ export interface ParsedChapter {
   title:   string;
   body:    string; // plain text
   words:   number;
-}
-
-// ── Text → Lexical JSON ───────────────────────────────────────────────────────
-
-export function textToLexical(text: string): Record<string, unknown> {
-  const paragraphs = text
-    .split(/\n{2,}/)
-    .map((p) => p.replace(/\n/g, " ").trim())
-    .filter((p) => p.length > 0);
-
-  if (paragraphs.length === 0) paragraphs.push("");
-
-  return {
-    root: {
-      type:      "root",
-      version:   1,
-      format:    "",
-      indent:    0,
-      direction: "ltr",
-      children:  paragraphs.map((p) => ({
-        type:      "paragraph",
-        version:   1,
-        format:    "",
-        indent:    0,
-        direction: "ltr",
-        children:  [
-          {
-            type:   "text",
-            text:   p,
-            version: 1,
-            format:  0,
-            mode:    "normal",
-            style:   "",
-            detail:  0,
-          },
-        ],
-      })),
-    },
-  };
 }
 
 // ── Detect chapters from plain text ──────────────────────────────────────────

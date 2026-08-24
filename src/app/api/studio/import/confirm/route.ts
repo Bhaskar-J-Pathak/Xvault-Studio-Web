@@ -8,7 +8,7 @@
 
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/auth";
-import { textToLexical } from "../route";
+import { textToLexical } from "@/lib/text-to-lexical";
 
 interface ChapterInput {
   title: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -15,6 +15,11 @@ import type { EditorState } from "lexical";
 
 // ── Ghost writer types ────────────────────────────────────────────────────────
 type GhostMode = "write" | "rewrite" | "continue";
+
+// ── Direct editor action (toolbar → Lexical, bypasses ghost overlay) ──────────
+type DirectAction =
+  | { type: "replace";      original: string; replacement: string }
+  | { type: "insert-after"; text: string };
 interface CursorContext {
   beforeCursor: string;    // all text before cursor position
   afterCursor: string;     // all text after cursor position
@@ -22,12 +27,19 @@ interface CursorContext {
 }
 import { createClient, creditsRemaining } from "@/lib/supabase";
 import type { Profile } from "@/lib/supabase";
-import { Loader2, Wand2, X } from "lucide-react";
+import { Loader2, Wand2, X, PenLine, Settings, MoreHorizontal, Share2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
 import CoauthorSetup from "@/app/studio/[projectId]/_components/coauthor-setup";
 import TutorialOverlay from "@/app/studio/[projectId]/_components/tutorial-overlay";
+import EditPreviewModal from "@/app/studio/[projectId]/_components/edit-preview-modal";
+import SelectionToolbar from "./selection-toolbar";
+import type { Branch } from "./selection-toolbar";
+import StudioSettingsPanel from "./studio-settings-panel";
+import type { EditorPrefs } from "./studio-settings-panel";
+import { DEFAULT_PREFS, PREFS_KEY, THEME_MAP, FONT_MAP, LINE_SPACING_MAP } from "./studio-settings-panel";
 import type { DbCoauthor } from "@/types/database";
+import type { EditPlan } from "@/app/api/ai/coauthor/edit/analyze/route";
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
@@ -295,6 +307,9 @@ interface CoAuthorPluginProps {
   onGhostAccepted:      () => void;
   onGhostDismissed:     () => void;
   acceptTrigger:        number;   // increment from outside to trigger accept (mobile)
+  directAction:         DirectAction | null;  // toolbar replace/insert bypassing ghost
+  onDirectActionDone:   () => void;
+  triggerWriteRef?:     React.MutableRefObject<(() => void) | null>;
 }
 
 function CoAuthorPlugin({
@@ -310,6 +325,9 @@ function CoAuthorPlugin({
   onGhostAccepted,
   onGhostDismissed,
   acceptTrigger,
+  directAction,
+  onDirectActionDone,
+  triggerWriteRef,
 }: CoAuthorPluginProps) {
   const [editor] = useLexicalComposerContext();
 
@@ -339,6 +357,97 @@ function CoAuthorPlugin({
   onGhostDismissedRef.current = onGhostDismissed;
 
   const acceptTriggerSeenRef = useRef(0);
+
+  // ── Direct action (toolbar replace / insert-after, bypasses ghost overlay) ──
+  const directActionRef        = useRef(directAction);
+  directActionRef.current      = directAction;
+  const directActionSeenRef    = useRef<DirectAction | null>(null);
+  const onDirectActionDoneRef  = useRef(onDirectActionDone);
+  onDirectActionDoneRef.current = onDirectActionDone;
+
+  // ── Expose triggerWrite to parent (Write button in title bar) ──────────────
+  useEffect(() => {
+    if (!triggerWriteRef) return;
+    triggerWriteRef.current = () => {
+      if (!coauthorRef.current) return;
+      let beforeCursor = "";
+      let afterCursor  = "";
+      let selectedText = "";
+      editor.getEditorState().read(() => {
+        const root     = $getRoot();
+        const fullText = root.getTextContent();
+        const sel      = $getSelection();
+        if ($isRangeSelection(sel)) {
+          selectedText = sel.getTextContent();
+          const anchorNode   = sel.anchor.getNode();
+          const anchorOffset = sel.anchor.offset;
+          const anchorText   = "getTextContent" in anchorNode
+            ? (anchorNode as unknown as { getTextContent: () => string }).getTextContent()
+            : "";
+          const beforeAnchor = anchorText.slice(0, anchorOffset);
+          const anchorIdx    = fullText.indexOf(beforeAnchor.slice(-100));
+          if (anchorIdx !== -1) {
+            beforeCursor = fullText.slice(0, anchorIdx + beforeAnchor.length);
+            afterCursor  = fullText.slice(anchorIdx + beforeAnchor.length + selectedText.length);
+          } else {
+            beforeCursor = fullText;
+          }
+        } else {
+          beforeCursor = fullText;
+        }
+      });
+      onCtrlKRef.current({ beforeCursor, afterCursor, selectedText });
+    };
+    return () => { if (triggerWriteRef) triggerWriteRef.current = null; };
+  }, [editor, triggerWriteRef]);
+
+  useEffect(() => {
+    if (!directAction || directAction === directActionSeenRef.current) return;
+    directActionSeenRef.current = directAction;
+
+    // Capture in local const so TypeScript can narrow the discriminated union inside callbacks
+    const action = directAction;
+
+    editor.update(() => {
+      if (action.type === "replace") {
+        const { original, replacement } = action;
+        const root = $getRoot();
+        function replaceInNode(node: ReturnType<typeof $getRoot>): boolean {
+          const type = (node as { getType: () => string }).getType?.();
+          if (type === "text") {
+            const tn = node as unknown as { getTextContent: () => string; setTextContent: (t: string) => void };
+            const text = tn.getTextContent();
+            const idx  = text.indexOf(original);
+            if (idx !== -1) {
+              tn.setTextContent(text.slice(0, idx) + replacement + text.slice(idx + original.length));
+              return true;
+            }
+          }
+          if ("getChildren" in node) {
+            for (const child of (node as { getChildren: () => ReturnType<typeof $getRoot>[] }).getChildren()) {
+              if (replaceInNode(child)) return true;
+            }
+          }
+          return false;
+        }
+        const replaced = replaceInNode(root as ReturnType<typeof $getRoot>);
+        if (!replaced) {
+          const sel = $getSelection();
+          if ($isRangeSelection(sel)) sel.insertText(replacement);
+        }
+      } else if (action.type === "insert-after") {
+        const sel = $getSelection();
+        if ($isRangeSelection(sel)) {
+          if (!sel.isCollapsed()) {
+            sel.anchor.set(sel.focus.key, sel.focus.offset, sel.focus.type);
+          }
+          sel.insertText(action.text);
+        }
+      }
+    });
+
+    onDirectActionDoneRef.current();
+  }, [directAction, editor]);
 
   // Shared accept logic — called from keyboard (Tab) and mobile button
   const doAcceptRef = useRef<() => void>(() => {});
@@ -377,7 +486,14 @@ function CoAuthorPlugin({
           }
         } else {
           const sel = $getSelection();
-          if ($isRangeSelection(sel)) sel.insertText(suggestion);
+          if ($isRangeSelection(sel)) {
+            // For continue mode, collapse to the focus (end of any selection)
+            // so the suggestion is inserted after the selection, not replacing it.
+            if (!sel.isCollapsed()) {
+              sel.anchor.set(sel.focus.key, sel.focus.offset, sel.focus.type);
+            }
+            sel.insertText(suggestion);
+          }
         }
       });
       onGhostAcceptedRef.current();
@@ -545,6 +661,78 @@ function CoAuthorPlugin({
   return null;
 }
 
+// ── SelectionPlugin ───────────────────────────────────────────────────────────
+// Tracks text selections inside the Lexical editor and calls onSelectionChange
+// with the viewport rect + cursor context whenever a non-empty selection exists.
+
+function SelectionPlugin({
+  onSelectionChange,
+}: {
+  onSelectionChange: (data: { rect: DOMRect; context: CursorContext } | null) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+  const cbRef = useRef(onSelectionChange);
+  cbRef.current = onSelectionChange;
+
+  useEffect(() => {
+    function handleSelectionChange() {
+      const domSel = window.getSelection();
+      if (!domSel || domSel.isCollapsed || domSel.rangeCount === 0) {
+        cbRef.current(null);
+        return;
+      }
+      const range = domSel.getRangeAt(0);
+      const rect  = range.getBoundingClientRect();
+      if (rect.width < 4) {
+        cbRef.current(null);
+        return;
+      }
+
+      let beforeCursor  = "";
+      let afterCursor   = "";
+      let selectedText  = "";
+
+      editor.getEditorState().read(() => {
+        const root     = $getRoot();
+        const fullText = root.getTextContent();
+        const sel      = $getSelection();
+
+        if ($isRangeSelection(sel)) {
+          selectedText = sel.getTextContent();
+          if (!selectedText.trim()) return;
+
+          const anchorNode   = sel.anchor.getNode();
+          const anchorOffset = sel.anchor.offset;
+          const anchorText   = "getTextContent" in anchorNode
+            ? (anchorNode as unknown as { getTextContent: () => string }).getTextContent()
+            : "";
+          const beforeAnchor = anchorText.slice(0, anchorOffset);
+          const anchorIdx    = fullText.indexOf(beforeAnchor.slice(-100));
+
+          if (anchorIdx !== -1) {
+            beforeCursor = fullText.slice(0, anchorIdx + beforeAnchor.length);
+            afterCursor  = fullText.slice(anchorIdx + beforeAnchor.length + selectedText.length);
+          } else {
+            beforeCursor = fullText;
+          }
+        }
+      });
+
+      if (!selectedText.trim()) {
+        cbRef.current(null);
+        return;
+      }
+
+      cbRef.current({ rect, context: { beforeCursor, afterCursor, selectedText } });
+    }
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () => document.removeEventListener("selectionchange", handleSelectionChange);
+  }, [editor]);
+
+  return null;
+}
+
 // ── ContentReloadPlugin ───────────────────────────────────────────────────────
 // After a global change is applied to the DB, re-hydrate the editor with
 // the freshly fetched content so the writer sees changes immediately.
@@ -651,6 +839,32 @@ export default function ZenEditor({
   const [chatResponseReceived, setChatResponseReceived] = useState(false);
   const [editorFocused,        setEditorFocused]        = useState(false);
 
+  // Line edit state
+  const [editPlan,    setEditPlan]    = useState<EditPlan | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+
+  async function handleEditChapter() {
+    if (editLoading) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch("/api/ai/coauthor/edit/analyze", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ projectId, chapterId }),
+      });
+      const data = await res.json() as { plan?: EditPlan; error?: string };
+      if (data.plan) {
+        setEditPlan(data.plan);
+      } else {
+        console.error("[edit] analyze failed:", data.error);
+      }
+    } catch (err) {
+      console.error("[edit] analyze error:", err);
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
   // Global change reload
   const [pendingReloadContent, setPendingReloadContent] = useState<Record<string, unknown> | null>(null);
   const handleReloadLoaded = useCallback(() => setPendingReloadContent(null), []);
@@ -724,6 +938,71 @@ export default function ZenEditor({
   const [ghostLoading,      setGhostLoading]      = useState(false);
   const [triggerAcceptGhost, setTriggerAcceptGhost] = useState(0);
 
+  // Write button → CoAuthorPlugin bridge
+  const triggerWriteRef = useRef<(() => void) | null>(null);
+
+  // Editor preferences (font / line-spacing / theme)
+  const [editorPrefs, setEditorPrefs] = useState<EditorPrefs>(DEFAULT_PREFS);
+  const [settingsOpen,    setSettingsOpen]    = useState(false);
+  const [mobileMoreOpen,  setMobileMoreOpen]  = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(PREFS_KEY);
+      if (stored) setEditorPrefs({ ...DEFAULT_PREFS, ...JSON.parse(stored) });
+    } catch { /* ignore */ }
+  }, []);
+
+  // Propagate theme to the entire studio (sidebar, shell, etc.)
+  useEffect(() => {
+    document.documentElement.setAttribute("data-editor-theme", editorPrefs.theme);
+    return () => document.documentElement.removeAttribute("data-editor-theme");
+  }, [editorPrefs.theme]);
+
+  // Inject paragraph styles imperatively — bypasses React 19's <style> hoisting
+  useEffect(() => {
+    const id = "xv-dyn-styles";
+    let el = document.getElementById(id) as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement("style");
+      el.id = id;
+      document.head.appendChild(el);
+    }
+    el.textContent = `.zen-paragraph { line-height: ${LINE_SPACING_MAP[editorPrefs.lineSpacing]} !important; text-indent: ${editorPrefs.indentParagraphs ? "2em" : "0"} !important; }`;
+    return () => { document.getElementById(id)?.remove(); };
+  }, [editorPrefs.lineSpacing, editorPrefs.indentParagraphs]);
+
+  function handlePrefsChange(p: EditorPrefs) {
+    setEditorPrefs(p);
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+  }
+
+  // Track whether user has ever used the selection toolbar (for footer hint).
+  // Must start as false on both server and client to avoid a hydration mismatch;
+  // the localStorage value is read only after mount.
+  const [barEverSeen, setBarEverSeen] = useState(false);
+  useEffect(() => {
+    if (localStorage.getItem("xv_bar_seen") === "true") setBarEverSeen(true);
+  }, []);
+
+  // Selection toolbar + What If + Rewrite
+  const [selectionData,  setSelectionData]  = useState<{ rect: DOMRect; context: CursorContext } | null>(null);
+  const [lockedToolbar,  setLockedToolbar]  = useState<{ rect: DOMRect; context: CursorContext } | null>(null);
+  const [whatIfExpanded, setWhatIfExpanded] = useState(false);
+  const [whatIfInput,    setWhatIfInput]    = useState("");
+  const [whatIfLoading,  setWhatIfLoading]  = useState(false);
+  const [whatIfBranches, setWhatIfBranches] = useState<Branch[] | null>(null);
+  const [rewriteResult,  setRewriteResult]  = useState<string | null>(null);
+  const [rewriteLoading, setRewriteLoading] = useState(false);
+  const [directAction,   setDirectAction]   = useState<DirectAction | null>(null);
+
+  useEffect(() => {
+    if (selectionData && !barEverSeen) {
+      setBarEverSeen(true);
+      localStorage.setItem("xv_bar_seen", "true");
+    }
+  }, [selectionData, barEverSeen]);
+
   const handleCreditUpdate = useCallback((remaining: number) => {
     setCredits(remaining);
     if (remaining <= 0) setShowUpgradeModal(true);
@@ -761,13 +1040,112 @@ export default function ZenEditor({
       });
       const data = await res.json() as { suggestion?: string; error?: string; remaining?: number };
       if (data.remaining !== undefined) handleCreditUpdate(data.remaining);
+      if (!res.ok) {
+        ph?.capture("api_error", { feature: "ghost_write", status: res.status, error: data.error, mode });
+        const msg = res.status === 429
+          ? (data.error ?? "You've run out of AI credits.")
+          : (data.error ?? `Something went wrong (${res.status}). Try again.`);
+        setGhostSuggestion(`[Error: ${msg}]`);
+        return;
+      }
       if (data.suggestion) setGhostSuggestion(data.suggestion);
-    } catch {
-      // silently ignore
+    } catch (err) {
+      ph?.capture("api_error", { feature: "ghost_write", error: "network_error", detail: String(err), mode });
+      setGhostSuggestion(`[Error: ${err instanceof Error ? err.message : "Network error. Check your connection."}]`);
     } finally {
       setGhostLoading(false);
     }
-  }, [projectId, chapterId]);
+  }, [projectId, chapterId, ph]);
+
+  // ── Selection toolbar callbacks ──────────────────────────────────────────────
+
+  function dismissToolbar() {
+    setLockedToolbar(null);
+    setSelectionData(null);
+    setWhatIfExpanded(false);
+    setWhatIfBranches(null);
+    setWhatIfInput("");
+    setRewriteResult(null);
+    setRewriteLoading(false);
+  }
+
+  const handleToolbarContinue = useCallback(async (context: CursorContext) => {
+    dismissToolbar();
+    setGhostMode("continue");
+    setGhostOriginalText("");
+    setGhostLoading(true);
+    try {
+      const res = await fetch("/api/ai/coauthor/suggest", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          projectId,
+          chapterId,
+          mode:         "continue",
+          // Move past the selection so generation continues after it
+          beforeCursor: context.beforeCursor + context.selectedText,
+          afterCursor:  context.afterCursor,
+        }),
+      });
+      const data = await res.json() as { suggestion?: string; remaining?: number };
+      if (data.remaining !== undefined) handleCreditUpdate(data.remaining);
+      if (data.suggestion) setGhostSuggestion(data.suggestion);
+    } catch { /* silently ignore */ }
+    finally { setGhostLoading(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, chapterId, handleCreditUpdate]);
+
+  const handleToolbarRewrite = useCallback(async (context: CursorContext) => {
+    // Keep toolbar visible (locked) — result shows in toolbar panel, not ghost overlay
+    setRewriteLoading(true);
+    setRewriteResult(null);
+    setWhatIfExpanded(false);
+    setWhatIfBranches(null);
+    try {
+      const res = await fetch("/api/ai/coauthor/suggest", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          projectId,
+          chapterId,
+          mode:         "rewrite",
+          instruction:  "Rewrite — different take, same voice and POV",
+          beforeCursor: context.beforeCursor,
+          afterCursor:  context.afterCursor,
+          selectedText: context.selectedText,
+        }),
+      });
+      const data = await res.json() as { suggestion?: string; remaining?: number };
+      if (data.remaining !== undefined) handleCreditUpdate(data.remaining);
+      if (data.suggestion) setRewriteResult(data.suggestion);
+    } catch { /* silently ignore */ }
+    finally { setRewriteLoading(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, chapterId, handleCreditUpdate]);
+
+  const handleWhatIfSubmit = useCallback(async (context: CursorContext, input: string) => {
+    if (!input.trim()) return;
+    setWhatIfLoading(true);
+    setWhatIfBranches(null);
+    try {
+      const res = await fetch("/api/ai/coauthor/whatif", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          projectId,
+          chapterId,
+          selectedText:  context.selectedText,
+          contextBefore: context.beforeCursor,
+          whatIf:        input.trim(),
+        }),
+      });
+      const data = await res.json() as { branches?: Branch[]; remaining?: number };
+      if (data.remaining !== undefined) handleCreditUpdate(data.remaining);
+      if (data.branches) setWhatIfBranches(data.branches);
+    } catch { /* silently ignore */ }
+    finally { setWhatIfLoading(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, chapterId, handleCreditUpdate]);
 
   const handleCoauthorSave = useCallback(async (name: string, personality: string) => {
     const res = await fetch("/api/coauthor/setup", {
@@ -811,25 +1189,67 @@ export default function ZenEditor({
     onError:     (err: Error) => console.error("[Lexical]", err),
   };
 
+  const th = THEME_MAP[editorPrefs.theme];
+
   return (
     <div className="flex h-full">
 
       {/* ── Editor column ──────────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-w-0 bg-white">
+      <div
+        className="xv-editor-col flex flex-col flex-1 min-w-0 transition-colors duration-300"
+        style={{
+          backgroundColor: th.bg,
+          "--zen-line-height": LINE_SPACING_MAP[editorPrefs.lineSpacing],
+          "--zen-text-indent": editorPrefs.indentParagraphs ? "2em" : "0",
+          "--zen-text":        th.text,
+          "--zen-border":      th.border,
+        } as React.CSSProperties}
+      >
 
         {/* Title bar */}
-        <div className="shrink-0 flex items-center justify-between px-8 py-3 border-b border-black/[0.06]">
-          <h1 className="text-sm font-semibold text-[#1A1A1A] tracking-tight truncate">
+        <div
+          className="shrink-0 flex items-center justify-between px-4 md:px-8 py-3 border-b"
+          style={{ backgroundColor: th.bg, borderBottomColor: th.border }}
+        >
+          <h1 className="text-sm font-semibold tracking-tight truncate" style={{ color: th.text }}>
             {chapterTitle}
           </h1>
           <div className="flex items-center gap-2">
-            <SaveIndicator status={saveStatus} />
+            <SaveIndicator status={saveStatus} theme={th} />
 
-            {/* Share button */}
+            {/* Continue button (Ctrl+K) — desktop only; mobile uses Write FAB */}
+            <button
+              onClick={() => {
+                if (!coauthor) { setShowCoauthorSetup(true); return; }
+                triggerWriteRef.current?.();
+              }}
+              disabled={ghostLoading}
+              title="Continue writing from cursor (Ctrl+K)"
+              className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium xv-chrome-btn transition-colors disabled:opacity-40"
+            >
+              <span className="text-[10px] leading-none">✦</span>
+              Continue
+            </button>
+
+            {/* Line edit — desktop only; mobile uses ••• menu */}
+            <button
+              onClick={handleEditChapter}
+              disabled={editLoading}
+              title="Line edit this chapter"
+              className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium xv-chrome-btn transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {editLoading
+                ? <Loader2 size={12} className="animate-spin" />
+                : <PenLine size={12} />
+              }
+              {editLoading ? "Scanning…" : "Edit"}
+            </button>
+
+            {/* Share — desktop only; mobile uses ••• menu */}
             <button
               onClick={openShareModal}
               title="Share this chapter"
-              className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[#1A1A1A]/40 hover:text-[#1A1A1A]/70 hover:bg-black/[0.05] transition-colors"
+              className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium xv-chrome-btn transition-colors"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -838,17 +1258,37 @@ export default function ZenEditor({
               Share
             </button>
 
-            {/* Co-author toggle */}
+            {/* Co-author toggle — desktop only; mobile uses FAB */}
             <button
               onClick={openCoauthorPanel}
               title={coauthor ? `${coauthor.name} (co-author)` : "Set up co-author"}
               className={`hidden md:flex w-6 h-6 items-center justify-center rounded-lg transition-colors ${
                 coauthor && !coauthorSlim
                   ? "bg-amber-100 text-amber-600"
-                  : "text-[#1A1A1A]/30 hover:text-[#1A1A1A]/60 hover:bg-black/[0.05]"
+                  : "xv-chrome-btn"
               }`}
             >
               <Wand2 size={13} />
+            </button>
+
+            {/* Settings — visible on all sizes */}
+            <button
+              onClick={() => setSettingsOpen(s => !s)}
+              title="Editor settings"
+              className={`flex w-8 h-8 md:w-6 md:h-6 items-center justify-center rounded-lg transition-colors xv-chrome-btn ${
+                settingsOpen ? "xv-chrome-btn-active" : ""
+              }`}
+            >
+              <Settings size={14} />
+            </button>
+
+            {/* ••• mobile overflow — Share + Line Edit */}
+            <button
+              onClick={() => setMobileMoreOpen(true)}
+              title="More options"
+              className="md:hidden flex w-8 h-8 items-center justify-center rounded-lg xv-chrome-btn transition-colors"
+            >
+              <MoreHorizontal size={16} />
             </button>
           </div>
         </div>
@@ -856,20 +1296,33 @@ export default function ZenEditor({
         {/* Lexical editor */}
         <LexicalComposer initialConfig={initialConfig}>
           <div id="tutorial-editor" className="flex-1 overflow-y-auto relative" onClick={() => !editorFocused && setEditorFocused(true)}>
+
             <div className="relative max-w-[680px] mx-auto px-8 py-14">
               <RichTextPlugin
                 contentEditable={
                   <ContentEditable
-                    className="outline-none text-[17px] leading-[1.85] text-[#1A1A1A] font-display min-h-[60vh]"
+                    className="outline-none min-h-[60vh]"
+                    style={{
+                      fontSize:   "17px",
+                      color:      THEME_MAP[editorPrefs.theme].text,
+                      fontFamily: FONT_MAP[editorPrefs.font],
+                      transition: "color 0.3s, font-family 0.2s",
+                    }}
                     aria-label="Story editor"
                   />
                 }
                 placeholder={
                   <div
-                    className="absolute top-14 left-8 pointer-events-none text-[17px] leading-[1.85] text-[#1A1A1A]/20 font-display select-none"
+                    className="absolute top-0 left-0 pointer-events-none select-none"
+                    style={{
+                      fontSize:   "17px",
+                      lineHeight: LINE_SPACING_MAP[editorPrefs.lineSpacing],
+                      color:      THEME_MAP[editorPrefs.theme].placeholder,
+                      fontFamily: FONT_MAP[editorPrefs.font],
+                    }}
                     aria-hidden
                   >
-                    Begin your story…
+                    Start writing…
                   </div>
                 }
                 ErrorBoundary={LexicalErrorBoundary}
@@ -941,17 +1394,68 @@ export default function ZenEditor({
             onGhostAccepted={() => { setGhostSuggestion(null); setGhostOriginalText(""); }}
             onGhostDismissed={() => { setGhostSuggestion(null); setGhostOriginalText(""); }}
             acceptTrigger={triggerAcceptGhost}
+            directAction={directAction}
+            onDirectActionDone={() => setDirectAction(null)}
+            triggerWriteRef={triggerWriteRef}
           />
           <ContentReloadPlugin
             pendingContent={pendingReloadContent}
             onLoaded={handleReloadLoaded}
           />
+          <SelectionPlugin onSelectionChange={setSelectionData} />
         </LexicalComposer>
 
+        {/* ── Selection toolbar (Continue / Rewrite / What If) ── */}
+        {(() => {
+          const activeToolbar = lockedToolbar ?? selectionData;
+          if (!activeToolbar || ghostLoading || ghostSuggestion || commandBarOpen) return null;
+          return (
+            <SelectionToolbar
+              rect={activeToolbar.rect}
+              whatIfExpanded={whatIfExpanded}
+              whatIfInput={whatIfInput}
+              whatIfLoading={whatIfLoading}
+              whatIfBranches={whatIfBranches}
+              rewriteLoading={rewriteLoading}
+              rewriteResult={rewriteResult}
+              onContinue={() => handleToolbarContinue(activeToolbar.context)}
+              onRewrite={() => {
+                setLockedToolbar(activeToolbar);
+                handleToolbarRewrite(activeToolbar.context);
+              }}
+              onWhatIfToggle={() => {
+                if (whatIfExpanded || whatIfBranches) {
+                  dismissToolbar();
+                } else {
+                  setLockedToolbar(activeToolbar);
+                  setWhatIfExpanded(true);
+                  setWhatIfInput("");
+                  setWhatIfBranches(null);
+                  setRewriteResult(null);
+                }
+              }}
+              onWhatIfChange={setWhatIfInput}
+              onWhatIfSubmit={() => handleWhatIfSubmit(activeToolbar.context, whatIfInput)}
+              onBranchUse={(text) => {
+                setDirectAction({ type: "insert-after", text });
+                dismissToolbar();
+              }}
+              onRewriteAccept={(replacement) => {
+                setDirectAction({ type: "replace", original: activeToolbar.context.selectedText, replacement });
+                dismissToolbar();
+              }}
+              onDismiss={dismissToolbar}
+            />
+          );
+        })()}
+
         {/* Status bar */}
-        <div className="shrink-0 flex items-center justify-between px-8 py-2 border-t border-black/[0.06] bg-[#FAFAF8]">
+        <div
+          className="shrink-0 flex items-center justify-between px-8 py-2 border-t"
+          style={{ backgroundColor: th.bg, borderTopColor: th.border }}
+        >
           <div className="flex items-center gap-3">
-            <span className="text-xs text-[#1A1A1A]/35">
+            <span className="text-xs xv-chrome-label">
               {wordCount.toLocaleString()} word{wordCount !== 1 ? "s" : ""}
             </span>
             {extractionStatus === "extracting" && (
@@ -967,7 +1471,7 @@ export default function ZenEditor({
                   ? "text-red-500 cursor-pointer hover:text-red-600"
                   : credits <= 20
                   ? "text-amber-500"
-                  : "text-[#1A1A1A]/30"
+                  : "xv-chrome-label"
               }`}
               title={isTrial ? `Trial credits: ${credits} of 100 remaining` : `Credits this month: ${credits} remaining`}
             >
@@ -976,11 +1480,49 @@ export default function ZenEditor({
                 {credits <= 0 ? "No credits · Upgrade" : `${credits} credit${credits !== 1 ? "s" : ""}${credits <= 20 ? " · Low" : ""}`}
               </span>
             </button>
-            <span className="hidden md:inline text-xs text-[#1A1A1A]/40 font-mono">
-              Ctrl+K write · Tab accept · Esc dismiss
+            <span className="hidden md:inline text-xs xv-chrome-label font-mono">
+              {barEverSeen
+                ? "Tab accept · Esc dismiss"
+                : "Select text for Rewrite / What If  ·  Continue (Ctrl+K)"}
             </span>
           </div>
         </div>
+
+        {/* Mobile ••• bottom sheet */}
+        {mobileMoreOpen && (
+          <>
+            <div
+              className="md:hidden fixed inset-0 z-[190] bg-black/40"
+              onClick={() => setMobileMoreOpen(false)}
+            />
+            <div className="md:hidden fixed inset-x-0 bottom-0 z-[200] rounded-t-2xl bg-white shadow-2xl pb-safe">
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-8 h-1 rounded-full bg-neutral-200" />
+              </div>
+              <div className="px-4 py-2 space-y-1">
+                <button
+                  onClick={() => { setMobileMoreOpen(false); openShareModal(); }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[14px] text-[#1A1A1A] hover:bg-black/[0.04] transition-colors"
+                >
+                  <Share2 size={16} className="text-[#71717A]" />
+                  Share chapter
+                </button>
+                <button
+                  onClick={() => { setMobileMoreOpen(false); handleEditChapter(); }}
+                  disabled={editLoading}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[14px] text-[#1A1A1A] hover:bg-black/[0.04] disabled:opacity-40 transition-colors"
+                >
+                  {editLoading
+                    ? <Loader2 size={16} className="animate-spin text-[#71717A]" />
+                    : <PenLine size={16} className="text-[#71717A]" />
+                  }
+                  {editLoading ? "Scanning chapter…" : "Line edit chapter"}
+                </button>
+              </div>
+              <div className="h-6" />
+            </div>
+          </>
+        )}
 
         {/* Upgrade modal */}
         {showUpgradeModal && (
@@ -1048,6 +1590,20 @@ export default function ZenEditor({
           onSave={handleCoauthorSave}
           onClose={() => setShowCoauthorSetup(false)}
           initial={coauthor ? { name: coauthor.name, personality: coauthor.personality } : undefined}
+        />
+      )}
+
+      {/* ── Edit preview modal ─────────────────────────────────────────────── */}
+      {editPlan && (
+        <EditPreviewModal
+          plan={editPlan}
+          projectId={projectId}
+          onDone={async (summary) => {
+            setEditPlan(null);
+            await handleGlobalChangeDone(); // reuse existing reload mechanism
+            console.info("[edit] done:", summary);
+          }}
+          onCancel={() => setEditPlan(null)}
         />
       )}
 
@@ -1176,6 +1732,17 @@ export default function ZenEditor({
         />
       )}
 
+      {/* ── Editor settings panel ───────────────────────────────────────────── */}
+      <StudioSettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        credits={credits}
+        isTrial={isTrial}
+        cap={initialCredits > 0 ? Math.max(initialCredits, credits) : 100}
+        prefs={editorPrefs}
+        onChange={handlePrefsChange}
+      />
+
     </div>
   );
 }
@@ -1205,6 +1772,18 @@ function InlineCommandBar({
     ? context.selectedText.trim().split(/\s+/).length
     : 0;
 
+  // Last ~8 words before the cursor — shown when no selection so the user
+  // can see exactly where in the document generation will land.
+  const cursorPreview = !hasSelection
+    ? (() => {
+        const trimmed = context.beforeCursor.trim();
+        if (!trimmed) return null;
+        const words = trimmed.split(/\s+/);
+        const tail  = words.slice(-8).join(" ");
+        return words.length > 8 ? `…${tail}` : tail;
+      })()
+    : null;
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -1221,21 +1800,33 @@ function InlineCommandBar({
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[min(640px,92%)] z-[100]">
       <div className="rounded-xl border border-neutral-300 bg-white shadow-2xl overflow-hidden">
         {/* Context badge */}
-        <div className="px-3.5 py-1.5 border-b border-neutral-100 bg-neutral-50 flex items-center gap-2">
-          <span className="text-[11px] text-neutral-400 font-mono flex-1">
+        <div className="px-3.5 py-2 border-b border-neutral-100 bg-neutral-50 flex items-center gap-2.5 min-w-0">
+          <span className="text-[11px] font-semibold text-neutral-400 shrink-0">
             {hasSelection
-              ? `✦ Rewriting ${selWordCount} word${selWordCount !== 1 ? "s" : ""}`
-              : "✦ Write at cursor"}
+              ? `✦ Rewrite · ${selWordCount} word${selWordCount !== 1 ? "s" : ""}`
+              : "✦ Write"}
           </span>
+          {/* Selection preview */}
           {hasSelection && (
-            <span className="hidden md:inline text-[11px] text-neutral-300 italic truncate max-w-[300px]">
-              "{context.selectedText.trim().slice(0, 60)}{context.selectedText.length > 60 ? "…" : ""}"
+            <span className="hidden md:inline text-[11px] text-neutral-300 italic truncate">
+              &ldquo;{context.selectedText.trim().slice(0, 80)}{context.selectedText.length > 80 ? "…" : ""}&rdquo;
             </span>
           )}
-          {/* Mobile: close button */}
+          {/* Cursor position preview — the key UX fix */}
+          {!hasSelection && cursorPreview && (
+            <span className="hidden md:inline text-[11px] text-neutral-300 italic truncate">
+              &ldquo;{cursorPreview}&rdquo; &#x2502;
+            </span>
+          )}
+          {!hasSelection && !cursorPreview && (
+            <span className="hidden md:inline text-[11px] text-neutral-300">
+              start of document
+            </span>
+          )}
+          {/* Mobile: close */}
           <button
             onClick={onCancel}
-            className="md:hidden flex-shrink-0 p-0.5 text-neutral-400 hover:text-neutral-700 transition-colors"
+            className="md:hidden ml-auto flex-shrink-0 p-0.5 text-neutral-400 hover:text-neutral-700 transition-colors"
             aria-label="Cancel"
           >
             <X size={14} />
@@ -1401,16 +1992,16 @@ function GhostTextOverlay({
 
 // ── Save indicator ────────────────────────────────────────────────────────────
 
-function SaveIndicator({ status }: { status: SaveStatus }) {
+function SaveIndicator({ status, theme }: { status: SaveStatus; theme: typeof THEME_MAP[keyof typeof THEME_MAP] }) {
   if (status === "idle") return null;
 
   return (
     <span
       className={`text-xs transition-opacity ${
-        status === "saving" ? "text-[#1A1A1A]/35" :
-        status === "saved"  ? "text-green-600"     :
-                              "text-red-500"
+        status === "saved"  ? "text-green-600" :
+        status === "error"  ? "text-red-500"   : ""
       }`}
+      style={status === "saving" ? { color: theme.text, opacity: 0.35 } : undefined}
     >
       {status === "saving" && "Saving…"}
       {status === "saved"  && "Saved"}

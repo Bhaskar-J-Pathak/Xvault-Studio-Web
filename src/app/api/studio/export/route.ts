@@ -99,49 +99,67 @@ function exportTxt(title: string, chapters: ChapterData[], filename: string): Re
 // ── DOCX ──────────────────────────────────────────────────────────────────────
 
 async function exportDocx(title: string, chapters: ChapterData[], filename: string): Promise<Response> {
-  const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, PageBreak } = await import("docx");
+  const {
+    Document, Packer, Paragraph, TextRun, HeadingLevel,
+    AlignmentType, PageBreak, Footer, PageNumber,
+  } = await import("docx");
 
   const children: InstanceType<typeof Paragraph>[] = [];
 
-  // Title page
+  // Title page — centered, vertically positioned via large top spacing
   children.push(
     new Paragraph({
-      children: [new TextRun({ text: title, bold: true, size: 56 })],
+      children: [new TextRun({ text: title, bold: true, size: 52, font: "Georgia" })],
       alignment: AlignmentType.CENTER,
-      spacing: { before: 2400, after: 400 },
+      spacing:   { before: 3600, after: 0 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: "\n", size: 24 })],
+      spacing:  { before: 0, after: 0 },
     })
   );
 
   for (let i = 0; i < chapters.length; i++) {
     const ch = chapters[i];
 
-    // Page break before each chapter (except maybe first)
-    if (i > 0) {
-      children.push(new Paragraph({ children: [new PageBreak()] }));
-    }
+    // Page break before each chapter
+    children.push(new Paragraph({ children: [new PageBreak()] }));
 
-    // Chapter heading
+    // "Chapter N" label — centered, small caps feel
     children.push(
       new Paragraph({
-        text:    `Chapter ${ch.position + 1}: ${ch.title}`,
-        heading: HeadingLevel.HEADING_1,
-        spacing: { before: 480, after: 240 },
+        children: [new TextRun({ text: `Chapter ${ch.position + 1}`, size: 20, font: "Georgia", color: "888888" })],
+        alignment: AlignmentType.CENTER,
+        spacing:   { before: 1440, after: 120 },
       })
     );
 
-    // Body paragraphs
+    // Chapter title — centered heading
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: ch.title, bold: true, size: 36, font: "Georgia" })],
+        alignment: AlignmentType.CENTER,
+        spacing:   { before: 0, after: 960 },
+      })
+    );
+
+    // Body paragraphs — first-line indent, no extra space between, double-spaced
     if (ch.paragraphs.length > 0) {
       for (const para of ch.paragraphs) {
         children.push(
           new Paragraph({
-            children: [new TextRun({ text: para, size: 24 })],
-            spacing:  { after: 160, line: 360 },
-            indent:   { firstLine: 720 },
+            children: [new TextRun({ text: para, size: 24, font: "Georgia" })],
+            spacing:  { line: 480, after: 0 },   // double spacing (480 = 2× 240 baseline)
+            indent:   { firstLine: 720 },          // 0.5 inch first-line indent
           })
         );
       }
     } else {
-      children.push(new Paragraph({ children: [new TextRun({ text: "[Empty chapter]", color: "999999", italics: true })] }));
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: "[Empty chapter]", color: "999999", italics: true, size: 24 })],
+        })
+      );
     }
   }
 
@@ -150,11 +168,34 @@ async function exportDocx(title: string, chapters: ChapterData[], filename: stri
       default: {
         document: {
           run:       { font: "Georgia", size: 24 },
-          paragraph: { spacing: { line: 360 } },
+          paragraph: { spacing: { line: 480 } },
         },
       },
     },
-    sections: [{ children }],
+    sections: [{
+      properties: {
+        page: {
+          margin: {
+            top:    1440, // 1 inch
+            bottom: 1440,
+            left:   1800, // 1.25 inch
+            right:  1800,
+          },
+        },
+      },
+      // Page number footer — centred
+      footers: {
+        default: new Footer({
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children:  [new TextRun({ children: [PageNumber.CURRENT], font: "Georgia", size: 20, color: "888888" })],
+            }),
+          ],
+        }),
+      },
+      children,
+    }],
   });
 
   const nodeBuffer = await Packer.toBuffer(doc);
@@ -205,8 +246,8 @@ async function exportEpub(title: string, chapters: ChapterData[], filename: stri
     spineItems.push(`<itemref idref="${id}"/>`);
 
     const bodyParagraphs = ch.paragraphs.length > 0
-      ? ch.paragraphs.map((p) => `    <p>${escapeXml(p)}</p>`).join("\n")
-      : `    <p><em>[Empty chapter]</em></p>`;
+      ? ch.paragraphs.map((p, pi) => `    <p${pi === 0 ? ' class="first"' : ""}>${escapeXml(p)}</p>`).join("\n")
+      : `    <p class="first"><em>[Empty chapter]</em></p>`;
 
     zip.file(`OEBPS/${href}`, `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
@@ -217,7 +258,9 @@ async function exportEpub(title: string, chapters: ChapterData[], filename: stri
   <link rel="stylesheet" type="text/css" href="styles.css"/>
 </head>
 <body>
-  <h1>${escapeXml(label)}</h1>
+  <p class="chnum">Chapter ${ch.position + 1}</p>
+  <h1>${escapeXml(ch.title)}</h1>
+  <hr/>
 ${bodyParagraphs}
 </body>
 </html>`);
@@ -259,11 +302,15 @@ ${navItems}
   </spine>
 </package>`);
 
-  // Stylesheet
-  zip.file("OEBPS/styles.css", `body { font-family: Georgia, serif; font-size: 1em; line-height: 1.8; margin: 5% 8%; color: #1a1a1a; }
-h1 { font-size: 1.4em; margin: 2em 0 1em; page-break-before: always; }
-p { text-indent: 1.5em; margin: 0 0 0.4em; }
-p:first-of-type { text-indent: 0; }`);
+  // Stylesheet — book-style typography
+  zip.file("OEBPS/styles.css", `
+body  { font-family: Georgia, "Times New Roman", serif; font-size: 1em; line-height: 1.9; margin: 6% 10%; color: #1a1a1a; }
+h1   { font-size: 1.5em; font-weight: bold; text-align: center; margin: 3em 0 0.3em; page-break-before: always; }
+.chnum { font-size: 0.75em; text-align: center; color: #888; letter-spacing: 0.15em; text-transform: uppercase; margin: 3em 0 0.5em; page-break-before: always; }
+hr   { width: 2em; border: none; border-top: 1px solid #ccc; margin: 1.2em auto 2em; }
+p    { text-indent: 1.6em; margin: 0; }
+p.first { text-indent: 0; }
+`);
 
   const buffer = await zip.generateAsync({ type: "arraybuffer", compression: "DEFLATE" });
 
@@ -280,67 +327,104 @@ p:first-of-type { text-indent: 0; }`);
 async function exportPdf(title: string, chapters: ChapterData[], filename: string): Promise<Response> {
   const { jsPDF } = await import("jspdf");
 
-  const doc        = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const marginL    = 25;
-  const marginR    = 25;
-  const marginTop  = 30;
-  const marginBot  = 25;
-  const pageW      = 210;
-  const pageH      = 297;
-  const maxW       = pageW - marginL - marginR;
-  const maxY       = pageH - marginBot;
+  const doc       = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const marginL   = 31.75; // 1.25 inch
+  const marginR   = 31.75;
+  const marginTop = 25.4;  // 1 inch
+  const marginBot = 25.4;
+  const pageW     = 210;
+  const pageH     = 297;
+  const textW     = pageW - marginL - marginR;
+  const maxY      = pageH - marginBot - 8; // leave room for page number
 
   let y = marginTop;
 
-  function newPageIfNeeded(needed: number) {
-    if (y + needed > maxY) { doc.addPage(); y = marginTop; }
-  }
-
-  function writeLine(text: string, size: number, bold: boolean, align: "left" | "center" = "left") {
-    doc.setFontSize(size);
-    doc.setFont("helvetica", bold ? "bold" : "normal");
-    newPageIfNeeded(size * 0.4);
-    if (align === "center") {
-      doc.text(text, pageW / 2, y, { align: "center" });
-    } else {
-      doc.text(text, marginL, y);
+  function addPageNumber() {
+    const n = doc.getNumberOfPages();
+    for (let p = 1; p <= n; p++) {
+      doc.setPage(p);
+      doc.setFont("times", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(150, 150, 150);
+      doc.text(String(p), pageW / 2, pageH - 12, { align: "center" });
     }
-    y += size * 0.42;
+    doc.setTextColor(0, 0, 0);
   }
 
-  function writeParagraph(text: string) {
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    const lines = doc.splitTextToSize(text, maxW) as string[];
-    for (const line of lines) {
-      newPageIfNeeded(6);
-      doc.text(line, marginL, y);
-      y += 6;
-    }
-    y += 2; // paragraph gap
-  }
-
-  // Title page
-  y = pageH * 0.35;
-  writeLine(title, 22, true, "center");
-  y += 6;
-
-  for (let i = 0; i < chapters.length; i++) {
-    const ch = chapters[i];
+  function newPage() {
     doc.addPage();
     y = marginTop;
+  }
 
-    writeLine(`Chapter ${ch.position + 1}`, 10, false);
-    y += 2;
-    writeLine(ch.title, 16, true);
-    y += 8;
+  function newPageIfNeeded(needed: number) {
+    if (y + needed > maxY) newPage();
+  }
 
-    if (ch.paragraphs.length > 0) {
-      for (const para of ch.paragraphs) writeParagraph(para);
-    } else {
-      writeParagraph("[Empty chapter]");
+  const LINE_H   = 7.5;  // ~double-spaced 11pt in mm
+  const INDENT   = 8;    // first-line indent in mm
+
+  function writeParagraph(text: string, opts: { center?: boolean; size?: number; bold?: boolean; muted?: boolean; indent?: boolean } = {}) {
+    const size = opts.size ?? 11;
+    doc.setFontSize(size);
+    doc.setFont("times", opts.bold ? "bold" : "normal");
+    if (opts.muted) doc.setTextColor(130, 130, 130); else doc.setTextColor(30, 30, 30);
+
+    if (opts.center) {
+      newPageIfNeeded(size * 0.45);
+      doc.text(text, pageW / 2, y, { align: "center" });
+      y += size * 0.47;
+      return;
+    }
+
+    // Left-aligned with optional first-line indent
+    const indentX = opts.indent ? marginL + INDENT : marginL;
+    const wrapW   = opts.indent ? textW - INDENT : textW;
+    const lines   = doc.splitTextToSize(text, wrapW) as string[];
+
+    for (let li = 0; li < lines.length; li++) {
+      newPageIfNeeded(LINE_H);
+      const x = (li === 0 && opts.indent) ? indentX : marginL;
+      doc.text(lines[li], x, y);
+      y += LINE_H;
     }
   }
+
+  // ── Title page ─────────────────────────────────────────────
+  y = pageH * 0.38;
+  writeParagraph(title, { center: true, size: 22, bold: true });
+  y += 5;
+
+  // ── Chapters ───────────────────────────────────────────────
+  for (const ch of chapters) {
+    newPage();
+
+    // "Chapter N" label
+    y += 18;
+    writeParagraph(`Chapter ${ch.position + 1}`, { center: true, size: 10, muted: true });
+    y += 4;
+
+    // Chapter title
+    writeParagraph(ch.title, { center: true, size: 18, bold: true });
+    y += 14;
+
+    // Thin rule
+    doc.setDrawColor(180, 180, 180);
+    doc.line(pageW / 2 - 12, y, pageW / 2 + 12, y);
+    y += 12;
+    doc.setDrawColor(0, 0, 0);
+
+    // Body
+    if (ch.paragraphs.length > 0) {
+      for (const para of ch.paragraphs) {
+        writeParagraph(para, { indent: true });
+      }
+    } else {
+      writeParagraph("[Empty chapter]", { muted: true });
+    }
+  }
+
+  // Stamp page numbers on every page
+  addPageNumber();
 
   const buffer = doc.output("arraybuffer") as ArrayBuffer;
 

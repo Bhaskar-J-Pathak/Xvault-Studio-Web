@@ -19,7 +19,11 @@ export default async function DashboardLayout({
   const profile = await getProfile(user.id);
 
   return (
-    <DashboardShell profile={profile} email={user.email ?? ""}>
+    <DashboardShell
+      profile={profile}
+      email={user.email ?? ""}
+      isBeta={process.env.BETA_MODE === "true"}
+    >
       {children}
     </DashboardShell>
   );

@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const desc   = excerpt.content.slice(0, 200).replace(/\n/g, " ") + "…";
 
   return {
-    title:       `${title}${novel ? ` — ${novel}` : ""}`,
+    title:       `${title}${novel ? ` - ${novel}` : ""}`,
     description: desc,
     openGraph: {
       title:       `${title}${novel ? ` from ${novel}` : ""}${author ? ` by ${author}` : ""}`,
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card:        "summary",
-      title:       `${title}${novel ? ` — ${novel}` : ""}`,
+      title:       `${title}${novel ? ` - ${novel}` : ""}`,
       description: desc,
     },
   };

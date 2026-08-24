@@ -14,10 +14,8 @@ export async function POST(request: NextRequest) {
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const title = (typeof body.title === "string" && body.title.trim()) ? body.title.trim() : "Untitled";
   const genre = typeof body.genre === "string" && body.genre ? body.genre : null;
-
-  if (!title) return Response.json({ error: "Title is required." }, { status: 400 });
 
   // Ensure profile row exists (guard against handle_new_user trigger failure)
   const service = createServiceClient();

@@ -226,7 +226,7 @@ export default function CoAuthorSection() {
                 className="h-1.5 w-1.5 rounded-full bg-violet-500"
               />
               <span className="text-[0.67rem] font-semibold tracking-wide text-violet-600">
-                Meet Alex: your AI co-author
+                Meet Alex
               </span>
             </span>
           </motion.div>
@@ -239,7 +239,7 @@ export default function CoAuthorSection() {
             className="font-display text-[#1A0A3C]"
             style={{ fontSize: "clamp(2rem, 4vw, 3rem)", lineHeight: 1.1, letterSpacing: "-0.025em", fontWeight: 300 }}
           >
-            A co-author who actually knows your story.
+            It knows your story. Every chapter.
           </motion.h2>
 
           {/* Animated mode description */}

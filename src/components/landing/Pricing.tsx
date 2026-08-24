@@ -52,8 +52,8 @@ const PLANS: Plan[] = [
     features: [
       { text: "300 AI credits / month" },
       { text: "1 active manuscript" },
-      { text: "Alex co-author (chat + suggestions)" },
-      { text: "Ghost Writing (Ctrl+K)" },
+      { text: "Alex (story chat + suggestions)" },
+      { text: "Inline suggestions (Ctrl+K)" },
       { text: "Story Bible & World Board" },
       { text: "Basic continuity checking" },
       { text: "Community support", muted: true },

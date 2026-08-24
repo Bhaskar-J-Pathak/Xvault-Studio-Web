@@ -12,14 +12,14 @@ const FAQS = [
   },
   {
     q: "Is this the full product?",
-    a: "Xvault Studio is currently in public beta. The core writing experience (Alex, Ghost Writing, World Board, Story Bible, and Global Replace) is fully functional. We're actively building toward a full launch with expanded features and subscription plans. Beta users get full access and directly shape what we build next.",
+    a: "Xvault Studio is currently in public beta. The core writing experience (Alex, inline suggestions, World Board, Story Bible, and Global Replace) is fully functional. We're actively building toward a full launch with expanded features and subscription plans. Beta users get full access and directly shape what we build next.",
   },
   {
     q: "What exactly is Alex?",
-    a: "Alex is your AI co-author. Before it says a word, it reads your entire manuscript: every chapter, every character, every open thread. Ask it anything about your story, get ghost suggestions in your voice, or just talk through a plot problem. Alex always has context.",
+    a: "Alex is your story studio. Before it says a word, it reads your entire manuscript: every chapter, every character, every open thread. Ask it anything about your story, get inline suggestions in your voice, or just talk through a plot problem. Alex always has context.",
   },
   {
-    q: "How does Ghost Writing preserve my voice?",
+    q: "How do inline suggestions preserve my voice?",
     a: "Press Ctrl+K anywhere in the editor. Alex generates suggestions trained on your existing chapters, not generic AI output. The more you've written, the better it understands your rhythm, vocabulary, and style. Every suggestion is optional and editable.",
   },
   {

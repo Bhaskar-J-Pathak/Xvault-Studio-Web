@@ -341,8 +341,8 @@ const FEATURES = [
   {
     id: "alex",
     num: "01",
-    category: "Co-Author",
-    title: "Alex: Your Co-Author",
+    category: "Story Studio",
+    title: "Alex",
     description:
       "Alex lives in a panel next to your writing canvas. Before you type a word, it reads your entire manuscript. Ask it anything: who Nadia is, what happened in Chapter 3, which plot threads are still open. Every answer grounded in what you've actually written.",
     demo: (live: boolean) => <AlexChatDemo live={live} />,
@@ -351,7 +351,7 @@ const FEATURES = [
     id: "ghost-writing",
     num: "02",
     category: "AI Writing",
-    title: "Ghost Writing",
+    title: "Suggest a Line",
     description:
       "Press Ctrl+K. Describe what you want to happen. The AI writes it in your voice, trained on your existing chapters, not a generic model. Tab to accept, Esc to dismiss.",
     demo: (live: boolean) => <GhostWritingDemo live={live} />,

@@ -26,7 +26,7 @@ export default function StudioShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-white">
+    <div className="studio-shell-bg flex h-[100dvh] overflow-hidden bg-white">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
@@ -45,7 +45,7 @@ export default function StudioShell({
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Mobile top bar */}
-        <div className="md:hidden flex items-center gap-3 px-4 h-12 shrink-0 border-b border-black/[0.06] bg-[#F7F6F4]">
+        <div className="studio-mobile-bar md:hidden flex items-center gap-3 px-4 h-12 shrink-0 border-b border-black/[0.06] bg-[#F7F6F4]">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-1.5 -ml-1 rounded-lg text-[#1A1A1A]/50 hover:bg-black/[0.05] transition-colors"

@@ -586,7 +586,7 @@ function CustomAlexDemo({ live }: { live: boolean }) {
 
         {/* Heading */}
         <div className="mb-4">
-          <p className="text-[0.72rem] font-semibold text-[#1A1A1A]">Meet your co-author</p>
+          <p className="text-[0.72rem] font-semibold text-[#1A1A1A]">Your story studio</p>
           <p className="text-[0.58rem] text-neutral-400 mt-0.5">Give them a name and a personality. One setup per story.</p>
         </div>
 
@@ -687,7 +687,7 @@ interface ChapterData {
 const CHAPTERS: ChapterData[] = [
   {
     num: "01",
-    tag: "Co-Author",
+    tag: "Story Studio",
     lines: [
       { text: "Alex knows your story." },
       { text: "Every character." },
@@ -766,14 +766,14 @@ const CHAPTERS: ChapterData[] = [
     num: "06",
     tag: "Personalise",
     lines: [
-      { text: "Your co-author." },
+      { text: "Your studio." },
       { text: "Your rules.", gradient: true },
     ],
     description: "Alex ships with a personality that works for most writers. But sometimes you need someone different in your corner. Choose the editor who dissects your structure, the honest friend who tells you the truth, or the contrarian who questions every choice. Name them anything. Tune them to how you write best.",
     details: [
       "4 built-in personas, each with a distinct approach to feedback",
       "Or write your own: describe exactly how blunt, warm, or demanding you want",
-      "Per-story setting: different projects can have different co-authors",
+      "Per-story setting: different projects can have a different style",
     ],
     Demo: CustomAlexDemo,
   },

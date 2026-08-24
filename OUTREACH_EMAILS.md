@@ -389,27 +389,6 @@ Bhaskar
 Founder, Xvault Studio
 xvault.dev
 
----
-
-## Charlie March — The Plottery
-**Send to:** hello@the-plottery.com
-**Subject:** The Plottery and a tool built around the plotting problems novelists actually have
-
-Hi Charlie,
-
-I've been watching The Plottery and listening to the podcast for a while. Your focus on structure and plotting is exactly where the hardest problems in novel writing tend to live — not the prose, but keeping the whole architecture coherent.
-
-I'm building Xvault Studio. It's an AI writing partner for novelists, and the continuity and structure problems you cover are specifically what it's designed around. It reads the full manuscript before doing anything, so it knows the story. From there it helps catch plot contradictions, tracks where character arcs and motivations actually go across the draft, manages world rules, and can run changes across all chapters at once.
-
-I'd like to give you free access to try it on whatever you're working on. No strings — if you find it useful and want to cover it, great. If not, no problem.
-
-Would that be useful?
-
-Bhaskar
-Founder, Xvault Studio
-xvault.dev
-
----
 
 ## Orna Ross
 **Send to:** ornaross.com
@@ -619,26 +598,6 @@ xvault.dev
 
 ---
 
-## Nathan Bransford
-**Send to:** nathanbransford.com
-**Subject:** Your writing about AI in publishing — and a tool I'd like your take on
-
-Hi Nathan,
-
-I've been reading your Substack for a while. Your perspective on AI in publishing is one of the more nuanced I've come across — you've engaged with it seriously rather than defaulting to either boosterism or dismissal.
-
-I'm building Xvault Studio. It's an AI writing partner for novelists, specifically built around the problems that actually slow down a novel manuscript: continuity across hundreds of pages, character consistency, catching the contradiction that gets introduced three drafts in. It reads the full manuscript first so it knows the story. From there it helps with those problems specifically — not generating prose, but helping writers keep a complex manuscript coherent.
-
-Given your background as both an agent and a working author, I'd genuinely like your take on whether what I've built holds up. I'll give you full free access with no strings.
-
-Would that be useful?
-
-Bhaskar
-Founder, Xvault Studio
-xvault.dev
-
----
-
 ## Kristen Kieffer — Well-Storied
 **Send to:** well-storied.com/contact
 **Subject:** Well-Storied and a tool I'd like your readers' opinion on
@@ -670,46 +629,6 @@ I've been listening to Happy Writing for a while. The focus on making the writin
 I'm building Xvault Studio. It's an AI writing partner for novelists. Not built around generating prose. The idea is that a lot of what makes writing feel hard in the long middle of a novel — losing track of details, not being sure if what you're writing contradicts something established earlier, getting stuck without knowing where to unstick — is a memory and consistency problem as much as a motivation problem. It reads the full manuscript first so it knows the story, then helps with those specific things.
 
 I'd like to give you free access to try it. No strings.
-
-Would that be useful?
-
-Bhaskar
-Founder, Xvault Studio
-xvault.dev
-
----
-
-## James Blatch & Mark Dawson — The Self Publishing Show
-**Send to:** selfpublishingformula.com/contact
-**Subject:** Self Publishing Show and an AI writing partner for serious indie authors
-
-Hi James and Mark,
-
-I've been listening to The Self Publishing Show for a while. You've built the most practically useful resource in the indie author space — not just craft, but the actual business of writing and publishing at volume.
-
-I'm building Xvault Studio. It's an AI co-author for novelists, specifically built around the problems that indie authors working at volume know well: keeping a series consistent across multiple books, catching continuity errors before publication, managing complex world-building, running manuscript-wide changes fast. It reads the full manuscript first so it knows the story.
-
-Your listeners are serious indie authors — exactly who this is built for. I'd like to give you free access to evaluate it properly. If it's something that would genuinely be useful to your audience, I'd love to talk about how we might work together — there's an affiliate arrangement I'm happy to discuss.
-
-Would that be useful?
-
-Bhaskar
-Founder, Xvault Studio
-xvault.dev
-
----
-
-## Becca Syme — Write Better Faster
-**Send to:** beccasyme.com
-**Subject:** Strengths-based writing and a tool for the manuscript-level problems
-
-Hi Becca,
-
-I've been following Write Better Faster for a while. Your approach — understanding the individual writer's strengths rather than prescribing a one-size-fits-all process — addresses something most writing advice ignores entirely.
-
-I'm building Xvault Studio. It's an AI writing partner for novelists. Not built around generating prose or imposing a process. The specific problem it solves is what compounds at manuscript length regardless of the writer's style or strengths: continuity across hundreds of pages, character consistency, catching conflicts between what's being written now and what was established earlier. It reads the full manuscript first so it knows the story, then helps with those problems in whatever way fits the writer's workflow.
-
-Given your work on individual writer differences, I'd genuinely like your take on whether something like this would be useful across different writer types, or whether it helps some more than others. I'll give you full free access with no strings.
 
 Would that be useful?
 
@@ -779,82 +698,3 @@ xvault.dev
 
 ---
 
-## Mythcreants
-**Send to:** via mythcreants.com/contact
-**Subject:** Speculative fiction craft and a tool for novelists — free access if useful
-
-Hi,
-
-I have been reading Mythcreants for a while. Your approach to speculative fiction craft is more analytically rigorous than most writing blogs — you explain why things work rather than just prescribing them, and you cover dark fantasy and genre fiction honestly without softening it.
-
-I am building Xvault Studio. It is an AI writing partner for novelists built around the problems that speculative fiction makes harder: tracking world rules that cannot be violated, keeping a magic system or tech system consistent across hundreds of pages, managing large casts and complex timelines, catching the contradiction that breaks internal logic. It reads the full manuscript before doing anything so it knows the story. World Board extracts characters, locations, and factions automatically. Story Bible tracks open plot threads.
-
-I think your readers are exactly the kind of writers who would evaluate this seriously. I would like to offer free access to whoever on your team would like to try it. No strings.
-
-Would that be useful?
-
-Bhaskar
-Founder, Xvault Studio
-xvault.dev
-
----
-
-## Lindsay Buroker — The Craft and Business of Writing Fantasy
-**Send to:** via lindsayburoker.com
-**Subject:** 30 novels in and an AI tool I would like your take on
-
-Hi Lindsay,
-
-I have been listening to your podcast for a while. Your perspective on writing fantasy is one of the most process-informed I have come across — thirty-plus novels means you have solved the consistency and continuity problems that derail most first-time novelists in ways that came from real experience, not theory.
-
-I am building Xvault Studio. It is an AI writing partner for novelists, specifically built around the problems that compound in long fantasy series: keeping world rules and lore consistent across books, tracking characters across a large cast, catching the detail you established in book two that quietly breaks something in book four. It reads the full manuscript before doing anything so it knows the story. The World Board and Story Bible build themselves from what you write.
-
-Whether this is useful at the level you are writing at, or whether the systems you have developed over thirty novels make it redundant, is a real question I would genuinely like your take on. I will give you full free access with no strings.
-
-Interested?
-
-Bhaskar
-Founder, Xvault Studio
-xvault.dev
-
----
-
-## Alan Baxter
-**Send to:** via alanbaxter.com.au/contact
-**Subject:** Dark fiction and an AI tool that does not flinch at it
-
-Hi Alan,
-
-I have been reading your work and following your writing on AI in publishing for a while. Your position on dark fiction is one I find more honest than most of the debate — that the darkness in a story is not incidental but often the point, and that tools that cannot follow a writer into that territory are not useful for serious dark fiction.
-
-I am building Xvault Studio. It is an AI co-author for novelists built specifically to work across the full range of literary fiction including horror, dark fantasy, and morally complex content. It reads the full manuscript first so it knows the story. From there: brainstorming, continuity checking, plot thread tracking, voice-matched prose suggestions. No content restrictions that would make it unusable for the genres you write in.
-
-I would like to give you free access to try it on whatever you are working on. Your honest reaction from a dark fiction writer's perspective is exactly what I am after. No strings.
-
-Would that be useful?
-
-Bhaskar
-Founder, Xvault Studio
-xvault.dev
-
----
-
-## Chuck Wendig — Terribleminds
-**Send to:** terribleminds.com/contact
-**Subject:** Terribleminds and something I want to give you to evaluate honestly
-
-Hi Chuck,
-
-I've been reading Terribleminds for a while. Your opinions on AI in writing are among the most direct in the space. I'm going to skip the usual framing.
-
-I'm building Xvault Studio. It's an AI co-author for novelists. You probably have concerns about this category and fair enough.
-
-The specific thing I'd like your opinion on is whether what I've built deserves those concerns, or whether it's doing something different enough to be worth distinguishing. It's not built around generating prose. It reads the full manuscript first, so it knows the story. From there it helps with continuity, catches character inconsistencies, flags conflicts between what's being written and what's already established. The writing stays yours. Whether that distinction holds up under your scrutiny, or whether your objection is more fundamental than that, is what I'd genuinely like to find out from someone who won't pull punches.
-
-I'll give you full free access with no expectation of a positive take. Your honest reaction is worth more than a polite review.
-
-Worth trying?
-
-Bhaskar
-Founder, Xvault Studio
-xvault.dev

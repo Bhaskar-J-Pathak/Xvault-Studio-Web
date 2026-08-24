@@ -8,8 +8,8 @@ const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 // ─── Marquee ──────────────────────────────────────────────────────────────────
 
 const ROW_1 = [
-  "Alex: Your Co-Author",
-  "Ghost Writing",
+  "Alex",
+  "Suggest a Line",
   "World Board",
   "Story Bible",
   "Global Replace",
@@ -69,7 +69,7 @@ const PROBLEMS = [
   {
     num: "02",
     problem: "AI suggestions sound nothing like me. My editor could spot them from a mile away.",
-    solution: "Ghost Writing",
+    solution: "Suggest a Line",
     detail: "Press Ctrl+K. The AI is trained on your existing chapters, so every suggestion sounds like you.",
     badge: "bg-rose-50 text-rose-700 border-rose-200",
     dot: "bg-rose-500",
@@ -224,7 +224,7 @@ export default function WhyXvault() {
           {[
             { text: "Writing long-form fiction", italic: false, dim: false },
             { text: "without the right tools",   italic: false, dim: true  },
-            { text: "is self-sabotage.",          italic: true,  dim: false },
+            { text: "means losing the thread.",    italic: true,  dim: false },
           ].map(({ text, italic, dim }, i) => (
             <div key={i} className="overflow-hidden">
               <motion.h2
