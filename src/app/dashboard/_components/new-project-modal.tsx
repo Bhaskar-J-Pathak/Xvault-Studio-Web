@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { X, Plus } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 const GENRES = [
   { value: "",              label: "No genre selected" },
@@ -36,6 +37,7 @@ interface Props {
 export default function NewProjectModal({ open, onClose }: Props) {
   const router   = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const ph = usePostHog();
 
   const [title,   setTitle]   = useState("");
   const [genre,   setGenre]   = useState("");
@@ -74,6 +76,7 @@ export default function NewProjectModal({ open, onClose }: Props) {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? "Could not create project.");
 
+        ph?.capture("project_created", { genre: genre || "none" });
         onClose();
         router.refresh();
       } catch (err: unknown) {

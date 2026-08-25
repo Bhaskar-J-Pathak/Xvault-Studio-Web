@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Upload, FileText, Loader2, AlertCircle, ChevronRight } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,7 @@ const GENRES = [
 export default function ImportModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const ph = usePostHog();
 
   const [step,      setStep]      = useState<Step>("upload");
   const [dragging,  setDragging]  = useState(false);
@@ -118,6 +120,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
         return;
       }
 
+      ph?.capture("manuscript_imported", { chapter_count: chapters.length, genre: genre || "none" });
       router.push(`/studio/${data.projectId}`);
       onClose();
     } catch {

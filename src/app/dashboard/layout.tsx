@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUser, getProfile } from "@/lib/auth";
 import DashboardShell from "./_components/dashboard-shell";
+import PostHogIdentifier from "@/components/posthog-identifier";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -19,12 +20,15 @@ export default async function DashboardLayout({
   const profile = await getProfile(user.id);
 
   return (
-    <DashboardShell
-      profile={profile}
-      email={user.email ?? ""}
-      isBeta={process.env.BETA_MODE === "true"}
-    >
-      {children}
-    </DashboardShell>
+    <>
+      <PostHogIdentifier userId={user.id} email={user.email ?? ""} plan={profile?.plan ?? "free"} />
+      <DashboardShell
+        profile={profile}
+        email={user.email ?? ""}
+        isBeta={process.env.BETA_MODE === "true"}
+      >
+        {children}
+      </DashboardShell>
+    </>
   );
 }

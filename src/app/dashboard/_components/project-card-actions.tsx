@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import EditProjectModal, { type ProjectForEdit } from "./edit-project-modal";
+import { usePostHog } from "posthog-js/react";
 
 interface Props {
   project: ProjectForEdit;
@@ -12,6 +13,7 @@ interface Props {
 
 export default function ProjectCardActions({ project }: Props) {
   const router = useRouter();
+  const ph = usePostHog();
   const [menuOpen,      setMenuOpen]      = useState(false);
   const [editOpen,      setEditOpen]      = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -31,6 +33,7 @@ export default function ProjectCardActions({ project }: Props) {
     setDeleting(true);
     const supabase = createClient();
     await supabase.from("projects").delete().eq("id", project.id);
+    ph?.capture("project_deleted");
     router.refresh();
   }
 

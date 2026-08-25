@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, CheckCircle2, XCircle, AlertTriangle, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import type { ChangePlan, ChangeItem, FlaggedItem } from "@/app/api/ai/coauthor/global-change/route";
 
 interface Props {
@@ -27,6 +28,7 @@ export default function GlobalChangePreview({
   const [approvedFlagged, setApprovedFlagged] = useState<Set<number>>(new Set());
   const [applying, setApplying] = useState(false);
   const [expandedContexts, setExpandedContexts] = useState<Set<string>>(new Set());
+  const ph = usePostHog();
 
   function toggleApproved(i: number) {
     setApproved((prev) => {
@@ -93,6 +95,7 @@ export default function GlobalChangePreview({
             }`
           : "No changes could be applied. Phrases may have changed since the analysis.";
 
+      ph?.capture("global_change_applied", { applied: data.applied, skipped: data.skipped, total_selected: totalSelected });
       onDone(summary);
     } catch {
       onDone("Something went wrong while applying changes. Please try again.");
@@ -196,7 +199,7 @@ export default function GlobalChangePreview({
         {/* Footer */}
         <div className="px-5 py-4 border-t border-neutral-100 flex items-center justify-between gap-3">
           <button
-            onClick={onCancel}
+            onClick={() => { ph?.capture("global_change_cancelled"); onCancel(); }}
             className="text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
           >
             Cancel

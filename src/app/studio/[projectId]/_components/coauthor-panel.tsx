@@ -202,6 +202,7 @@ export default function CoauthorPanel({
 
         // Handle HTTP errors (especially 429 rate-limit) before treating as a reply
         if (!res.ok) {
+          if (res.status === 429) ph?.capture("credits_depleted", { reason: data.reason });
           ph?.capture("api_error", { feature: "coauthor_chat", status: res.status, error: data.error, reason: data.reason, detail: (data as Record<string, unknown>).detail });
           const errorMsg = res.status === 429
             ? (data.error ?? "You've run out of AI credits. Upgrade to keep writing.")

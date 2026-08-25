@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getUser, createServerSupabaseClient } from "@/lib/auth";
 import StudioShell from "./_components/studio-shell";
+import PostHogIdentifier from "@/components/posthog-identifier";
 
 export const metadata: Metadata = {
   title: "Studio",
@@ -38,12 +39,15 @@ export default async function StudioLayout({
     .order("position", { ascending: true });
 
   return (
-    <StudioShell
-      projectId={projectId}
-      projectTitle={project.title}
-      initialChapters={chapters ?? []}
-    >
-      {children}
-    </StudioShell>
+    <>
+      <PostHogIdentifier userId={user.id} email={user.email ?? ""} />
+      <StudioShell
+        projectId={projectId}
+        projectTitle={project.title}
+        initialChapters={chapters ?? []}
+      >
+        {children}
+      </StudioShell>
+    </>
   );
 }

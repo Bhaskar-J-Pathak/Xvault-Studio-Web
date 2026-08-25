@@ -1,22 +1,26 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
+import { usePostHog } from "posthog-js/react";
+import { useSearchParams } from "next/navigation";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export default function CheckoutSuccessPage() {
+  const searchParams = useSearchParams();
+  const ph = usePostHog();
 
-export default async function CheckoutSuccessPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const params = await searchParams;
-  const status = params.status as string | undefined;
-  const orderId = params.orderId as string | undefined;
-  const paymentId = params.payment_id as string | undefined;
+  const status    = searchParams.get("status") ?? undefined;
+  const orderId   = searchParams.get("orderId") ?? undefined;
+  const paymentId = searchParams.get("payment_id") ?? undefined;
 
-  // No status param means Dodo simply redirected back after payment — treat as success.
   const isSuccess = !status || status === "succeeded" || status === "success";
+
+  useEffect(() => {
+    if (isSuccess) {
+      ph?.capture("upgrade_completed", { orderId, paymentId });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8F5FF]">

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
 import {
   ArrowLeft,
   Plus,
@@ -53,6 +54,7 @@ export default function StudioSidebar({
   const params   = useParams<{ chapterId?: string }>();
   const pathname = usePathname();
   const activeId = params.chapterId;
+  const ph = usePostHog();
 
   const [chapters,         setChapters]         = useState<Chapter[]>(initialChapters);
   const [openMenuId,       setOpenMenuId]       = useState<string | null>(null);
@@ -83,6 +85,7 @@ export default function StudioSidebar({
 
       if (error || !data) throw error;
 
+      ph?.capture("chapter_created", { total_chapters: chapters.length + 1 });
       setChapters((prev) => [...prev, data]);
       router.push(`/studio/${projectId}/${data.id}`);
     } catch {
@@ -125,6 +128,7 @@ export default function StudioSidebar({
       const remaining = chapters.filter((c) => c.id !== id);
       setChapters(remaining);
 
+      ph?.capture("chapter_deleted");
       const supabase = createClient();
       await supabase.from("chapters").delete().eq("id", id);
 
@@ -364,6 +368,7 @@ function ImportMenu({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef  = useRef<HTMLDivElement>(null);
+  const ph = usePostHog();
 
   type Stage = "idle" | "parsing" | "preview" | "importing";
   const [stage,   setStage]   = useState<Stage>("idle");
@@ -439,6 +444,7 @@ function ImportMenu({
 
       if (dbErr || !data) throw dbErr;
 
+      ph?.capture("chapters_imported", { chapter_count: rows.length });
       setStage("idle");
       setPreview([]);
       onChaptersAdded(data as Chapter[]);
@@ -559,6 +565,7 @@ const FORMATS = [
 function ExportMenu({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const ph = usePostHog();
 
   // Close on outside click
   useEffect(() => {
@@ -587,7 +594,7 @@ function ExportMenu({ projectId }: { projectId: string }) {
               key={fmt.mime}
               href={`/api/studio/export?projectId=${projectId}&format=${fmt.mime}`}
               download
-              onClick={() => setOpen(false)}
+              onClick={() => { ph?.capture("manuscript_exported", { format: fmt.ext }); setOpen(false); }}
               className="flex items-center justify-between px-3 py-2 text-sm text-[#1A1A1A]/60 hover:bg-black/[0.04] hover:text-[#1A1A1A] transition-colors"
             >
               <span>{fmt.label}</span>
