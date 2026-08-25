@@ -63,7 +63,7 @@ export default function ProjectCardActions({ project }: Props) {
       <div ref={menuRef} className="relative" onClick={(e) => e.preventDefault()}>
         <button
           onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-          className="w-7 h-7 flex items-center justify-center rounded-lg text-[#A1A1AA] dark:text-white/25 hover:text-[#0F0F0F] dark:hover:text-white/60 hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors opacity-0 group-hover:opacity-100"
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-[#A1A1AA] dark:text-white/25 hover:text-[#0F0F0F] dark:hover:text-white/60 hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors"
         >
           <MoreHorizontal size={14} />
         </button>

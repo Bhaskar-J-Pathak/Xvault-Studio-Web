@@ -804,11 +804,12 @@ export default function ZenEditor({
   // Keep credits in sync with server via Supabase Realtime
   useEffect(() => {
     const supabase = createClient();
-    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      const channel = supabase
+      if (!user || cancelled) return;
+      channel = supabase
         .channel(`profile-credits-${user.id}`)
         .on(
           "postgres_changes",
@@ -821,10 +822,12 @@ export default function ZenEditor({
           }
         )
         .subscribe();
-      cleanup = () => { supabase.removeChannel(channel); };
     });
 
-    return () => { cleanup?.(); };
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   // Co-author

@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Zap } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import Image from "next/image";
 import DefaultCover from "./_components/default-cover";
 import NewProjectCard from "./_components/new-project-card";
 import ProjectCardActions from "./_components/project-card-actions";
 import ReferralLinker from "./_components/referral-linker";
+import UpgradeBanner from "./_components/upgrade-banner";
 import { getUser, getProfile, createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { isInTrial, creditsRemaining, creditsCap, TRIAL_CREDITS } from "@/lib/supabase";
 import { sendWelcomeEmail } from "@/lib/email";
@@ -40,13 +41,18 @@ type ProjectWithStats = DbProject & {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
   const user = await getUser();
   if (!user) redirect("/auth");
 
-  const [profile, supabase] = await Promise.all([
+  const [profile, supabase, { preview }] = await Promise.all([
     getProfile(user.id),
     createServerSupabaseClient(),
+    searchParams,
   ]);
 
   const { data: raw } = await supabase
@@ -69,9 +75,14 @@ export default async function DashboardPage() {
   });
 
   const totalWords = projects.reduce((s, p) => s + p.total_words, 0);
-  const inTrial    = profile ? isInTrial(profile as Parameters<typeof isInTrial>[0]) : false;
-  const credits    = profile ? creditsRemaining(profile as Parameters<typeof creditsRemaining>[0]) : 0;
-  const cap        = profile ? creditsCap(profile as Parameters<typeof creditsCap>[0]) : TRIAL_CREDITS;
+  let inTrial    = profile ? isInTrial(profile as Parameters<typeof isInTrial>[0]) : false;
+  let credits    = profile ? creditsRemaining(profile as Parameters<typeof creditsRemaining>[0]) : 0;
+  const cap      = profile ? creditsCap(profile as Parameters<typeof creditsCap>[0]) : TRIAL_CREDITS;
+
+  // Preview mode — lifetime accounts only, so real users are never affected
+  const isLifetime = profile?.is_lifetime === true;
+  if (isLifetime && preview === "trial")    { inTrial = true;  credits = 12; }
+  if (isLifetime && preview === "expired")  { inTrial = false; credits = 0; }
 
   // Welcome email — fires once
   if (profile && !profile.welcome_email_sent && user.email) {
@@ -111,22 +122,19 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* ── Trial banner ── */}
+        {/* ── Trial / upgrade banner ── */}
         {profile && inTrial && (
-          <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-[12px] border mb-10 ${
-            credits <= 20
-              ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200/70 dark:border-amber-700/30 text-amber-700 dark:text-amber-400"
-              : "bg-white/70 dark:bg-white/[0.04] border-black/[0.06] dark:border-white/[0.08] text-[#71717A] dark:text-white/60"
-          }`}>
-            <Zap size={12} fill="currentColor" className="shrink-0" />
-            <span>
-              <span className="font-semibold">{credits}</span> of {cap} trial credits remaining
-              {" · "}
-              <span className="font-semibold">
-                {Math.max(0, Math.ceil((new Date(profile.trial_ends_at!).getTime() - Date.now()) / 86_400_000))}
-              </span> days left
-            </span>
-          </div>
+          <UpgradeBanner
+            variant={credits <= 20 ? "trial-urgent" : "trial"}
+            credits={credits}
+            cap={cap}
+            daysLeft={Math.max(0, Math.ceil((new Date(profile.trial_ends_at!).getTime() - Date.now()) / 86_400_000))}
+          />
+        )}
+
+        {/* ── Post-trial free user banner ── */}
+        {profile && !inTrial && (profile.plan === "free" || (isLifetime && preview === "expired")) && (
+          <UpgradeBanner variant="expired" />
         )}
 
         {/* ── Books grid ── */}
@@ -212,7 +220,7 @@ function ProjectCard({ project }: { project: ProjectWithStats }) {
       </Link>
 
       {/* ── Actions on hover (overlay, top-right of cover) ── */}
-      <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+      <div className="absolute top-2 right-2 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150">
         <ProjectCardActions
           project={{
             id:              project.id,
