@@ -153,14 +153,21 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
   }
 
   // ── Regular chat ───────────────────────────────────────────────────────────
-  const { systemPrompt } = await assembleCoauthorContext(
-    supabase,
-    projectId,
-    coauthorName,
-    coauthorPersonality,
-    recentText,
-    body.chapterId
-  );
+  let systemPrompt: string;
+  try {
+    ({ systemPrompt } = await assembleCoauthorContext(
+      supabase,
+      projectId,
+      coauthorName,
+      coauthorPersonality,
+      recentText,
+      body.chapterId
+    ));
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[coauthor/chat] Context assembly failed:", detail);
+    return Response.json({ error: "Failed to load story context. Try again.", detail }, { status: 500 });
+  }
 
   let reply: string;
   try {

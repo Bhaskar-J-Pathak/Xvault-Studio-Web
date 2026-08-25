@@ -183,21 +183,26 @@ export default function CoauthorPanel({
           }),
         });
 
-        const data = await res.json() as {
-          reply?: string;
-          error?: string;
-          reason?: string;
-          messageType?: string;
-          instruction?: string;
-          remaining?: number;
-        };
+        let data: { reply?: string; error?: string; reason?: string; messageType?: string; instruction?: string; remaining?: number } = {};
+        try {
+          data = await res.json();
+        } catch {
+          ph?.capture("api_error", { feature: "coauthor_chat", status: res.status, error: "empty_response_body" });
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.pending ? { ...m, content: "Something went wrong. Try again.", message_type: "chat", pending: false } : m
+            )
+          );
+          onResponseReceived?.();
+          return;
+        }
 
         // Always update credit display from any response (success or rate-limit)
         if (data.remaining !== undefined) onCreditUpdate?.(data.remaining);
 
         // Handle HTTP errors (especially 429 rate-limit) before treating as a reply
         if (!res.ok) {
-          ph?.capture("api_error", { feature: "coauthor_chat", status: res.status, error: data.error, reason: data.reason });
+          ph?.capture("api_error", { feature: "coauthor_chat", status: res.status, error: data.error, reason: data.reason, detail: (data as Record<string, unknown>).detail });
           const errorMsg = res.status === 429
             ? (data.error ?? "You've run out of AI credits. Upgrade to keep writing.")
             : (data.error ?? "Something went wrong. Try again.");
