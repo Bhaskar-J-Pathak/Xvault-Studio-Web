@@ -66,25 +66,25 @@ export async function assembleCoauthorContext(
   const characterBlock = characters.length
     ? characters
         .map((c) => {
-          const attrs = (c.attributes ?? {}) as Record<string, string>;
+          const attrs = (c.attributes ?? {}) as Record<string, unknown>;
           const lines: string[] = [`• ${c.name}`];
 
           // Physical appearance — always first
           const physicalLines = PHYSICAL_KEYS
-            .filter((k) => attrs[k]?.trim())
+            .filter((k) => typeof attrs[k] === "string" && (attrs[k] as string).trim())
             .map((k) => `  ${k.replace(/_/g, " ")}: ${attrs[k]}`);
           if (physicalLines.length) lines.push(...physicalLines);
 
           // Character profile
           const charLines = CHAR_KEYS
-            .filter((k) => attrs[k]?.trim())
+            .filter((k) => typeof attrs[k] === "string" && (attrs[k] as string).trim())
             .map((k) => `  ${k.replace(/_/g, " ")}: ${attrs[k]}`);
           if (charLines.length) lines.push(...charLines);
 
           // Any other extracted attributes (catch-all for future/custom keys)
           const knownKeys = new Set([...PHYSICAL_KEYS, ...CHAR_KEYS]);
           const otherLines = Object.entries(attrs)
-            .filter(([k, v]) => !knownKeys.has(k) && v?.trim())
+            .filter(([k, v]) => !knownKeys.has(k) && typeof v === "string" && v.trim())
             .map(([k, v]) => `  ${k.replace(/_/g, " ")}: ${v}`);
           if (otherLines.length) lines.push(...otherLines);
 

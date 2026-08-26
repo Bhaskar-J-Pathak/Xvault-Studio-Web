@@ -74,14 +74,20 @@ export async function POST(request: NextRequest) {
 
   const contextText = beforeCursor || recentText;
 
-  const { systemPrompt } = await assembleCoauthorContext(
-    supabase,
-    projectId,
-    coauthor?.name ?? "Alex",
-    coauthor?.personality ?? null,
-    contextText,
-    body.chapterId
-  );
+  let systemPrompt: string;
+  try {
+    ({ systemPrompt } = await assembleCoauthorContext(
+      supabase,
+      projectId,
+      coauthor?.name ?? "Alex",
+      coauthor?.personality ?? null,
+      contextText,
+      body.chapterId
+    ));
+  } catch (err) {
+    console.error("[coauthor/suggest] Context assembly failed:", err);
+    return Response.json({ error: "Failed to load story context. Try again." }, { status: 500 });
+  }
 
   // ── Style fingerprint ─────────────────────────────────────────────────────
   // Extract a style analysis from the writer's existing prose so the AI can
