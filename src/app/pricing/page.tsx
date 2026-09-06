@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import Pricing from "../../components/landing/Pricing";
-import AnnouncementBar from "@/components/landing/AnnouncementBar";
 import { getUser } from "@/lib/auth";
 import Link from "next/link";
 
@@ -96,7 +95,6 @@ export default async function PricingPage() {
     <div className="min-h-screen bg-[#F8F5FF]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <AnnouncementBar />
       {/* Top bar for logged-in users */}
       {user && (
         <div className="border-b border-violet-200/60 bg-white/80 backdrop-blur-md sticky top-0 z-50">
