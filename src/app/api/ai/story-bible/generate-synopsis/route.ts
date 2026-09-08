@@ -106,10 +106,14 @@ Be specific — use character names and concrete events. Present tense. No edito
   if (!synopsis) return Response.json({ error: "Empty response" }, { status: 500 });
 
   // Upsert into story_bibles
-  await supabase.from("story_bibles").upsert(
+  const { error: saveError } = await supabase.from("story_bibles").upsert(
     { project_id: projectId, synopsis, updated_at: new Date().toISOString() },
     { onConflict: "project_id" }
   );
+  if (saveError) {
+    console.error("[generate-synopsis] Save failed:", saveError);
+    return Response.json({ error: "Synopsis was generated but could not be saved" }, { status: 500 });
+  }
 
   return Response.json({ ok: true, synopsis });
 }

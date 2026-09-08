@@ -281,29 +281,48 @@ export default function EntityEditPanel({
           label:    relLabel.trim(),
         }),
       });
-      const data = await res.json() as { relationship?: DBRelationship; error?: string };
+      const data = await res.json().catch(() => ({})) as { relationship?: DBRelationship; error?: string };
       if (!res.ok || !data.relationship) { setRelError(data.error ?? "Failed to add."); return; }
       onRelationshipCreated(data.relationship);
       setShowAddRel(false);
       setRelTarget("");
       setRelLabel("");
+    } catch (err) {
+      console.error("[worldboard] add relationship failed:", err);
+      setRelError("Network error. Please try adding the relationship again.");
     } finally {
       setAddingRel(false);
     }
   }
 
   async function handleUpdateRel(id: string, label: string) {
-    await fetch(`/api/studio/worldboard/relationships/${id}`, {
+    setRelError(null);
+    try {
+      const res = await fetch(`/api/studio/worldboard/relationships/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ label }),
-    });
-    onRelationshipUpdated(id, label);
+      });
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      if (!res.ok) { setRelError(data.error ?? "Failed to update relationship."); return; }
+      onRelationshipUpdated(id, label);
+    } catch (err) {
+      console.error("[worldboard] update relationship failed:", err);
+      setRelError("Network error. Please try again.");
+    }
   }
 
   async function handleDeleteRel(id: string) {
-    await fetch(`/api/studio/worldboard/relationships/${id}`, { method: "DELETE" });
-    onRelationshipDeleted(id);
+    setRelError(null);
+    try {
+      const res = await fetch(`/api/studio/worldboard/relationships/${id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({})) as { error?: string };
+      if (!res.ok) { setRelError(data.error ?? "Failed to delete relationship."); return; }
+      onRelationshipDeleted(id);
+    } catch (err) {
+      console.error("[worldboard] delete relationship failed:", err);
+      setRelError("Network error. Please try again.");
+    }
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -430,6 +449,10 @@ export default function EntityEditPanel({
 
               {myRels.length === 0 && !showAddRel && (
                 <p className="text-[12px] text-[#1A1A1A]/30 italic py-1">No relationships yet.</p>
+              )}
+
+              {relError && !showAddRel && (
+                <p role="alert" className="mt-2 text-[11px] text-red-600">{relError}</p>
               )}
 
               {myRels.length > 0 && (

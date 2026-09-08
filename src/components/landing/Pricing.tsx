@@ -3,7 +3,10 @@
 import { cn } from "@/lib/utils";
 import NumberFlow from "@number-flow/react";
 import { CheckIcon, Crown, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
 
 type BillingPlan = "monthly" | "annually";
 
@@ -46,7 +49,7 @@ const PLANS: Plan[] = [
     originalMonthly: 19.99,
     originalAnnually: 239,
     credits: 300,
-    buttonText: "Start now",
+    buttonText: "Choose Hobbyist",
     productId: process.env.NEXT_PUBLIC_DODO_LINK_HOBBYIST!,
     highlighted: false,
     features: [
@@ -64,10 +67,10 @@ const PLANS: Plan[] = [
     id: "founder_circle",
     title: "FOUNDER'S CIRCLE",
     tagline: "Limited Lifetime Access",
-    desc: "Everything you need to write + direct 1:1 access to the founder for life.",
+    desc: "For writers who want to shape Xvault directly while they build their novel.",
     lifetimePrice: 49,
     credits: 500,
-    buttonText: "Claim Lifetime Seat",
+    buttonText: "Become a founding member",
     productId: process.env.NEXT_PUBLIC_DODO_LINK_LIFETIME!,
     badge: "ONLY 30 SEATS",
     isLifetime: true,
@@ -113,6 +116,16 @@ function SeatsBar({ seats }: { seats: SeatInfo }) {
     );
   }
 
+  // Showing “0 claimed” is truthful but acts as negative social proof on a new offer.
+  // Until the first seat is claimed, state the availability rather than inventing urgency.
+  if (taken === 0) {
+    return (
+      <p className="mt-4 mb-2 text-xs font-medium text-orange-700">
+        30 founding seats are available
+      </p>
+    );
+  }
+
   return (
     <div className="mt-4 mb-2 space-y-1.5">
       {/* Bar */}
@@ -138,10 +151,12 @@ function PlanCard({
   plan,
   billing,
   seats,
+  onCheckout,
 }: {
   plan: Plan;
   billing: BillingPlan;
   seats?: SeatInfo;
+  onCheckout: (plan: Plan) => Promise<void>;
 }) {
   const [loading, setLoading] = useState(false);
   const isLifetime = plan.isLifetime ?? false;
@@ -181,33 +196,8 @@ function PlanCard({
   const handleCheckout = async () => {
     if (soldOut) return;
     setLoading(true);
-
-    try {
-      const planPurchased = isLifetime
-        ? "founder_circle"
-        : billing === "monthly"
-        ? "hobbyist"
-        : "hobbyist";
-
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: plan.productId, planPurchased }),
-      });
-
-      const data = await res.json();
-
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        alert(data.error || "Something went wrong. Please try again.");
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Failed to start checkout");
-      setLoading(false);
-    }
+    await onCheckout(plan);
+    setLoading(false);
   };
 
   return (
@@ -359,7 +349,11 @@ function PlanCard({
 // ── Main export ─────────────────────────────────────────────────────────────
 
 export default function Pricing() {
-  const [billing, setBilling] = useState<BillingPlan>("monthly");
+  const searchParams = useSearchParams();
+  const posthog = usePostHog();
+  const billing: BillingPlan = "monthly";
+  const [checkoutError, setCheckoutError] = useState("");
+  const autoCheckoutStarted = useRef(false);
   const [seats, setSeats] = useState<SeatInfo>({
     taken: 0,
     left: TOTAL_SEATS,
@@ -381,45 +375,74 @@ export default function Pricing() {
     return () => controller.abort(new DOMException("unmounted", "AbortError"));
   }, []);
 
+  const startCheckout = async (plan: Plan) => {
+    setCheckoutError("");
+    posthog?.capture("pricing_cta_clicked", { plan: plan.id, price: plan.lifetimePrice ?? plan.monthlyPrice });
+
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: plan.productId, planPurchased: plan.id }),
+      });
+      const data = await res.json();
+
+      if (res.status === 401) {
+        posthog?.capture("pricing_auth_required", { plan: plan.id });
+        window.location.href = `/auth?mode=signup&next=${encodeURIComponent(`/pricing?checkout=${plan.id}`)}`;
+        return;
+      }
+
+      if (data.checkoutUrl) {
+        posthog?.capture("checkout_opened", { plan: plan.id });
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
+      setCheckoutError(data.error || "We couldn’t start checkout. Please try again.");
+    } catch (err) {
+      console.error(err);
+      setCheckoutError("We couldn’t start checkout. Please try again.");
+    }
+  };
+
+  useEffect(() => {
+    const checkoutPlan = searchParams.get("checkout");
+    const plan = PLANS.find((candidate) => candidate.id === checkoutPlan);
+    if (!plan || autoCheckoutStarted.current) return;
+
+    autoCheckoutStarted.current = true;
+    const timeout = window.setTimeout(() => startCheckout(plan), 0);
+    return () => window.clearTimeout(timeout);
+    // This runs only when the destination query changes after authentication.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   return (
     <section className="relative bg-[#F8F5FF] py-20 lg:py-28">
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-5xl font-light tracking-tight text-[#1A0A3C]">
-            Simple pricing
+            Start writing free. Upgrade when you need more.
           </h2>
           <p className="mt-4 text-lg text-violet-700/70">
-            Free during public beta · Early supporters get lifetime access
+            Get 14 days and 100 AI credits free — no credit card required.
+          </p>
+          <Link
+            href="/auth?mode=signup&next=/start"
+            onClick={() => posthog?.capture("pricing_free_trial_clicked")}
+            className="inline-flex mt-7 items-center justify-center rounded-2xl bg-violet-600 px-6 py-3.5 font-medium text-white transition hover:bg-violet-700"
+          >
+            Start free — no card required
+          </Link>
+          <p className="mt-3 text-sm text-violet-700/60">
+            Your manuscript stays yours. Export it whenever you want.
           </p>
         </div>
 
-        {/* Billing Toggle (only affects Hobbyist) */}
-        <div className="flex justify-center mb-14">
-          <div className="inline-flex bg-white rounded-full p-1 shadow-sm">
-            <button
-              onClick={() => setBilling("monthly")}
-              className={cn(
-                "px-8 py-2.5 rounded-full text-sm font-medium transition-all",
-                billing === "monthly"
-                  ? "bg-violet-600 text-white"
-                  : "text-violet-600 hover:bg-violet-50"
-              )}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBilling("annually")}
-              className={cn(
-                "px-8 py-2.5 rounded-full text-sm font-medium transition-all",
-                billing === "annually"
-                  ? "bg-violet-600 text-white"
-                  : "text-violet-600 hover:bg-violet-50"
-              )}
-            >
-              Annual
-            </button>
-          </div>
-        </div>
+        <p className="text-center text-sm text-violet-700/60 -mt-8 mb-14">
+          Paid plans are monthly or one-time; you’ll create a free account before checkout.
+        </p>
 
         {/* Cards - 2 columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -429,9 +452,18 @@ export default function Pricing() {
               plan={plan}
               billing={billing}
               seats={plan.isLifetime ? seats : undefined}
+              onCheckout={startCheckout}
             />
           ))}
         </div>
+        {checkoutError && (
+          <p role="alert" className="mx-auto mt-6 max-w-md rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
+            {checkoutError}
+          </p>
+        )}
+        <p className="mx-auto mt-10 max-w-2xl text-center text-sm leading-relaxed text-violet-900/60">
+          Not sure yet? Start free and explore Alex, your Story Bible, and the World Board before choosing a plan.
+        </p>
       </div>
     </section>
   );

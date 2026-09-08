@@ -8,11 +8,11 @@ const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const FAQS = [
   {
     q: "Is Xvault Studio free to start?",
-    a: "Yes. Sign up in 10 seconds, no credit card needed. You get 100 AI credits and 14 days of full access. After your trial, the free plan gives you continued access with a smaller monthly credit allowance. Paid plans with higher limits are coming at full launch.",
+    a: "Yes. Sign up in 10 seconds, with no credit card needed. You get 100 AI credits and 14 days of full access. When you need more credits, you can choose a paid plan from the pricing page.",
   },
   {
     q: "Is this the full product?",
-    a: "Xvault Studio is currently in public beta. The core writing experience (Alex, inline suggestions, World Board, Story Bible, and Global Replace) is fully functional. We're actively building toward a full launch with expanded features and subscription plans. Beta users get full access and directly shape what we build next.",
+    a: "Xvault Studio is in public beta. The core writing experience — Alex, inline suggestions, World Board, Story Bible, and Global Replace — is ready to use today. Beta writers get full access to the current product and can directly shape what we build next.",
   },
   {
     q: "What exactly is Alex?",

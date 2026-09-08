@@ -301,6 +301,7 @@ interface CoAuthorPluginProps {
   onRecentTextChange:   (text: string) => void;
   onObservation:        (obs: string) => void;
   onCtrlK:              (context: CursorContext) => void;
+  onContinue:           (context: CursorContext) => void;
   ghostSuggestion:      string | null;
   ghostMode:            GhostMode;
   ghostOriginalText:    string;   // original selected text for rewrite accept
@@ -319,6 +320,7 @@ function CoAuthorPlugin({
   onRecentTextChange,
   onObservation,
   onCtrlK,
+  onContinue,
   ghostSuggestion,
   ghostMode,
   ghostOriginalText,
@@ -345,6 +347,8 @@ function CoAuthorPlugin({
   onObservationRef.current   = onObservation;
   const onCtrlKRef           = useRef(onCtrlK);
   onCtrlKRef.current         = onCtrlK;
+  const onContinueRef        = useRef(onContinue);
+  onContinueRef.current      = onContinue;
   const ghostSuggestionRef   = useRef(ghostSuggestion);
   ghostSuggestionRef.current = ghostSuggestion;
   const ghostModeRef         = useRef(ghostMode);
@@ -396,7 +400,9 @@ function CoAuthorPlugin({
           beforeCursor = fullText;
         }
       });
-      onCtrlKRef.current({ beforeCursor, afterCursor, selectedText });
+      // The title-bar button promises a continuation; Ctrl+K still opens the
+      // instruction command bar through onCtrlK.
+      onContinueRef.current({ beforeCursor, afterCursor, selectedText });
     };
     return () => { if (triggerWriteRef) triggerWriteRef.current = null; };
   }, [editor, triggerWriteRef]);
@@ -1076,6 +1082,7 @@ export default function ZenEditor({
     dismissToolbar();
     setGhostMode("continue");
     setGhostOriginalText("");
+    setGhostSuggestion(null);
     setGhostLoading(true);
     try {
       const res = await fetch("/api/ai/coauthor/suggest", {
@@ -1090,13 +1097,22 @@ export default function ZenEditor({
           afterCursor:  context.afterCursor,
         }),
       });
-      const data = await res.json() as { suggestion?: string; remaining?: number };
+      const data = await res.json().catch(() => ({})) as { suggestion?: string; error?: string; remaining?: number };
       if (data.remaining !== undefined) handleCreditUpdate(data.remaining);
-      if (data.suggestion) setGhostSuggestion(data.suggestion);
-    } catch { /* silently ignore */ }
+      if (!res.ok || !data.suggestion) {
+        const message = data.error ?? `Could not continue writing (${res.status}). Please try again.`;
+        ph?.capture("api_error", { feature: "toolbar_continue", status: res.status, error: message });
+        setGhostSuggestion(`[Error: ${message}]`);
+        return;
+      }
+      setGhostSuggestion(data.suggestion);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Network error. Check your connection.";
+      ph?.capture("api_error", { feature: "toolbar_continue", error: "network_error", detail: String(err) });
+      setGhostSuggestion(`[Error: ${message}]`);
+    }
     finally { setGhostLoading(false); }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, chapterId, handleCreditUpdate]);
+  }, [projectId, chapterId, handleCreditUpdate, ph]);
 
   const handleToolbarRewrite = useCallback(async (context: CursorContext) => {
     // Keep toolbar visible (locked) — result shows in toolbar panel, not ghost overlay
@@ -1391,6 +1407,7 @@ export default function ZenEditor({
               if (!userClosedPanel.current) setCoauthorSlim(false);
             }}
             onCtrlK={handleCtrlK}
+            onContinue={(context) => handleGhostRequest("", context)}
             ghostSuggestion={ghostSuggestion}
             ghostMode={ghostMode}
             ghostOriginalText={ghostOriginalText}

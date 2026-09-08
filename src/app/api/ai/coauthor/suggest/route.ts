@@ -23,6 +23,20 @@ import { geminiGenerate } from "@/lib/ai";
 import { assembleCoauthorContext } from "@/lib/coauthor-context";
 import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
+/**
+ * Suggestions are inserted directly into a manuscript, not rendered as Markdown.
+ * Gemini occasionally uses asterisks for action beats or emphasis despite the
+ * prompt, so remove Markdown emphasis before it reaches the editor.
+ */
+function normalizeProse(text: string): string {
+  return text
+    .replace(/\*{1,3}([^*\n]+?)\*{1,3}/g, "$1")
+    .replace(/^\s*[-•]\s+/gm, "")
+    .replace(/[—―]/g, ", ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -97,8 +111,8 @@ export async function POST(request: NextRequest) {
   const styleSample = styleWords.slice(Math.max(0, styleWords.length - 800)).join(" ");
 
   const styleAnalysisBlock = styleSample
-    ? `WRITER'S STYLE — study this excerpt and mirror it exactly:
-POV, tense, sentence rhythm, paragraph length, vocabulary level, dialogue formatting, use of internal thought, descriptive density — all must match.
+    ? `WRITER'S VOICE IS THE SOURCE OF TRUTH — imitate this excerpt, do not "improve" it or substitute generic AI prose:
+Match its POV, tense, sentence rhythm, paragraph length, vocabulary, dialogue punctuation, interiority, descriptive density, and level of formality. Keep its quirks and restraint. If it is plain, write plainly; if it is fragmented, use fragments; if it is lyrical, remain lyrical without adding purple prose. Do not introduce stock phrases, a more polished narrator, or your own signature voice.
 ---
 ${styleSample}
 ---`
@@ -140,8 +154,8 @@ INSTRUCTION: ${instruction.trim()}
 
 Rewrite ONLY the selected text according to the instruction. Match the writer's voice, POV, tense, and style exactly.
 Craft rules: no em-dashes, no AI-cliché phrases (see system rules), no bare emotion labels — show through action or detail, no adverbs on dialogue tags, write specific not vague.
-If the passage contains dialogue: every line must sound spoken not written. Characters deflect, trail off, give fragments. Use contractions. No character is too articulate for their situation.
-Output ONLY the rewritten passage — no preamble, no labels, no explanation. Aim for roughly the same length as the original unless the instruction asks for more or less.`;
+If the passage contains dialogue: every line must sound spoken not written. Characters deflect, trail off, give fragments. Use contractions. No character is too articulate for their situation. Use double quotation marks for spoken dialogue.
+Output ONLY the rewritten passage — no preamble, no labels, no explanation, no Markdown, and never use asterisks for action beats or emphasis. Aim for roughly the same length as the original unless the instruction asks for more or less.`;
 
     maxTokens = Math.max(512, Math.ceil(selectedText.split(/\s+/).length * 1.5 * 1.4));
 
@@ -169,10 +183,10 @@ ${afterBlock}
 
 INSTRUCTION: ${instruction.trim()}
 
-Write ${wordTarget} words of story prose to be inserted at the cursor. Match the writer's voice, POV, tense, sentence rhythm, and style exactly.
+Write ${wordTarget} words of story prose to be inserted at the cursor. The writer's excerpt is binding: match its voice, POV, tense, sentence rhythm, diction, paragraph shape, dialogue punctuation, and degree of detail exactly. Do not make it sound more polished, more dramatic, or more literary than the writer's own text.
 Craft rules: no em-dashes, no AI-cliché phrases (see system rules), no bare emotion labels — ground them in action or sensation, no adverbs on dialogue tags, write specific and concrete not vague. Vary sentence length and structure.
-If the passage includes dialogue: make every line sound spoken not written. Characters deflect, trail off, give non-answers, use fragments and contractions. No one is too eloquent for their situation. Use "said" or "asked" for tags, and action beats over adverbs.
-Output ONLY the story text — no preamble, no labels, no commentary. Do not repeat the text before the cursor. Pick up naturally from it.`;
+If the passage includes dialogue: make every line sound spoken not written. Characters deflect, trail off, give non-answers, use fragments and contractions. No one is too eloquent for their situation. Put every spoken line in double quotation marks. Use "said" or "asked" for tags, and action beats over adverbs.
+Output ONLY the story text — no preamble, no labels, no commentary, no Markdown, and no asterisks for action beats or emphasis. Do not repeat the text before the cursor. Pick up naturally from it.`;
 
   } else {
     // "continue" — blind continuation (Ctrl+K with no instruction, legacy)
@@ -188,14 +202,15 @@ ${afterBlock}
 Continue the story exactly where it left off. Write 150-250 words.
 
 Rules:
-- Match voice, pacing, and style of the existing text exactly
+- The writer's existing text is binding. Match its voice, pacing, diction, POV, tense, paragraph shape, and dialogue punctuation exactly. Never substitute generic AI prose or your own preferred style.
 - Do not introduce new plot elements — continue the current scene
-- Never use em-dashes (—) — restructure the sentence or use a comma/period instead
+- Never use em-dashes (— or ―) — restructure the sentence with a comma, period, colon, semicolon, parentheses, or a new sentence instead
 - Keep prose lean — no stacked adjectives, no excessive sensory detail, no purple prose
 - No AI-cliché phrases (see system rules): no "washed over," no "found herself," no "heart raced," no "in that moment," no bare emotion labels — show through action or sensation
 - Write specific and concrete — "the smell of diesel and wet asphalt" beats "the smell of the city"
 - Vary sentence length — avoid three consecutive sentences starting with the same subject
 - No adverbs on dialogue tags — use action beats or just "said"
+- Use double quotation marks for every line of spoken dialogue; never use asterisks to describe an action or emotion
 - Output ONLY the continuation. No preamble, no labels.
 
 The manuscript so far ends with:
@@ -210,8 +225,10 @@ Continue:`;
   const suggestionSystem = `${systemPrompt}
 
 PROSE RULES (always enforced):
-- Never use em-dashes (—). Restructure the sentence, use a comma, or use a period instead.
+- Never use em-dashes (— or ―). Restructure the sentence with a comma, period, colon, semicolon, parentheses, or a new sentence instead.
 - Keep prose lean. Include only what moves the scene forward. No stacked adjectives, no excessive sensory detail, no purple prose.
+- Output plain manuscript prose, never Markdown. Do not use asterisks for emphasis, action beats, thoughts, or scene description.
+- The manuscript excerpt is the authority on voice. Match its exact tense, POV, diction, punctuation, sentence length, paragraph rhythm, and amount of description. Never add a generic AI voice, stock dramatic phrasing, or polish the prose beyond the writer's established style.
 
 ANTI-CLICHÉ RULES (strictly enforced — these are the marks of AI-generated slop):
 - Never open a sentence with "Suddenly," "In that moment," "It was as if," or "Needless to say."
@@ -234,6 +251,7 @@ DIALOGUE RULES (enforced whenever dialogue appears):
 - Subtext over text. Anger is not "I'm angry." It's "Fine." followed by silence, or a suddenly very careful choice of words.
 - Every character must sound different: their vocabulary, rhythm, and sentence length should reflect their age, education, mood, and relationship to the person they are speaking to.
 - Contractions are mandatory in casual speech. "Don't" not "do not." "It's" not "it is." Only use full forms for deliberate emphasis.
+- Put all spoken dialogue inside double quotation marks. Do not write dialogue or actions with asterisks.
 - Fragments are good dialogue. "Yeah." "No." "Tomorrow, maybe." "Forget it." These are natural.
 - Use "said" or "asked" for dialogue tags 90% of the time. Reserve other tags (whispered, snapped, called) only when the manner of delivery is genuinely surprising and cannot be shown another way.
 - Never use these hollow dialogue openers repeatedly: "Well," "Look," "Listen," "So," "Anyway," "I mean" — vary them or cut them entirely.
@@ -261,11 +279,8 @@ OUTPUT RULE: Output ONLY the story prose — zero preamble, zero labels, zero me
 
   await commitRateLimit(user.id, createServiceClient(), isLongWrite ? 2 : 1);
 
-  suggestion = suggestion.trim();
+  suggestion = normalizeProse(suggestion);
   if (!suggestion) return Response.json({ error: "Empty suggestion" }, { status: 500 });
-
-  // Strip any em-dashes that slipped through despite the prompt rule
-  suggestion = suggestion.replace(/ — /g, ", ").replace(/—/g, ", ");
 
   return Response.json({ ok: true, suggestion, remaining });
 }

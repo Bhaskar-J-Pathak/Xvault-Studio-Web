@@ -307,6 +307,9 @@ export async function mergeExtractionIntoGraph(
   existingEntities: ExistingEntity[],
   client:          SupabaseClient
 ): Promise<ExtractedInconsistency[]> {
+  const throwIfError = (error: { message: string } | null, operation: string) => {
+    if (error) throw new Error(`${operation}: ${error.message}`);
+  };
   // Use existId as the sole authority — model's is_update flag is unreliable
   const nameToId = buildNameMap(existingEntities);
 
@@ -335,30 +338,34 @@ export async function mergeExtractionIntoGraph(
     if (existId) {
       // Entity already exists — always merge new attributes, never duplicate
       if (Object.keys(e.attributes).length > 0) {
-        await client.rpc("merge_entity_attributes", {
+        const { error } = await client.rpc("merge_entity_attributes", {
           p_entity_id: existId,
           p_attributes: e.attributes,
         });
+        throwIfError(error, "Could not update entity attributes");
       }
-      await client
+      const { error } = await client
         .from("entities")
         .update({ last_seen_word: chapterNumber, confidence: e.confidence })
         .eq("id", existId);
+      throwIfError(error, "Could not update entity");
     } else {
       // DB safety check: prevent concurrent-extraction duplicates
-      const { data: dbDupe } = await client
+      const { data: dbDupe, error: dupeError } = await client
         .from("entities")
         .select("id")
         .eq("project_id", projectId)
         .ilike("name", e.name)
         .maybeSingle();
+      throwIfError(dupeError, "Could not check for duplicate entity");
 
       if (dbDupe) {
         if (Object.keys(e.attributes).length > 0) {
-          await client.rpc("merge_entity_attributes", {
+          const { error } = await client.rpc("merge_entity_attributes", {
             p_entity_id: dbDupe.id,
             p_attributes: e.attributes,
           });
+          throwIfError(error, "Could not update duplicate entity attributes");
         }
         nameToId.set(e.name.toLowerCase(), dbDupe.id);
         continue;
@@ -373,7 +380,7 @@ export async function mergeExtractionIntoGraph(
         y: origin.y + Math.floor(i / ZONE_COLS) * ZONE_ROW_GAP,
       };
 
-      const { data: inserted } = await client
+      const { data: inserted, error: insertError } = await client
         .from("entities")
         .insert({
           project_id:             projectId,
@@ -387,8 +394,10 @@ export async function mergeExtractionIntoGraph(
         })
         .select("id")
         .single();
+      throwIfError(insertError, `Could not create entity "${e.name}"`);
 
-      if (inserted) nameToId.set(e.name.toLowerCase(), inserted.id);
+      if (!inserted) throw new Error(`Could not create entity "${e.name}"`);
+      nameToId.set(e.name.toLowerCase(), inserted.id);
     }
   }
 
@@ -399,28 +408,30 @@ export async function mergeExtractionIntoGraph(
     if (!sourceId || !targetId || sourceId === targetId) continue;
 
     // Avoid duplicates — check if this relationship already exists
-    const { data: existing } = await client
+    const { data: existing, error: relationshipLookupError } = await client
       .from("relationships")
       .select("id")
       .eq("project_id", projectId)
       .eq("source_id", sourceId)
       .eq("target_id", targetId)
       .maybeSingle();
+    throwIfError(relationshipLookupError, "Could not check for duplicate relationship");
 
     if (!existing) {
-      await client.from("relationships").insert({
+      const { error } = await client.from("relationships").insert({
         project_id: projectId,
         source_id:  sourceId,
         target_id:  targetId,
         label:      rel.label,
       });
+      throwIfError(error, `Could not create relationship "${rel.label}"`);
     }
   }
 
   // ── Plot threads ─────────────────────────────────────────────
   for (const thread of result.threads) {
     if (thread.is_new) {
-      await client.from("plot_threads").insert({
+      const { error } = await client.from("plot_threads").insert({
         project_id:                  projectId,
         description:                 thread.description,
         introduced_chapter_id:       chapterId,
@@ -429,9 +440,10 @@ export async function mergeExtractionIntoGraph(
         last_seen_chapter_number:    chapterNumber,
         status:                      thread.status,
       });
+      throwIfError(error, "Could not create plot thread");
     } else {
       // Update last_seen on existing thread (fuzzy match by partial description)
-      await client
+      const { error } = await client
         .from("plot_threads")
         .update({
           last_seen_chapter_id:     chapterId,
@@ -440,6 +452,7 @@ export async function mergeExtractionIntoGraph(
         })
         .eq("project_id", projectId)
         .ilike("description", `%${thread.description.slice(0, 20)}%`);
+      throwIfError(error, "Could not update plot thread");
     }
   }
 
@@ -449,7 +462,7 @@ export async function mergeExtractionIntoGraph(
   for (const inc of result.inconsistencies) {
     const entityId = nameToId.get(inc.entity.toLowerCase());
 
-    await client.from("inconsistency_flags").insert({
+    const { error } = await client.from("inconsistency_flags").insert({
       project_id:        projectId,
       entity_id:         entityId ?? null,
       entity_name:       inc.entity,
@@ -460,6 +473,7 @@ export async function mergeExtractionIntoGraph(
       chapter_id:        chapterId,
       status:            "pending",
     });
+    throwIfError(error, "Could not create inconsistency flag");
 
     flagsCreated.push(inc);
   }

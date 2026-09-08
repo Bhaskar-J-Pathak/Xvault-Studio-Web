@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Pricing | Xvault Studio",
-  description: "Xvault Studio starts free: 14 days, 100 AI credits, no credit card. Hobbyist plan from $11.99/mo. Lifetime access for $49.",
+  description: "Start Xvault Studio free for 14 days with 100 AI credits and no credit card. Upgrade to Hobbyist for $11.99/month, or join the limited Founder's Circle for $49.",
   alternates: { canonical: "https://xvault.dev/pricing" },
 };
 
@@ -30,14 +30,6 @@ const pricingSchema = {
       priceCurrency: "USD",
       billingIncrement: "P1M",
       description: "300 AI credits per month. Full access to Alex, World Board, Story Bible, and Ghost Writing.",
-    },
-    {
-      "@type": "Offer",
-      name: "Hobbyist Annual",
-      price: "119",
-      priceCurrency: "USD",
-      billingIncrement: "P1Y",
-      description: "300 AI credits per month, billed annually.",
     },
     {
       "@type": "Offer",
@@ -74,7 +66,7 @@ const faqSchema = {
       name: "What is the Founder's Circle?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "The Founder's Circle is a one-time lifetime access plan for $49. It includes 500 AI credits per month and is limited to 30 seats total.",
+        text: "The Founder's Circle is a one-time $49 founding membership limited to 30 writers. It includes 500 AI credits per month, direct founder access, and a voice in shaping the product.",
       },
     },
     {
@@ -82,7 +74,7 @@ const faqSchema = {
       name: "What are AI credits?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "AI credits are used each time you interact with Alex, generate a Ghost Writing suggestion, or run a continuity check. The Hobbyist plan includes 300 credits per month. The Founder's Circle includes 500 credits per month.",
+        text: "AI credits are used each time you interact with Alex, generate an inline suggestion, or run a continuity check. The Hobbyist plan includes 300 credits per month. The Founder's Circle includes 500 credits per month.",
       },
     },
   ],

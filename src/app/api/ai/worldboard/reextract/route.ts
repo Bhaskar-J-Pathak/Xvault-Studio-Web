@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
     let wordOffset   = 0;
 
     // Process chapter in chunks
+    let chapterFailure: string | null = null;
     while (wordOffset < words.length) {
       const chunk = words.slice(wordOffset, wordOffset + CHUNK_SIZE).join(" ");
 
@@ -159,6 +160,7 @@ export async function POST(request: NextRequest) {
         );
       } catch (err) {
         console.error(`[reextract] AI failed on chapter "${chapter.title}" offset ${wordOffset}:`, err);
+        chapterFailure = `AI extraction failed for chapter "${chapter.title}".`;
         break;
       }
 
@@ -168,24 +170,44 @@ export async function POST(request: NextRequest) {
       const extracted = parseExtractionResponse(rawResponse);
       if (!extracted) {
         console.error(`[reextract] Parse failed on chapter "${chapter.title}" offset ${wordOffset}`);
+        chapterFailure = `The AI returned an invalid extraction for chapter "${chapter.title}". Please try again.`;
         break;
       }
 
-      const inconsistencies = await mergeExtractionIntoGraph(
-        projectId,
-        chapter.id,
-        chapterNum,
-        extracted,
-        existingEntities ?? [],
-        supabase
-      );
+      try {
+        const inconsistencies = await mergeExtractionIntoGraph(
+          projectId,
+          chapter.id,
+          chapterNum,
+          extracted,
+          existingEntities ?? [],
+          supabase
+        );
+        // Kept for future extraction diagnostics.
+        void inconsistencies;
+      } catch (err) {
+        console.error(`[reextract] Database merge failed on chapter "${chapter.title}" offset ${wordOffset}:`, err);
+        chapterFailure = `Could not save extracted data for chapter "${chapter.title}".`;
+        break;
+      }
 
       totalEntities      += extracted.entities.length;
       totalRelationships += extracted.relationships.length;
       wordOffset         += CHUNK_SIZE;
 
-      // Silence unused variable warning
-      void inconsistencies;
+    }
+
+    // Never mark a failed chapter as extracted. Previously this advanced the
+    // watermark even after an AI/parse/database failure, leaving a blank board
+    // that could not recover automatically.
+    if (chapterFailure) {
+      return Response.json({
+        ok: false,
+        error: chapterFailure,
+        chaptersProcessed,
+        totalEntities,
+        totalRelationships,
+      }, { status: 502 });
     }
 
     // Update chapter watermark to full word count

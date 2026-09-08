@@ -42,6 +42,7 @@ export default function WorldBoardView({
   const [reExtracting,      setReExtracting]      = useState(false);
   const [confirmOpen,       setConfirmOpen]       = useState(false);
   const [reExtractProgress, setReExtractProgress] = useState<string | null>(null);
+  const [actionError,       setActionError]       = useState<string | null>(null);
   const [resetScope,        setResetScope]        = useState<"project" | string>("project");
 
   // Dedup state
@@ -176,13 +177,18 @@ export default function WorldBoardView({
     const scopeBody = isProject ? { projectId } : { projectId, chapterId: resetScope };
 
     try {
+      setActionError(null);
       setResetting(true);
       const resetRes = await fetch("/api/studio/worldboard/reset", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(scopeBody),
       });
-      if (!resetRes.ok) return;
+      const resetData = await resetRes.json().catch(() => ({})) as { error?: string };
+      if (!resetRes.ok) {
+        setActionError(resetData.error ?? "Could not reset the World Board. Please try again.");
+        return;
+      }
       setResetting(false);
 
       setReExtracting(true);
@@ -195,14 +201,27 @@ export default function WorldBoardView({
         );
       }
 
-      await fetch("/api/ai/worldboard/reextract", {
+      const reextractRes = await fetch("/api/ai/worldboard/reextract", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(scopeBody),
       });
+      const reextractData = await reextractRes.json().catch(() => ({})) as {
+        ok?: boolean;
+        error?: string;
+        chaptersProcessed?: number;
+        totalEntities?: number;
+      };
+      if (!reextractRes.ok || !reextractData.ok) {
+        setActionError(reextractData.error ?? "Extraction failed. Your World Board was reset, but nothing was re-extracted.");
+        return;
+      }
 
       if (!isProject) setSelectedChapterId(null);
       router.refresh();
+    } catch (err) {
+      console.error("[worldboard] reset/re-extract failed:", err);
+      setActionError("Network error while re-extracting. Please check your connection and try again.");
     } finally {
       setResetting(false);
       setReExtracting(false);
@@ -242,7 +261,7 @@ export default function WorldBoardView({
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full">
       {/* Tab bar + controls */}
       <div className="shrink-0 flex items-center gap-1 px-4 pt-1.5 pb-0 border-b border-black/[0.06] bg-white">
 
@@ -355,6 +374,13 @@ export default function WorldBoardView({
           )}
         </div>
       </div>
+
+      {actionError && (
+        <div role="alert" className="mx-4 mt-3 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="shrink-0 font-medium underline">Dismiss</button>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 relative" style={{ minHeight: 0 }}>

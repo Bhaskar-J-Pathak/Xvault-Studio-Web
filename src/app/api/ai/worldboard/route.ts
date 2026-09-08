@@ -109,21 +109,31 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Merge into graph ────────────────────────────────────────────────────────
-  const inconsistencies = await mergeExtractionIntoGraph(
-    projectId,
-    chapterId,
-    chapterNumber,
-    extracted,
-    existingEntities ?? [],
-    supabase
-  );
+  let inconsistencies;
+  try {
+    inconsistencies = await mergeExtractionIntoGraph(
+      projectId,
+      chapterId,
+      chapterNumber,
+      extracted,
+      existingEntities ?? [],
+      supabase
+    );
+  } catch (err) {
+    console.error("[worldboard] Failed to save extraction:", err);
+    return Response.json({ error: "Could not save extracted World Board data" }, { status: 500 });
+  }
 
   // ── Update chapter extraction watermark ────────────────────────────────────
   const currentWordCount = deltaText.trim().split(/\s+/).length;
-  await supabase.rpc("advance_chapter_extraction", {
+  const { error: watermarkError } = await supabase.rpc("advance_chapter_extraction", {
     p_chapter_id: chapterId,
     p_word_delta: currentWordCount,
   });
+  if (watermarkError) {
+    console.error("[worldboard] Could not update extraction watermark:", watermarkError);
+    return Response.json({ error: "Extraction completed but could not be finalized. Please retry." }, { status: 500 });
+  }
 
   return Response.json({
     ok:                true,

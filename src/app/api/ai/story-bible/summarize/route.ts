@@ -106,10 +106,14 @@ Rules: specific and factual, past tense, no editorializing, no spoilers framing.
     await commitRateLimit(user.id, createServiceClient(), 1);
   }
 
-  await supabase
+  const { error: saveError } = await supabase
     .from("chapters")
     .update({ summary })
     .eq("id", chapterId);
+  if (saveError) {
+    console.error("[story-bible/summarize] Save failed:", saveError);
+    return Response.json({ error: "Summary was generated but could not be saved" }, { status: 500 });
+  }
 
   return Response.json({ ok: true, summary });
 }

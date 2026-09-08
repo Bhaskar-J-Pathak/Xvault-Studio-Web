@@ -190,6 +190,7 @@ export default function BibleView({
   const [expandedEntities, setExpandedEntities] = useState<Record<string, boolean>>({});
   const [analyzing,        setAnalyzing]        = useState<Record<string, boolean>>({});
   const [analyzeError,     setAnalyzeError]     = useState<Record<string, string>>({});
+  const [genreError,       setGenreError]       = useState(false);
 
   // Debounce refs for auto-saves
   const intentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -285,12 +286,17 @@ export default function BibleView({
   // ── Genre ─────────────────────────────────────────────────────────────────
   const handleGenreChange = (value: string) => {
     setGenre(value);
+    setGenreError(false);
     if (genreTimerRef.current) clearTimeout(genreTimerRef.current);
     genreTimerRef.current = setTimeout(async () => {
       setGenreSaving(true);
       const supabase = createClient();
-      await supabase.from("projects").update({ genre: value }).eq("id", projectId);
+      const { error } = await supabase.from("projects").update({ genre: value }).eq("id", projectId);
       setGenreSaving(false);
+      if (error) {
+        console.error("[bible] genre save failed:", error);
+        setGenreError(true);
+      }
     }, 1500);
   };
 
@@ -309,7 +315,8 @@ export default function BibleView({
 
   // ── Synopsis: save on blur ────────────────────────────────────────────────
   const handleSynopsisSave = useCallback(async (value: string) => {
-    await upsertBible({ synopsis: value });
+    const ok = await upsertBible({ synopsis: value });
+    if (!ok) setSynopsisError("Could not save synopsis. Please try again.");
   }, [upsertBible]);
 
   // ── Synopsis: AI generate ─────────────────────────────────────────────────
@@ -338,7 +345,11 @@ export default function BibleView({
   // ── Chapter summaries ─────────────────────────────────────────────────────
   const handleSummarySave = useCallback(async (chapterId: string, value: string) => {
     const supabase = createClient();
-    await supabase.from("chapters").update({ summary: value }).eq("id", chapterId);
+    const { error } = await supabase.from("chapters").update({ summary: value }).eq("id", chapterId);
+    if (error) {
+      console.error("[bible] chapter summary save failed:", error);
+      setGenerateError((p) => ({ ...p, [chapterId]: "Could not save summary. Please try again." }));
+    }
   }, []);
 
   const handleGenerate = useCallback(async (chapterId: string) => {
@@ -372,9 +383,13 @@ export default function BibleView({
     const entity = entities.find((e) => e.id === entityId);
     if (!entity) return;
     const supabase = createClient();
-    await supabase.from("entities")
+    const { error } = await supabase.from("entities")
       .update({ attributes: { ...(entity.attributes ?? {}), ...attrs } })
       .eq("id", entityId);
+    if (error) {
+      console.error("[bible] character save failed:", error);
+      setAnalyzeError((p) => ({ ...p, [entityId]: "Could not save character details." }));
+    }
   }, [entities]);
 
   const updateAttr = (entityId: string, key: keyof CharacterAttrs, value: string) =>
@@ -474,6 +489,7 @@ export default function BibleView({
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-[13px] font-semibold text-[#1A1A1A]">Genre</h2>
             {genreSaving && <span className="text-[11px] text-[#1A1A1A]/30">Saving…</span>}
+            {genreError && <span className="text-[11px] text-red-400">Save failed. Check your connection</span>}
           </div>
           <p className="text-[11px] text-[#1A1A1A]/40 mb-3">
             Genre shapes tone, pacing, and reader expectations. Be specific: "Dark Portal Fantasy" beats "Fantasy".
