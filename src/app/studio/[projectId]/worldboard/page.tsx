@@ -85,6 +85,7 @@ export default async function WorldBoardPage({
       {/* View (Canvas + Debug tabs) */}
       <div className="flex-1" style={{ minHeight: 0 }}>
         <WorldBoardView
+          key={JSON.stringify([safeEntities, safeRelationships])}
           initialEntities={safeEntities as Parameters<typeof WorldBoardView>[0]["initialEntities"]}
           initialRelationships={safeRelationships}
           projectId={projectId}

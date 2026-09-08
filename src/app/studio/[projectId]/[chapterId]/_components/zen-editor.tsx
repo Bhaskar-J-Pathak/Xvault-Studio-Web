@@ -13,6 +13,15 @@ import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { $getRoot, $getSelection, $isRangeSelection } from "lexical";
 import type { EditorState } from "lexical";
 
+// Generated prose must create editor paragraphs, not newlines inside a text node.
+function insertProse(selection: import("lexical").RangeSelection, text: string) {
+  const paragraphs = text.replace(/\r\n?/g, "\n").split(/\n+/);
+  paragraphs.forEach((paragraph, index) => {
+    if (index > 0) selection.insertParagraph();
+    selection.insertText(paragraph);
+  });
+}
+
 // ── Ghost writer types ────────────────────────────────────────────────────────
 type GhostMode = "write" | "rewrite" | "continue";
 
@@ -219,9 +228,12 @@ function ExtractionPlugin({
               const data = await res.json() as { remaining?: number };
               if (data.remaining !== undefined) onCreditUpdate?.(data.remaining);
             } else {
+              const failure = await res.json().catch(() => ({}));
+              window.dispatchEvent(new CustomEvent("worldboard-error", { detail: failure.error ?? "World Board extraction failed. Please retry from the World Board." }));
               break;
             }
           } catch {
+            window.dispatchEvent(new CustomEvent("worldboard-error", { detail: "World Board extraction could not connect. Please retry from the World Board." }));
             break;
           }
         }
@@ -474,7 +486,11 @@ function CoAuthorPlugin({
               const text = textNode.getTextContent();
               const idx = text.indexOf(originalText);
               if (idx !== -1) {
-                textNode.setTextContent(text.slice(0, idx) + suggestion + text.slice(idx + originalText.length));
+                // Select the matched passage so paragraph insertion preserves
+                // the surrounding text and creates real paragraph nodes.
+                const lexicalNode = node as unknown as import("lexical").TextNode;
+                const selection = lexicalNode.select(idx, idx + originalText.length);
+                insertProse(selection, suggestion!);
                 return true;
               }
             }
@@ -488,7 +504,7 @@ function CoAuthorPlugin({
           const replaced = replaceInNode(root as ReturnType<typeof $getRoot>);
           if (!replaced) {
             const sel = $getSelection();
-            if ($isRangeSelection(sel)) sel.insertText(suggestion);
+            if ($isRangeSelection(sel)) insertProse(sel, suggestion);
           }
         } else {
           const sel = $getSelection();
@@ -498,7 +514,7 @@ function CoAuthorPlugin({
             if (!sel.isCollapsed()) {
               sel.anchor.set(sel.focus.key, sel.focus.offset, sel.focus.type);
             }
-            sel.insertText(suggestion);
+            insertProse(sel, suggestion);
           }
         }
       });
@@ -774,6 +790,7 @@ interface Props {
   initialSummary:       string | null;
   initialCoauthor:      DbCoauthor | null;
   initialCredits:       number;
+  initialCreditCap:     number;
   isTrial:              boolean;
   // Tutorial
   onboardingStep?:      number;
@@ -792,6 +809,7 @@ export default function ZenEditor({
   initialSummary,
   initialCoauthor,
   initialCredits,
+  initialCreditCap,
   isTrial,
   onboardingStep = 9,
   onboardingDone = true,
@@ -802,6 +820,12 @@ export default function ZenEditor({
   const [wordCount,        setWordCount]        = useState(initialWordCount);
   const [saveStatus,       setSaveStatus]       = useState<SaveStatus>("idle");
   const [extractionStatus, setExtractionStatus] = useState<"idle" | "extracting">("idle");
+  const [extractionError, setExtractionError] = useState<string | null>(null);
+  useEffect(() => {
+    const report = (event: Event) => setExtractionError(String((event as CustomEvent).detail));
+    window.addEventListener("worldboard-error", report);
+    return () => window.removeEventListener("worldboard-error", report);
+  }, []);
 
   // Credits
   const [credits,          setCredits]          = useState(initialCredits);
@@ -1478,6 +1502,7 @@ export default function ZenEditor({
             <span className="text-xs xv-chrome-label">
               {wordCount.toLocaleString()} word{wordCount !== 1 ? "s" : ""}
             </span>
+            {extractionError && <span role="alert" className="text-xs text-red-600" onClick={() => setExtractionError(null)}>{extractionError}</span>}
             {extractionStatus === "extracting" && (
               <span className="text-xs text-violet-500/70">World Board updating…</span>
             )}
@@ -1758,7 +1783,7 @@ export default function ZenEditor({
         onClose={() => setSettingsOpen(false)}
         credits={credits}
         isTrial={isTrial}
-        cap={initialCredits > 0 ? Math.max(initialCredits, credits) : 100}
+        cap={initialCreditCap}
         prefs={editorPrefs}
         onChange={handlePrefsChange}
       />

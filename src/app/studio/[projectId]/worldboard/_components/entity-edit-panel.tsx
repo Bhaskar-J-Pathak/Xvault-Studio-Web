@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { relationshipStatement } from "@/lib/relationships";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -55,10 +56,11 @@ function typeLabel(type: string) {
 // ── Relationship row ───────────────────────────────────────────────────────────
 
 function RelRow({
-  rel, isOutgoing, otherName, onUpdate, onDelete,
+  rel, isOutgoing, entityName, otherName, onUpdate, onDelete,
 }: {
   rel:        DBRelationship;
   isOutgoing: boolean;
+  entityName: string;
   otherName:  string;
   onUpdate:   (id: string, label: string) => Promise<void>;
   onDelete:   (id: string) => Promise<void>;
@@ -67,6 +69,8 @@ function RelRow({
   const [label,    setLabel]    = useState(rel.label);
   const [saving,   setSaving]   = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const sourceName = isOutgoing ? entityName : otherName;
+  const targetName = isOutgoing ? otherName : entityName;
 
   async function save() {
     if (!label.trim()) return;
@@ -83,19 +87,6 @@ function RelRow({
 
   return (
     <div className="flex items-start gap-2 py-1.5 border-b border-black/[0.05] last:border-0">
-      {/* Direction indicator */}
-      <span
-        title={isOutgoing ? "Outgoing" : "Incoming"}
-        className={`mt-0.5 shrink-0 text-[10px] font-bold w-4 text-center ${isOutgoing ? "text-violet-500" : "text-emerald-500"}`}
-      >
-        {isOutgoing ? "→" : "←"}
-      </span>
-
-      {/* Other entity */}
-      <span className="shrink-0 text-[12px] font-medium text-[#1A1A1A] w-[90px] truncate" title={otherName}>
-        {otherName}
-      </span>
-
       {/* Label */}
       <div className="flex-1 min-w-0">
         {editing ? (
@@ -127,7 +118,9 @@ function RelRow({
             className="text-[11px] text-[#1A1A1A]/50 hover:text-[#1A1A1A]/80 text-left truncate max-w-full block"
             title="Click to edit"
           >
-            {label || <span className="italic opacity-50">no label</span>}
+            {label
+              ? relationshipStatement(sourceName, label, targetName)
+              : <span className="italic opacity-50">no relationship description</span>}
           </button>
         )}
       </div>
@@ -466,6 +459,7 @@ export default function EntityEditPanel({
                         key={rel.id}
                         rel={rel}
                         isOutgoing={isOut}
+                        entityName={entity!.name}
                         otherName={other?.name ?? "Unknown"}
                         onUpdate={handleUpdateRel}
                         onDelete={handleDeleteRel}

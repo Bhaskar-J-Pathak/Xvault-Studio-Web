@@ -13,9 +13,9 @@ This works well for isolated tasks: brainstorming a scene in the abstract, gener
 
 ## The Context Window Problem
 
-Every AI model has a context window — the amount of text it can hold in working memory at once. Current large models handle roughly 100,000 to 200,000 tokens, which translates to approximately 75,000 to 150,000 words. A standard novel is 80,000 to 100,000 words. An epic fantasy can reach 200,000.
+Every AI model has a context window: the amount of text it can hold in working memory at once. Current large models handle roughly 100,000 to 200,000 tokens, which translates to approximately 75,000 to 150,000 words. A standard novel is 80,000 to 100,000 words. An epic fantasy can reach 200,000.
 
-Even within those limits, context is not free. The more tokens are occupied by existing text, the less room there is for the AI's working reasoning. Most AI writing tools solve this by summarising earlier content rather than reading it in full, which means what gets passed to the model is an abstraction — not the actual prose, not the actual voice, not the actual details.
+Even within those limits, context is not free. The more tokens are occupied by existing text, the less room there is for the AI's working reasoning. Most AI writing tools solve this by summarising earlier content rather than reading it in full, which means what gets passed to the model is an abstraction. It is not the actual prose, the actual voice, or the actual details.
 
 The consequence is small at first. By chapter five, the AI is working from summaries of chapters one through four. By chapter ten, some of those summaries are themselves summarised. By chapter fifteen, a character established with careful specificity in the opening chapters has become a rough sketch in the AI's working memory.
 
@@ -23,7 +23,7 @@ This is why AI writing tools produce suggestions that contradict established fac
 
 ## What Reading the Full Manuscript Changes
 
-When an AI reads your entire manuscript before responding — not a summary, not a compressed version, the actual prose — several things change:
+When an AI reads your entire manuscript before responding, using the actual prose instead of a summary or compressed version, several things change:
 
 **Character recall improves dramatically.** A character who appears once in chapter two and reappears in chapter seventeen is not a blank. The AI has read every line of dialogue they spoke, every action they took, every detail established about their appearance, their habits, their fears. Ask about them and the AI draws on the complete record, not a summary of a summary.
 
@@ -31,19 +31,19 @@ When an AI reads your entire manuscript before responding — not a summary, not
 
 **Continuity errors surface before they are written.** If the AI is tracking everything you have established, it can flag when a suggestion contradicts an earlier fact rather than simply generating the contradiction for you to find in revision.
 
-**World details stay specific.** The made-up words, the invented geography, the magic system rules, the faction names — these are not generic. An AI reading your manuscript picks them up from the text rather than defaulting to fantasy genre conventions when the details are out of working memory.
+**World details stay specific.** The made-up words, invented geography, magic system rules, and faction names are not generic. An AI reading your manuscript picks them up from the text rather than defaulting to fantasy genre conventions when the details are out of working memory.
 
 ## What This Costs
 
 Full manuscript reading is computationally expensive. Loading 100,000 words of prose into an AI's context before every response takes time and processing. This is why most tools do not do it: it is slower, it costs more per query, and it requires architectural decisions that favour quality over speed.
 
-The alternative — prompting with summaries, using manually maintained codexes, relying on the writer to paste relevant excerpts — is faster and cheaper. It is also less accurate in proportion to how long the manuscript is and how specific the world is.
+The alternative is prompting with summaries, using manually maintained codexes, or relying on the writer to paste relevant excerpts. This is faster and cheaper. It is also less accurate in proportion to how long the manuscript is and how specific the world is.
 
 ## The Threshold Where It Matters
 
 For short fiction, this tradeoff is manageable. A 15,000-word novella holds in context comfortably. Character details are recent enough to be in working memory. The world is not yet complex enough to require systematic tracking.
 
-The threshold where full manuscript reading stops being a nice-to-have and starts being the difference between a usable tool and an unusable one is somewhere around 50,000 words — roughly where a first novel finds its footing and where the complexity of what you have already established begins to outpace what you can reliably recall or manually track.
+The threshold where full manuscript reading stops being a nice-to-have and starts being the difference between a usable tool and an unusable one is somewhere around 50,000 words. At roughly this length, a first novel finds its footing and the complexity of what you have established begins to outpace what you can reliably recall or manually track.
 
 Past that threshold, the question is not whether the AI is smart. It is whether the AI has been given the information it needs to be accurate. Full manuscript context is the only reliable way to provide that.
 

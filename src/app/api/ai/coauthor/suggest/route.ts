@@ -106,9 +106,10 @@ export async function POST(request: NextRequest) {
   // ── Style fingerprint ─────────────────────────────────────────────────────
   // Extract a style analysis from the writer's existing prose so the AI can
   // mirror it exactly. We look at the last ~800 words before the cursor.
-  const styleSource = contextText.trim();
-  const styleWords = styleSource ? styleSource.split(/\s+/) : [];
-  const styleSample = styleWords.slice(Math.max(0, styleWords.length - 800)).join(" ");
+  const styleSource = (mode === "rewrite" ? selectedText || contextText : contextText).trim();
+  const styleWords = [...styleSource.matchAll(/\S+/g)];
+  // Slice the original prose so the model can see paragraph and dialogue breaks.
+  const styleSample = styleSource.slice(styleWords[Math.max(0, styleWords.length - 800)]?.index ?? 0);
 
   const styleAnalysisBlock = styleSample
     ? `WRITER'S VOICE IS THE SOURCE OF TRUTH — imitate this excerpt, do not "improve" it or substitute generic AI prose:
@@ -225,6 +226,7 @@ Continue:`;
   const suggestionSystem = `${systemPrompt}
 
 PROSE RULES (always enforced):
+- Preserve normal novel paragraphing. Separate paragraphs with a blank line. Start a new paragraph when the speaker changes. Keep a speaker's dialogue and related action together; separate another character's response or action into its own paragraph. Never flatten a scene into one block of text.
 - Never use em-dashes (— or ―). Restructure the sentence with a comma, period, colon, semicolon, parentheses, or a new sentence instead.
 - Keep prose lean. Include only what moves the scene forward. No stacked adjectives, no excessive sensory detail, no purple prose.
 - Output plain manuscript prose, never Markdown. Do not use asterisks for emphasis, action beats, thoughts, or scene description.

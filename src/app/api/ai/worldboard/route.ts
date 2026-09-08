@@ -99,7 +99,6 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "AI extraction failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk);
 
   // ── Parse ───────────────────────────────────────────────────────────────────
   const extracted = parseExtractionResponse(rawResponse);
@@ -135,6 +134,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Extraction completed but could not be finalized. Please retry." }, { status: 500 });
   }
 
+  await commitRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk);
   return Response.json({
     ok:                true,
     entitiesProcessed: extracted.entities.length,

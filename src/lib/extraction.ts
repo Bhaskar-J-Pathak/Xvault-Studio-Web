@@ -176,6 +176,7 @@ NEVER extract: furniture (beds, tables, chairs), mirrors, clothing, glasses, eve
 
 ━━━ RELATIONSHIP RULES (MAX 6) ━━━
 CAPTURE permanent bonds: family ties (aunt of, younger sister of, adoptive father of), social roles (best friend of, mentor of, arch-enemy of), power dynamics (guardian of, leader of).
+Labels are predicates placed between source and target. Write "mother of", not "is mother of"; "guardian of", not "is guardian of".
 SKIP: spatial relations (room contains table, estate has balcony), single-scene actions, emotional reactions, anything not true 50 chapters later.
 
 ━━━ THREAD RULES (MAX 4) ━━━

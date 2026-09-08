@@ -4,7 +4,7 @@ import { getUser } from "@/lib/auth";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Pricing | Xvault Studio",
+  title: "Pricing",
   description: "Start Xvault Studio free for 14 days with 100 AI credits and no credit card. Upgrade to Hobbyist for $11.99/month, or join the limited Founder's Circle for $49.",
   alternates: { canonical: "https://xvault.dev/pricing" },
 };

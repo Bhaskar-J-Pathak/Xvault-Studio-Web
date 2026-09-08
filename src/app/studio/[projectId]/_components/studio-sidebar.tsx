@@ -15,6 +15,7 @@ import {
   X,
   Network,
   ScrollText,
+  HeartPulse,
   Download,
   Upload,
   Loader2,
@@ -203,6 +204,17 @@ export default function StudioSidebar({
         >
           <ScrollText size={13} />
           Story Bible
+        </Link>
+        <Link
+          href={`/studio/${projectId}/pulse`}
+          className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
+            pathname === `/studio/${projectId}/pulse`
+              ? "sb-active bg-[#1A1A1A] text-white"
+              : "text-[#1A1A1A]/65 hover:bg-black/[0.05] hover:text-[#1A1A1A]"
+          }`}
+        >
+          <HeartPulse size={13} />
+          Story Pulse
         </Link>
       </div>
 

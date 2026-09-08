@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getUser, getProfile, createServerSupabaseClient } from "@/lib/auth";
-import { creditsRemaining, isInTrial } from "@/lib/supabase";
+import { creditsRemaining, creditsCap, isInTrial } from "@/lib/supabase";
 import ZenEditor from "./_components/zen-editor";
 
 export default async function ChapterPage({
@@ -51,6 +51,7 @@ export default async function ChapterPage({
       initialSummary={(chapter.summary as string | null) ?? null}
       initialCoauthor={coauthor ?? null}
       initialCredits={initialCredits}
+      initialCreditCap={profile ? creditsCap(profile as Parameters<typeof creditsCap>[0]) : 100}
       isTrial={isTrial}
       onboardingStep={onboardingStep}
       onboardingDone={onboardingDone}

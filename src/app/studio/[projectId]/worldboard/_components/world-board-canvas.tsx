@@ -20,6 +20,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { createClient } from "@/lib/supabase";
+import { relationshipStatement } from "@/lib/relationships";
 
 // ── Relationship edge — label appears on hover only ───────────────────────────
 
@@ -262,14 +263,15 @@ function toNodes(entities: DBEntity[], onEntityClick: (id: string) => void): Nod
   );
 }
 
-function toEdges(rels: DBRelationship[]): Edge[] {
+function toEdges(rels: DBRelationship[], entities: DBEntity[]): Edge[] {
+  const names = new Map(entities.map((entity) => [entity.id, entity.name]));
   return rels.map((r) => ({
     id:        r.id,
     source:    r.source_id,
     target:    r.target_id,
     type:      "relationship",
     markerEnd: { type: MarkerType.ArrowClosed, color: "#94a3b8", width: 14, height: 14 },
-    data:      { label: r.label },
+    data:      { label: relationshipStatement(names.get(r.source_id) ?? "Unknown", r.label, names.get(r.target_id) ?? "Unknown") },
   }));
 }
 
@@ -284,7 +286,7 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
   ref
 ) {
   const [nodes, setNodes, onNodesChange] = useNodesState(toNodes(initialEntities, onEntityClick));
-  const [edges, setEdges, onEdgesChange] = useEdgesState(toEdges(initialRelationships));
+  const [edges, setEdges, onEdgesChange] = useEdgesState(toEdges(initialRelationships, initialEntities));
 
   // Type visibility filter
   const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set(ALL_TYPES));
@@ -397,6 +399,8 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
       });
     },
     addRelationship(rel: DBRelationship) {
+      const sourceName = (nodes.find((node) => node.id === rel.source_id)?.data as EntityData | undefined)?.name ?? "Unknown";
+      const targetName = (nodes.find((node) => node.id === rel.target_id)?.data as EntityData | undefined)?.name ?? "Unknown";
       setEdges((prev) => [
         ...prev,
         {
@@ -405,7 +409,7 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
           target:    rel.target_id,
           type:      "relationship",
           markerEnd: { type: MarkerType.ArrowClosed, color: "#94a3b8", width: 14, height: 14 },
-          data:      { label: rel.label },
+          data:      { label: relationshipStatement(sourceName, rel.label, targetName) },
         },
       ]);
     },
@@ -414,10 +418,15 @@ const WorldBoardCanvas = forwardRef<WorldBoardCanvasHandle, Props>(function Worl
     },
     updateRelationshipLabel(id: string, label: string) {
       setEdges((prev) =>
-        prev.map((e) => e.id === id ? { ...e, data: { ...e.data, label } } : e)
+        prev.map((e) => {
+          if (e.id !== id) return e;
+          const sourceName = (nodes.find((node) => node.id === e.source)?.data as EntityData | undefined)?.name ?? "Unknown";
+          const targetName = (nodes.find((node) => node.id === e.target)?.data as EntityData | undefined)?.name ?? "Unknown";
+          return { ...e, data: { ...e.data, label: relationshipStatement(sourceName, label, targetName) } };
+        })
       );
     },
-  }), [onEntityClick, setNodes, setEdges]);
+  }), [nodes, onEntityClick, setNodes, setEdges]);
 
   // ── Empty state ─────────────────────────────────────────────────────────────
 

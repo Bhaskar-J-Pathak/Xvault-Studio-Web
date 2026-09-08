@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!guide) return {};
 
   return {
-    title: `${guide.title} | Xvault Studio`,
+    title: guide.title,
     description: guide.description,
     alternates: { canonical: `https://xvault.dev/guides/${guide.slug}` },
     openGraph: {

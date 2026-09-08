@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Affiliates | Xvault Studio",
+  title: "Affiliates",
   description: "Join the Xvault Studio affiliate program. Earn commission by recommending the AI writing studio for novelists.",
   alternates: { canonical: "https://xvault.dev/affiliates" },
   openGraph: {

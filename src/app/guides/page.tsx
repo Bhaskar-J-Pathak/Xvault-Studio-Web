@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getAllGuides } from "@/lib/guides";
 
 export const metadata: Metadata = {
-  title: "Writing Guides | Xvault Studio",
+  title: "Writing Guides",
   description: "Practical guides for writing novels in every genre. Fantasy, mystery, romance, thriller, and the craft of plotting, written for serious novelists.",
   alternates: { canonical: "https://xvault.dev/guides" },
   openGraph: {

@@ -45,7 +45,8 @@ function lexicalToText(content: unknown): string {
     }
   }
 
-  walk(content);
+  const state = content as Record<string, unknown>;
+  walk(state.root ?? content);
   return parts.join(" ").replace(/\s+/g, " ").trim();
 }
 
@@ -87,9 +88,10 @@ export async function POST(request: NextRequest) {
     query = query.eq("id", chapterId) as typeof query;
   }
 
-  const { data: chapters } = await query;
+  const { data: chapters, error: chapterError } = await query;
+  if (chapterError) return Response.json({ error: "Could not load saved chapters." }, { status: 500 });
   if (!chapters?.length) {
-    return Response.json({ ok: true, chaptersProcessed: 0, remaining: 0 });
+    return Response.json({ error: "No chapters found to extract." }, { status: 400 });
   }
 
   // ── Count total chunks so we can deduct the correct number of credits ────────
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (totalChunks === 0) {
-    return Response.json({ ok: true, chaptersProcessed: 0, remaining: 0 });
+    return Response.json({ error: "Extraction needs at least one chapter with 50 words of saved text." }, { status: 400 });
   }
 
   const totalCredits = totalChunks * CREDITS_PER_CHUNK;
@@ -140,11 +142,14 @@ export async function POST(request: NextRequest) {
       const chunk = words.slice(wordOffset, wordOffset + CHUNK_SIZE).join(" ");
 
       // Fetch current graph state (updated by each chunk so context accumulates)
-      const [{ data: existingEntities }, { data: openThreads }] = await Promise.all([
+      const [{ data: existingEntities, error: entityError }, { data: openThreads, error: threadError }] = await Promise.all([
         supabase.from("entities").select("id, name, type, attributes").eq("project_id", projectId),
         supabase.from("plot_threads").select("id, description, status, last_seen_chapter_number")
           .eq("project_id", projectId).neq("status", "resolved"),
       ]);
+      if (entityError || threadError) {
+        return Response.json({ error: "Could not load World Board data. Check the database migrations before retrying." }, { status: 500 });
+      }
 
       const summary = buildEntitySummary(existingEntities ?? [], openThreads ?? []);
       const prompt  = buildExtractionPrompt(chunk, summary);
@@ -163,9 +168,6 @@ export async function POST(request: NextRequest) {
         chapterFailure = `AI extraction failed for chapter "${chapter.title}".`;
         break;
       }
-
-      // Commit credits for this chunk only after AI succeeds
-      await commitRateLimit(user.id, createServiceClient(), CREDITS_PER_CHUNK);
 
       const extracted = parseExtractionResponse(rawResponse);
       if (!extracted) {
@@ -193,7 +195,12 @@ export async function POST(request: NextRequest) {
 
       totalEntities      += extracted.entities.length;
       totalRelationships += extracted.relationships.length;
-      wordOffset         += CHUNK_SIZE;
+      const completedWords = Math.min(words.length, wordOffset + CHUNK_SIZE);
+      const { error: progressError } = await supabase.from("chapters")
+        .update({ last_extracted_word: completedWords }).eq("id", chapter.id);
+      if (progressError) return Response.json({ error: "Extracted data was saved, but extraction progress could not be saved." }, { status: 500 });
+      await commitRateLimit(user.id, createServiceClient(), CREDITS_PER_CHUNK);
+      wordOffset = completedWords;
 
     }
 
@@ -209,12 +216,6 @@ export async function POST(request: NextRequest) {
         totalRelationships,
       }, { status: 502 });
     }
-
-    // Update chapter watermark to full word count
-    await supabase
-      .from("chapters")
-      .update({ last_extracted_word: words.length })
-      .eq("id", chapter.id);
 
     chaptersProcessed++;
   }

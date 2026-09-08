@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Xvault Studio",
+  title: "Privacy Policy",
   description: "How Xvault Studio collects, uses, and protects your data.",
   alternates: { canonical: "https://xvault.dev/privacy" },
 };
