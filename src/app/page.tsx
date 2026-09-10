@@ -83,7 +83,7 @@ const howToSchema = {
       "@type": "HowToStep",
       position: 3,
       name: "Write",
-      text: "Write on the canvas while Alex lives in a panel alongside it, loaded with your entire manuscript. Press Ctrl+K anywhere in your text for an inline prose suggestion. No switching tabs or copy-pasting context.",
+      text: "Write on the canvas while Alex lives in a panel alongside it, loaded with your entire manuscript. Place the cursor and click Write for an inline prose suggestion. No switching tabs or copy-pasting context.",
     },
     {
       "@type": "HowToStep",
@@ -127,7 +127,7 @@ const faqSchema = {
       name: "How does Ghost Writing preserve my voice?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Press Ctrl+K anywhere in the editor. Alex generates suggestions trained on your existing chapters, not generic AI output. The more you've written, the better it understands your rhythm, vocabulary, and style. Every suggestion is optional and editable.",
+        text: "Place the cursor anywhere in the editor and click Write. Alex generates suggestions using your existing chapters, not isolated generic output. Choose the length, preview the result, then insert, refine, or dismiss it.",
       },
     },
     {

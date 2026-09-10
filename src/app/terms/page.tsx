@@ -114,7 +114,7 @@ export default function TermsPage() {
           <Section title="5. AI features and limitations">
             <p>
               The Service uses third-party AI models to power features including the
-              co-author, ghostwriter (Ctrl+K), Global Change, and Story Bible analysis.
+              co-author, cursor-aware prose generation, Global Change, and Story Bible analysis.
               You acknowledge that:
             </p>
             <ul>

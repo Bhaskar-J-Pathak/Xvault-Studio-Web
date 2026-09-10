@@ -17,7 +17,7 @@ export const maxDuration = 300;
 
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
-import { geminiGenerate } from "@/lib/ai";
+import { geminiGenerate, WORLDBOARD_MODEL } from "@/lib/ai";
 import {
   buildEntitySummary,
   buildExtractionPrompt,
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
           "You are a JSON extraction API for fiction manuscript analysis. Output valid JSON only.",
           8192,
           true,
-          "gemini-2.5-pro"
+          WORLDBOARD_MODEL
         );
       } catch (err) {
         console.error(`[reextract] AI failed on chapter "${chapter.title}" offset ${wordOffset}:`, err);
@@ -183,7 +183,8 @@ export async function POST(request: NextRequest) {
           chapterNum,
           extracted,
           existingEntities ?? [],
-          supabase
+          supabase,
+          openThreads ?? []
         );
         // Kept for future extraction diagnostics.
         void inconsistencies;

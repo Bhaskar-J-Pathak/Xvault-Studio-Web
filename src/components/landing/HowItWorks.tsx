@@ -29,7 +29,7 @@ const STEPS = [
     borderColor: "border-rose-200/70",
     label:       "Start your story",
     title:       "Name it and start writing",
-    body:        "Give your project a title and you're in the studio. Alex reads everything you write from the first sentence. A short feature card walks you through co-author, Ctrl+K, World Board, and Story Bible as you go.",
+    body:        "Give your project a title and you're in the studio. Alex reads everything you write from the first sentence. A short feature card walks you through Write, co-author, World Board, and Story Bible as you go.",
     detail:      "No setup · Just open and go",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
@@ -45,8 +45,8 @@ const STEPS = [
     borderColor: "border-amber-200/70",
     label:       "Write",
     title:       "Canvas on the left. Alex on the right.",
-    body:        "The studio is a clean writing canvas with no distractions. Alex lives in a panel alongside it, loaded with your entire manuscript. Press Ctrl+K anywhere in your text for an inline suggestion. No switching tabs, no copy-pasting context. Everything in one place.",
-    detail:      "Ctrl+K anywhere · Alex always in context",
+    body:        "The studio is a clean writing canvas with no distractions. Alex lives in a panel alongside it, loaded with your entire manuscript. Place the cursor and click Write for an inline suggestion. No switching tabs, no copy-pasting context. Everything in one place.",
+    detail:      "Write at the cursor · Alex always in context",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
         <path d="M4 17L8 6l4 8 3-5 3 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -60,7 +60,7 @@ const STEPS = [
     borderColor: "border-emerald-200/70",
     label:       "Finish",
     title:       "Finish the draft",
-    body:        "Stay in the flow. Press Ctrl+K when you're stuck. Ask Alex anything. When you're done, your manuscript is saved and organised, ready for the next session.",
+    body:        "Stay in the flow. Click Write when you're stuck, or select a passage to continue, rewrite, or explore another direction. Ask Alex anything. Your manuscript stays saved and organised for the next session.",
     detail:      "Cloud-saved · Always accessible",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">

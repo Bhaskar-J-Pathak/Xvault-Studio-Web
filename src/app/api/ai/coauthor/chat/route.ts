@@ -130,13 +130,14 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Prose request redirect ─────────────────────────────────────────────────
-  // If the writer is asking for prose in the chat, redirect them to Ctrl+K.
+  // If the writer is asking for prose in chat, redirect them to the editor's
+  // cursor-aware Write workflow.
   // Prose in chat history clogs the co-author's memory with text instead of
   // useful story context, which degrades the quality of feedback over time.
   if (isLikelyProseRequest(message.trim())) {
     const redirectReply = `Quick heads up before I do this. If I write prose here in our chat, it fills up my memory with text that crowds out the important stuff: your story decisions, character choices, things you have told me to track. Over time that starts to hurt the quality of my feedback.
 
-Hit Ctrl+K right in the editor instead. It pulls the same story context and keeps our conversation clean for the things I am actually here for.
+Place the cursor where the prose belongs and click Write in the editor header instead. It pulls the same story context and keeps our conversation clean for the things I am actually here for.
 
 What were you thinking for this scene? Tell me the idea and I can help you shape it before you write it.`;
 

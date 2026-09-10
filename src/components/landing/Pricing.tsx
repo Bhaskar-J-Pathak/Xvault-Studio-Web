@@ -56,7 +56,7 @@ const PLANS: Plan[] = [
       { text: "300 AI credits / month" },
       { text: "1 active manuscript" },
       { text: "Alex (story chat + suggestions)" },
-      { text: "Inline suggestions (Ctrl+K)" },
+      { text: "Cursor-aware prose generation" },
       { text: "Story Bible & World Board" },
       { text: "Basic continuity checking" },
       { text: "Community support", muted: true },

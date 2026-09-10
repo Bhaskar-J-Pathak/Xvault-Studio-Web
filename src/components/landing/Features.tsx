@@ -133,7 +133,7 @@ function GhostWritingDemo({ live }: { live: boolean }) {
           >
             <div className="h-1.5 w-1.5 rounded-full bg-violet-500" />
             <span className="text-[0.62rem] font-medium text-stone-400">
-              Ghost suggestion &middot; Ctrl+K &middot; Tab to accept
+              Prose preview &middot; Refine &middot; Insert at cursor
             </span>
           </motion.div>
         )}
@@ -353,7 +353,7 @@ const FEATURES = [
     category: "AI Writing",
     title: "Suggest a Line",
     description:
-      "Press Ctrl+K. Describe what you want to happen. The AI writes it in your voice, trained on your existing chapters, not a generic model. Tab to accept, Esc to dismiss.",
+      "Place the cursor and click Write. Describe what should happen, choose a length, then preview, refine, or insert prose that follows your existing chapters and voice.",
     demo: (live: boolean) => <GhostWritingDemo live={live} />,
   },
   {

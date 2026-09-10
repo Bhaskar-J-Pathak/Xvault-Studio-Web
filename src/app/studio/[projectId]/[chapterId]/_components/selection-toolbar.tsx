@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, X } from "lucide-react";
+import { ArrowRight, GitBranch, Loader2, RefreshCw, X } from "lucide-react";
 
 export interface Branch {
   label: string;
@@ -46,9 +46,9 @@ export default function SelectionToolbar({
   onDismiss,
 }: Props) {
   const midX     = Math.round((rect.left + rect.right) / 2);
-  // Clamp so the pill (≈210px wide, half≈105px) never escapes the viewport on mobile
+  // Keep the selection-action pill inside the viewport on narrow screens.
   const vw       = typeof window !== "undefined" ? window.innerWidth : 1200;
-  const cx       = Math.max(115, Math.min(midX, vw - 115));
+  const cx       = Math.max(150, Math.min(midX, vw - 150));
   const pillTop  = Math.max(60, rect.top - 58); // 60px min keeps it below the title bar
   const panelTop = rect.bottom + 8;
 
@@ -65,9 +65,11 @@ export default function SelectionToolbar({
         <div className="flex items-center bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-black/[0.07] overflow-hidden">
           <button
             onPointerDown={(e) => { e.preventDefault(); onContinue(); }}
-            className="px-4 py-2 text-[13px] font-medium text-[#1A1A1A]/75 hover:text-[#1A1A1A] hover:bg-[#F4F4F5] transition-colors whitespace-nowrap"
+            title="Generate prose immediately after this selection"
+            className="flex items-center gap-1.5 px-3 md:px-4 py-2 text-[13px] font-medium text-[#1A1A1A]/75 hover:text-[#1A1A1A] hover:bg-[#F4F4F5] transition-colors whitespace-nowrap"
           >
-            Continue
+            <ArrowRight size={12} />
+            Continue after
           </button>
 
           <span className="w-px h-5 bg-black/[0.08] shrink-0" />
@@ -75,13 +77,16 @@ export default function SelectionToolbar({
           <button
             onPointerDown={(e) => { e.preventDefault(); onRewrite(); }}
             disabled={rewriteLoading}
+            title="Rewrite only the selected passage"
             className={`px-4 py-2 text-[13px] font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 ${
               rewriteActive
                 ? "text-violet-600 bg-violet-50"
                 : "text-[#1A1A1A]/75 hover:text-[#1A1A1A] hover:bg-[#F4F4F5] disabled:opacity-50"
             }`}
           >
-            {rewriteLoading && <Loader2 size={11} className="animate-spin" />}
+            {rewriteLoading
+              ? <Loader2 size={11} className="animate-spin" />
+              : <RefreshCw size={11} />}
             Rewrite
           </button>
 
@@ -89,12 +94,14 @@ export default function SelectionToolbar({
 
           <button
             onPointerDown={(e) => { e.preventDefault(); onWhatIfToggle(); }}
-            className={`px-4 py-2 text-[13px] font-medium transition-colors whitespace-nowrap ${
+            title="Explore alternate directions without changing the manuscript"
+            className={`flex items-center gap-1.5 px-3 md:px-4 py-2 text-[13px] font-medium transition-colors whitespace-nowrap ${
               whatIfActive
                 ? "text-violet-600 bg-violet-50"
                 : "text-[#1A1A1A]/75 hover:text-[#1A1A1A] hover:bg-[#F4F4F5]"
             }`}
           >
+            <GitBranch size={11} />
             What If
           </button>
         </div>

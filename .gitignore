@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 .pnpm-store/
+docs/
+scripts/evaluate-*.cjs
 
 # Next.js
 .next/

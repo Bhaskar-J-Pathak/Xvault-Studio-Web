@@ -150,7 +150,7 @@ export default function RetroTourEmail() {
                     {[
                       ["Editor & auto-save", "Write and pick up exactly where you left off"],
                       ["Ask Alex", "Your AI co-author who has read your whole manuscript"],
-                      ["Ctrl+K ghostwriter", "Inline AI suggestions, accepted or dismissed"],
+                      ["Cursor-aware Write", "Preview, refine, insert, or dismiss AI prose"],
                       ["Global Change", "Rename a character across every chapter at once"],
                       ["Story Bible", "Long-term memory: style, voice, plot threads"],
                       ["World Board", "Auto-extracted characters, places, and factions"],

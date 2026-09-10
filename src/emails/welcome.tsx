@@ -155,7 +155,7 @@ export default function WelcomeEmail({ name = "there", dashboardUrl = "https://x
                   ],
                   [
                     "2. Try the co-author",
-                    "Ask Alex anything about your story. Then press Ctrl+K anywhere in the text to get an inline AI suggestion.",
+                    "Ask Alex anything about your story. Place the cursor and click Write for an inline AI prose suggestion.",
                   ],
                   [
                     "3. Explore the Story Bible & World Board",

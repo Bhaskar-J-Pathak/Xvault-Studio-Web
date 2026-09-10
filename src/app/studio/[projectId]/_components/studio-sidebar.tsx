@@ -181,10 +181,14 @@ export default function StudioSidebar({
 
       <div className="sb-divider mx-3 h-px bg-black/[0.06] mb-2" />
 
-      {/* Views */}
+      {/* Story tools */}
       <div className="px-2 pb-2 space-y-0.5">
+        <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/35">
+          Story tools
+        </p>
         <Link
           href={`/studio/${projectId}/worldboard`}
+          title="Characters, places, relationships, and plot threads"
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/worldboard`
               ? "sb-active bg-[#1A1A1A] text-white"
@@ -196,6 +200,7 @@ export default function StudioSidebar({
         </Link>
         <Link
           href={`/studio/${projectId}/bible`}
+          title="Story intent, character profiles, summaries, and voice"
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/bible`
               ? "sb-active bg-[#1A1A1A] text-white"
@@ -207,6 +212,7 @@ export default function StudioSidebar({
         </Link>
         <Link
           href={`/studio/${projectId}/pulse`}
+          title="Emotional continuity across your chapters"
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/pulse`
               ? "sb-active bg-[#1A1A1A] text-white"

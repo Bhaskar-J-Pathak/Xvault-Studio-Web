@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Send, ChevronRight, Settings, Loader2, Trash2, X } from "lucide-react";
+import { Send, ChevronRight, Settings, Loader2, Trash2, Wand2, X } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import type { DbCoauthor, DbCoauthorMessage, CoauthorMessageType } from "@/types/database";
 import GlobalChangePreview from "./global-change-preview";
@@ -621,13 +621,11 @@ function MessageBubble({
           )}
         </div>
 
-        {/* Ctrl+K shortcut badge — shown on prose redirect messages */}
+        {/* Direct the writer to the manuscript-safe prose workflow. */}
         {isProseRedirect && !msg.pending && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-neutral-900 w-fit">
-            <kbd className="text-[10px] font-mono font-semibold text-white leading-none">Ctrl</kbd>
-            <span className="text-neutral-500 text-[10px]">+</span>
-            <kbd className="text-[10px] font-mono font-semibold text-white leading-none">K</kbd>
-            <span className="text-[10px] text-neutral-400 ml-0.5">to write prose</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white w-fit">
+            <Wand2 size={11} />
+            <span className="text-[10px] font-medium">Use Write in the editor header</span>
           </div>
         )}
       </div>

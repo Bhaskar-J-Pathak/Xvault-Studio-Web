@@ -4,8 +4,8 @@
  * Cost strategy:
  * - Only the delta text (new words since last extraction) is sent to the AI.
  * - Existing entities are summarised in a compact ~200-token format, not full JSON.
- * - Everything runs on free OpenRouter models — zero per-call cost.
- * - Extraction never counts against the user's AI quota.
+ * - Production extraction currently uses Gemini 2.5 Pro through Vertex AI.
+ * - Each extraction chunk counts against the user's AI credit allowance.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -27,9 +27,10 @@ export interface ExtractedRelationship {
 }
 
 export interface ExtractedThread {
-  description: string;
-  status:      "open" | "resolved";
-  is_new:      boolean;
+  description:           string;
+  status:                "open" | "resolved";
+  is_new:                boolean;
+  existing_thread_index?: number | null;
 }
 
 export interface ExtractedInconsistency {
@@ -109,7 +110,7 @@ export function buildEntitySummary(
     const threadStr = threads
       .map(
         (t, i) =>
-          `[${i + 1}]${t.description.replace(/\s+/g, "_").slice(0, 40)}(${t.status},ch${t.last_seen_chapter_number})`
+          `[${i + 1}]${JSON.stringify(t.description.replace(/\s+/g, " ").slice(0, 160))}(${t.status},ch${t.last_seen_chapter_number})`
       )
       .join(" ");
     lines.push(`OpenThreads: ${threadStr}`);
@@ -138,7 +139,7 @@ OUTPUT FORMAT:
 {
   "entities": [{ "name": "ExactName", "type": "character|location|faction|item|event|lore", "is_update": false, "attributes": { "key": "value" }, "confidence": "explicit|inferred" }],
   "relationships": [{ "source": "Name", "target": "Name", "label": "short verb phrase" }],
-  "threads": [{ "description": "one clear sentence", "status": "open|resolved", "is_new": true }],
+  "threads": [{ "description": "one clear sentence", "status": "open|resolved", "is_new": true, "existing_thread_index": null }],
   "inconsistencies": [{ "entity": "Name", "attribute": "key", "established": "old value", "found": "new value", "quote": "exact short quote" }]
 }
 
@@ -164,23 +165,26 @@ Attributes: type (manor/city/school), region, notable_feature.
 
 ━━━ STEP 3: PLOT-CRITICAL ITEMS ONLY ━━━
 Only unique magical artifacts, weapons, or objects that are central to the plot and will recur.
-NEVER extract: furniture (beds, tables, chairs), mirrors, clothing, glasses, everyday objects, room contents.
+NEVER extract: vehicles, watches, luxury brands, furniture (beds, tables, chairs), mirrors, clothing, glasses, everyday objects, room contents, or possessions mentioned only to characterize wealth/status.
 
 ━━━ ENTITY RULES ━━━
-- MAX 8 entities total. Fill slots: characters first → locations → items → other.
+- MAX 12 entities total. Fill slots: characters first → locations → factions → plot-critical items → other.
 - is_update: Set to true ONLY if that exact name already appears in EXISTING KNOWLEDGE GRAPH above.
   If EXISTING KNOWLEDGE GRAPH says "EMPTY" → every entity gets is_update=false, no exceptions.
   Common mistake to avoid: if you are extracting a character for the first time, is_update MUST be false even if they are a main character.
 - ALIAS DEDUPLICATION: Same person with different names = one entity using the primary name with others as aliases attribute.
 - MAX 15 attributes per character entity. MAX 6 attributes for non-character entities. Attribute values MAX 6 words. Keys in snake_case.
 
-━━━ RELATIONSHIP RULES (MAX 6) ━━━
+━━━ RELATIONSHIP RULES (MAX 10) ━━━
 CAPTURE permanent bonds: family ties (aunt of, younger sister of, adoptive father of), social roles (best friend of, mentor of, arch-enemy of), power dynamics (guardian of, leader of).
 Labels are predicates placed between source and target. Write "mother of", not "is mother of"; "guardian of", not "is guardian of".
+Every source and target MUST use the exact name of an entity in the entity list above or the REGISTERED NAMES list. Never invent a relationship endpoint that is absent from both lists.
+Do not emit both directions of the same bond. For example, choose either "Azoth | husband of | Nyx" or "Nyx | wife of | Azoth", never both.
 SKIP: spatial relations (room contains table, estate has balcony), single-scene actions, emotional reactions, anything not true 50 chapters later.
 
 ━━━ THREAD RULES (MAX 4) ━━━
 One sentence per unresolved plot element that will drive future chapters. Skip scene-level observations.
+Compare every thread against OpenThreads in the existing graph. If it continues or resolves an existing thread, copy that existing description exactly, set is_new=false, and set existing_thread_index to its [number]. For a genuinely new thread, set is_new=true and existing_thread_index=null.
 
 ━━━ INCONSISTENCY RULES ━━━
 Only flag direct contradictions of established facts from the knowledge graph that appear to be author errors. Never flag intentional character changes.`;
@@ -197,13 +201,69 @@ export function parseExtractionResponse(raw: string): ExtractionResult | null {
 
     if (start === -1 || end === -1 || end <= start) return null;
 
-    const parsed = JSON.parse(raw.slice(start, end + 1));
+    const parsed = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+    const objectArray = (value: unknown): Record<string, unknown>[] =>
+      Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object") : [];
+    const text = (value: unknown, max = 500): string => typeof value === "string" ? value.trim().slice(0, max) : "";
+    const entityTypes = new Set(["character", "location", "faction", "item", "event", "lore"]);
+
+    const entities: ExtractedEntity[] = objectArray(parsed.entities).slice(0, 12).flatMap((item) => {
+      const name = text(item.name, 120);
+      const type = text(item.type, 20);
+      if (!name || !entityTypes.has(type)) return [];
+      const rawAttributes = item.attributes && typeof item.attributes === "object" && !Array.isArray(item.attributes)
+        ? item.attributes as Record<string, unknown>
+        : {};
+      const attributeLimit = type === "character" ? 15 : 6;
+      const attributes = Object.fromEntries(Object.entries(rawAttributes).slice(0, attributeLimit).flatMap(([key, value]) => {
+        const cleanKey = key.trim().replace(/[^a-z0-9_]/gi, "_").toLowerCase().slice(0, 50);
+        const cleanValue = typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+          ? text(String(value), 160)
+          : "";
+        return cleanKey && cleanValue ? [[cleanKey, cleanValue]] : [];
+      }));
+      return [{
+        name,
+        type: type as ExtractedEntity["type"],
+        is_update: item.is_update === true,
+        attributes,
+        confidence: item.confidence === "explicit" ? "explicit" : "inferred",
+      }];
+    });
+
+    const relationships: ExtractedRelationship[] = objectArray(parsed.relationships).slice(0, 10).flatMap((item) => {
+      const source = text(item.source, 120);
+      const target = text(item.target, 120);
+      const label = text(item.label, 80);
+      return source && target && label ? [{ source, target, label }] : [];
+    });
+
+    const threads: ExtractedThread[] = objectArray(parsed.threads).slice(0, 4).flatMap((item) => {
+      const description = text(item.description, 500);
+      if (!description) return [];
+      const existingIndex = Number(item.existing_thread_index);
+      return [{
+        description,
+        status: item.status === "resolved" ? "resolved" : "open",
+        is_new: item.is_new !== false,
+        existing_thread_index: Number.isInteger(existingIndex) && existingIndex > 0 ? existingIndex : null,
+      }];
+    });
+
+    const inconsistencies: ExtractedInconsistency[] = objectArray(parsed.inconsistencies).slice(0, 10).flatMap((item) => {
+      const entity = text(item.entity, 120);
+      const attribute = text(item.attribute, 80);
+      const established = text(item.established, 200);
+      const found = text(item.found, 200);
+      if (!entity || !attribute || !established || !found) return [];
+      return [{ entity, attribute, established, found, quote: text(item.quote, 300) }];
+    });
 
     return {
-      entities:        Array.isArray(parsed.entities)        ? parsed.entities        : [],
-      relationships:   Array.isArray(parsed.relationships)   ? parsed.relationships   : [],
-      threads:         Array.isArray(parsed.threads)         ? parsed.threads         : [],
-      inconsistencies: Array.isArray(parsed.inconsistencies) ? parsed.inconsistencies : [],
+      entities,
+      relationships,
+      threads,
+      inconsistencies,
     };
   } catch {
     return null;
@@ -224,22 +284,19 @@ export function parseExtractionResponse(raw: string): ExtractionResult | null {
  */
 // ── Name lookup helpers ───────────────────────────────────────────────────────
 
-/**
- * Build the name→id map including registered aliases so that
- * "Petunia Dursley" resolves to the same entity as "Petunia".
- */
-function buildNameMap(entities: ExistingEntity[]): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const e of entities) {
-    map.set(e.name.toLowerCase().trim(), e.id);
+interface NameEntry { name: string; id: string }
 
-    // Also register any aliases stored in attributes
-    const aliasRaw = String((e.attributes as Record<string, unknown>)?.aliases ?? "");
-    for (const alias of aliasRaw.split(",").map((a) => a.trim().toLowerCase()).filter((a) => a.length >= 3)) {
-      map.set(alias, e.id);
+/** Build canonical-name and alias entries without collapsing ambiguous names. */
+function buildNameEntries(entities: ExistingEntity[]): NameEntry[] {
+  const entries: NameEntry[] = [];
+  for (const entity of entities) {
+    entries.push({ name: entity.name, id: entity.id });
+    const aliasRaw = String((entity.attributes as Record<string, unknown>)?.aliases ?? "");
+    for (const alias of aliasRaw.split(",").map((value) => value.trim()).filter((value) => value.length >= 3)) {
+      entries.push({ name: alias, id: entity.id });
     }
   }
-  return map;
+  return entries;
 }
 
 // Common honorifics/titles to strip before name comparison — generic across all fiction genres
@@ -247,7 +304,8 @@ const TITLES = new Set([
   "mr", "mrs", "ms", "miss", "dr", "prof", "professor",
   "lord", "lady", "sir", "dame", "master", "mistress",
   "captain", "general", "colonel", "sergeant", "officer",
-  "king", "queen", "prince", "princess", "duke", "duchess",
+  "king", "queen", "emperor", "empress", "prince", "princess", "duke", "duchess",
+  "count", "countess", "baron", "baroness",
   "elder", "healer", "auror", "wizard", "witch",
   "the", "a", "an",
 ]);
@@ -257,47 +315,103 @@ function significantTokens(name: string): string[] {
   return name
     .toLowerCase()
     .trim()
-    .split(/[\s_-]+/)
+    .replace(/[’']s\b/gi, "")
+    .replace(/[’']/g, "")
+    .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3 && !TITLES.has(t));
 }
 
-/**
- * Look up an entity ID with a three-step fuzzy fallback:
- * 1. Exact match (case-insensitive, after normalising underscores/hyphens to spaces)
- * 2. First-significant-token match — "Petunia Dursley" ↔ "Petunia"
- * 3. Any shared significant token — catches "Dumbledore" ↔ "Albus Dumbledore"
- * All steps are story-agnostic string operations.
- */
-function lookupId(name: string, map: Map<string, string>): string | undefined {
-  const key = name.toLowerCase().trim().replace(/[_-]/g, " ");
+function normalizedFullName(name: string): string {
+  return name.toLowerCase().replace(/[’']s\b/gi, "").replace(/[’']/g, "").split(/[^a-z0-9]+/).filter(Boolean).join(" ");
+}
 
-  // 1. Exact
-  if (map.has(key)) return map.get(key)!;
+function startsWithTitle(name: string): boolean {
+  const first = name.toLowerCase().split(/[^a-z0-9]+/).find(Boolean);
+  return Boolean(first && TITLES.has(first));
+}
+
+/**
+ * Resolve an entity without ever guessing from one shared word between two
+ * multi-word names. That old fallback turned "Black Cloaked Figures" into
+ * "Black Obsidian Ring" and persisted a corrupt relationship.
+ */
+function lookupId(name: string, entries: NameEntry[]): string | undefined {
+  const fullKey = normalizedFullName(name);
+  if (!fullKey) return undefined;
+
+  const exactIds = new Set(entries
+    .filter((entry) => normalizedFullName(entry.name) === fullKey)
+    .map((entry) => entry.id));
+  if (exactIds.size === 1) return [...exactIds][0];
+  if (exactIds.size > 1) return undefined;
 
   const incomingTokens = significantTokens(name);
   if (incomingTokens.length === 0) return undefined;
-
-  const firstToken = incomingTokens[0];
-
-  let firstTokenMatch: string | undefined;
-  let sharedTokenMatch: string | undefined;
-
-  for (const [existing, id] of map) {
-    const existingTokens = significantTokens(existing);
+  const incomingIsBareSingle = incomingTokens.length === 1 && !startsWithTitle(name);
+  const candidateIds = new Set<string>();
+  for (const entry of entries) {
+    const existingTokens = significantTokens(entry.name);
     if (existingTokens.length === 0) continue;
-
-    // 2. First-significant-token match (highest confidence fuzzy match)
-    if (!firstTokenMatch && existingTokens[0] === firstToken) {
-      firstTokenMatch = id;
-    }
-
-    // 3. Any shared significant token (lower confidence — only use if nothing better found)
-    if (!sharedTokenMatch && existingTokens.some((t) => incomingTokens.includes(t))) {
-      sharedTokenMatch = id;
-    }
+    const shared = existingTokens.filter((token) => incomingTokens.includes(token));
+    const existingIsBareSingle = existingTokens.length === 1 && !startsWithTitle(entry.name);
+    const oneSideIsSingleToken = incomingIsBareSingle || existingIsBareSingle;
+    const strongMultiwordMatch = shared.length >= 2;
+    if ((oneSideIsSingleToken && shared.length === 1) || strongMultiwordMatch) candidateIds.add(entry.id);
   }
+  return candidateIds.size === 1 ? [...candidateIds][0] : undefined;
+}
 
-  return firstTokenMatch ?? sharedTokenMatch;
+/** Pure wrapper used by regression tests and diagnostics. */
+export function resolveEntityId(
+  name: string,
+  entities: Array<{ id: string; name: string; attributes?: Record<string, unknown> }>
+): string | undefined {
+  return lookupId(name, buildNameEntries(entities as ExistingEntity[]));
+}
+
+const THREAD_STOP_WORDS = new Set([
+  "about", "after", "again", "against", "being", "from", "have", "into", "must", "their",
+  "there", "they", "this", "through", "while", "will", "with", "that", "the", "and", "for",
+]);
+
+function threadTokens(description: string): Set<string> {
+  return new Set(significantTokens(description).filter((token) => !THREAD_STOP_WORDS.has(token)));
+}
+
+function threadSimilarity(left: string, right: string): number {
+  const a = threadTokens(left);
+  const b = threadTokens(right);
+  if (a.size === 0 || b.size === 0) return 0;
+  const shared = [...a].filter((token) => b.has(token)).length;
+  const union = new Set([...a, ...b]).size;
+  const jaccard = shared / union;
+  const containment = shared / Math.min(a.size, b.size);
+  return Math.max(jaccard, containment * 0.8);
+}
+
+/** Return a unique, high-confidence matching thread index, or -1. */
+export function findMatchingThreadIndex(
+  description: string,
+  threads: Array<{ description: string }>
+): number {
+  const ranked = threads
+    .map((thread, index) => ({ index, score: threadSimilarity(description, thread.description) }))
+    .sort((a, b) => b.score - a.score);
+  if (!ranked.length || ranked[0].score < 0.48) return -1;
+  if (ranked[1] && ranked[0].score - ranked[1].score < 0.08) return -1;
+  return ranked[0].index;
+}
+
+function cleanRelationshipLabel(label: string): string {
+  return label.trim().replace(/^(?:is|are|was|were)\s+/i, "").slice(0, 80);
+}
+
+const TRANSIENT_RELATIONSHIP = /^(?:attacked?|attracted to|captured?|connected by|fought|injured|killed|met|passenger of|resents?|resides? in|visited|entered|left|saw|spoke|talked|gave|handed|inhabits?|inhabited by|contains?|located in|warned|wears?)\b/i;
+
+/** World Board edges describe durable bonds, not scene actions or containment. */
+export function isPersistentRelationshipLabel(label: string): boolean {
+  const cleaned = cleanRelationshipLabel(label);
+  return Boolean(cleaned) && !TRANSIENT_RELATIONSHIP.test(cleaned);
 }
 
 export async function mergeExtractionIntoGraph(
@@ -306,13 +420,14 @@ export async function mergeExtractionIntoGraph(
   chapterNumber:   number,
   result:          ExtractionResult,
   existingEntities: ExistingEntity[],
-  client:          SupabaseClient
+  client:          SupabaseClient,
+  existingThreads: ExistingThread[] = []
 ): Promise<ExtractedInconsistency[]> {
   const throwIfError = (error: { message: string } | null, operation: string) => {
     if (error) throw new Error(`${operation}: ${error.message}`);
   };
   // Use existId as the sole authority — model's is_update flag is unreliable
-  const nameToId = buildNameMap(existingEntities);
+  const nameEntries = buildNameEntries(existingEntities);
 
   // ── Layout tracking: 2×3 zone grid matching world-board-canvas.tsx ──────────
   const ZONE_ORIGINS: Record<string, { x: number; y: number }> = {
@@ -334,9 +449,10 @@ export async function mergeExtractionIntoGraph(
 
   // ── Entities ────────────────────────────────────────────────
   for (const e of result.entities) {
-    const existId = lookupId(e.name, nameToId);
+    const existId = lookupId(e.name, nameEntries);
 
     if (existId) {
+      nameEntries.push({ name: e.name, id: existId });
       // Entity already exists — always merge new attributes, never duplicate
       if (Object.keys(e.attributes).length > 0) {
         const { error } = await client.rpc("merge_entity_attributes", {
@@ -368,7 +484,7 @@ export async function mergeExtractionIntoGraph(
           });
           throwIfError(error, "Could not update duplicate entity attributes");
         }
-        nameToId.set(e.name.toLowerCase(), dbDupe.id);
+        nameEntries.push({ name: e.name, id: dbDupe.id });
         continue;
       }
 
@@ -398,15 +514,21 @@ export async function mergeExtractionIntoGraph(
       throwIfError(insertError, `Could not create entity "${e.name}"`);
 
       if (!inserted) throw new Error(`Could not create entity "${e.name}"`);
-      nameToId.set(e.name.toLowerCase(), inserted.id);
+      nameEntries.push({ name: e.name, id: inserted.id });
+      const aliases = String(e.attributes?.aliases ?? "").split(",").map((value) => value.trim()).filter(Boolean);
+      for (const alias of aliases) nameEntries.push({ name: alias, id: inserted.id });
     }
   }
 
   // ── Relationships ────────────────────────────────────────────
   for (const rel of result.relationships) {
-    const sourceId = lookupId(rel.source, nameToId);
-    const targetId = lookupId(rel.target, nameToId);
-    if (!sourceId || !targetId || sourceId === targetId) continue;
+    const sourceId = lookupId(rel.source, nameEntries);
+    const targetId = lookupId(rel.target, nameEntries);
+    const label = cleanRelationshipLabel(rel.label);
+    if (!sourceId || !targetId || sourceId === targetId || !isPersistentRelationshipLabel(label)) {
+      console.warn(`[worldboard] Skipped unresolved relationship: ${rel.source} | ${rel.label} | ${rel.target}`);
+      continue;
+    }
 
     // Avoid duplicates — check if this relationship already exists
     const { data: existing, error: relationshipLookupError } = await client
@@ -423,15 +545,44 @@ export async function mergeExtractionIntoGraph(
         project_id: projectId,
         source_id:  sourceId,
         target_id:  targetId,
-        label:      rel.label,
+        label,
       });
-      throwIfError(error, `Could not create relationship "${rel.label}"`);
+      throwIfError(error, `Could not create relationship "${label}"`);
     }
   }
 
   // ── Plot threads ─────────────────────────────────────────────
+  const knownThreads = [...existingThreads];
+  const insertedThreadDescriptions: string[] = [];
   for (const thread of result.threads) {
-    if (thread.is_new) {
+    const requestedIndex = Number(thread.existing_thread_index);
+    const indexedMatch = thread.is_new === false && Number.isInteger(requestedIndex) &&
+      requestedIndex >= 1 &&
+      requestedIndex <= knownThreads.length &&
+      threadSimilarity(thread.description, knownThreads[requestedIndex - 1].description) >= 0.35
+      ? requestedIndex - 1
+      : -1;
+    const similarMatch = findMatchingThreadIndex(thread.description, knownThreads);
+    const matchIndex = indexedMatch >= 0 ? indexedMatch : similarMatch;
+
+    if (matchIndex >= 0) {
+      const matched = knownThreads[matchIndex];
+      const { error } = await client
+        .from("plot_threads")
+        .update({
+          last_seen_chapter_id:     chapterId,
+          last_seen_chapter_number: chapterNumber,
+          status:                   thread.status,
+        })
+        .eq("id", matched.id)
+        .eq("project_id", projectId);
+      throwIfError(error, "Could not update plot thread");
+      matched.status = thread.status;
+      matched.last_seen_chapter_number = chapterNumber;
+    } else {
+      if (findMatchingThreadIndex(thread.description, insertedThreadDescriptions.map((description) => ({ description }))) >= 0) {
+        continue;
+      }
       const { error } = await client.from("plot_threads").insert({
         project_id:                  projectId,
         description:                 thread.description,
@@ -442,18 +593,7 @@ export async function mergeExtractionIntoGraph(
         status:                      thread.status,
       });
       throwIfError(error, "Could not create plot thread");
-    } else {
-      // Update last_seen on existing thread (fuzzy match by partial description)
-      const { error } = await client
-        .from("plot_threads")
-        .update({
-          last_seen_chapter_id:     chapterId,
-          last_seen_chapter_number: chapterNumber,
-          status:                   thread.status,
-        })
-        .eq("project_id", projectId)
-        .ilike("description", `%${thread.description.slice(0, 20)}%`);
-      throwIfError(error, "Could not update plot thread");
+      insertedThreadDescriptions.push(thread.description);
     }
   }
 
@@ -461,11 +601,15 @@ export async function mergeExtractionIntoGraph(
   const flagsCreated: ExtractedInconsistency[] = [];
 
   for (const inc of result.inconsistencies) {
-    const entityId = nameToId.get(inc.entity.toLowerCase());
+    // A first extraction has no established facts to contradict. Also refuse
+    // to attach a flag to an entity the existing graph cannot identify.
+    if (existingEntities.length === 0) continue;
+    const entityId = lookupId(inc.entity, buildNameEntries(existingEntities));
+    if (!entityId) continue;
 
     const { error } = await client.from("inconsistency_flags").insert({
       project_id:        projectId,
-      entity_id:         entityId ?? null,
+      entity_id:         entityId,
       entity_name:       inc.entity,
       attribute:         inc.attribute,
       established_value: inc.established,

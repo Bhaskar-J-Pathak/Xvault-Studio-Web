@@ -11,7 +11,22 @@ import { GoogleAuth } from "google-auth-library";
 
 const PROJECT  = process.env.GOOGLE_CLOUD_PROJECT!;
 const LOCATION = process.env.VERTEX_LOCATION ?? "us-central1";
-const VERTEX   = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/${LOCATION}/publishers/google/models`;
+const EMBEDDING_LOCATION = process.env.VERTEX_EMBEDDING_LOCATION ?? LOCATION;
+const GENERATION_LOCATION = process.env.VERTEX_GENERATION_LOCATION ?? LOCATION;
+
+function vertexEndpoint(location: string): string {
+  const host = location === "global"
+  ? "https://aiplatform.googleapis.com"
+  : `https://${location}-aiplatform.googleapis.com`;
+  return `${host}/v1/projects/${PROJECT}/locations/${location}/publishers/google/models`;
+}
+
+const EMBEDDING_VERTEX = vertexEndpoint(EMBEDDING_LOCATION);
+const GENERATION_VERTEX = vertexEndpoint(GENERATION_LOCATION);
+
+// Server-only model switches. Defaults preserve current production behaviour,
+// while deployment settings can migrate models without another code release.
+export const WORLDBOARD_MODEL = process.env.WORLDBOARD_MODEL?.trim() || "gemini-2.5-pro";
 
 // Module-level singleton — reused across warm Vercel invocations.
 let _auth: GoogleAuth | null = null;
@@ -46,7 +61,7 @@ async function getBearerToken(): Promise<string> {
  */
 export async function geminiEmbed(text: string): Promise<number[]> {
   const tok = await getBearerToken();
-  const res = await fetch(`${VERTEX}/text-embedding-005:predict`, {
+  const res = await fetch(`${EMBEDDING_VERTEX}/text-embedding-005:predict`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -91,7 +106,7 @@ export async function geminiStream(
   }
 
   const res = await fetch(
-    `${VERTEX}/gemini-2.5-flash:streamGenerateContent?alt=sse`,
+    `${GENERATION_VERTEX}/gemini-2.5-flash:streamGenerateContent?alt=sse`,
     {
       method: "POST",
       headers: {
@@ -118,7 +133,9 @@ export async function geminiGenerate(
   systemPrompt?: string,
   maxTokens = 2048,
   jsonMode = false,
-  model = "gemini-2.5-flash"
+  model = "gemini-2.5-flash",
+  thinkingBudget?: number,
+  thinkingLevel?: "low" | "medium" | "high"
 ): Promise<string> {
   const tok = await getBearerToken();
 
@@ -127,9 +144,15 @@ export async function geminiGenerate(
     temperature: 0.7,
   };
 
-  // Flash: disable thinking — adds latency/cost with no benefit for short structured tasks.
-  // Pro: cap thinking at 1024 in jsonMode so the budget goes to JSON output.
-  if (model.includes("flash")) {
+  // Gemini 3 uses named thinking levels; Gemini 2.5 uses token budgets.
+  // Other callers retain their existing Flash and structured Pro defaults.
+  if (thinkingLevel !== undefined) {
+    generationConfig.thinkingConfig = { thinkingLevel };
+  } else if (thinkingBudget !== undefined) {
+    generationConfig.thinkingConfig = { thinkingBudget };
+  } else if (model.startsWith("gemini-3")) {
+    generationConfig.thinkingConfig = { thinkingLevel: "low" };
+  } else if (model.includes("flash")) {
     generationConfig.thinkingConfig = { thinkingBudget: 0 };
   } else if (jsonMode) {
     generationConfig.thinkingConfig = { thinkingBudget: 1024 };
@@ -148,7 +171,7 @@ export async function geminiGenerate(
     body.system_instruction = { parts: [{ text: systemPrompt }] };
   }
 
-  const res = await fetch(`${VERTEX}/${model}:generateContent`, {
+  const res = await fetch(`${GENERATION_VERTEX}/${model}:generateContent`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -163,7 +186,13 @@ export async function geminiGenerate(
   }
 
   const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const candidate = data.candidates?.[0];
+  if ((thinkingBudget !== undefined || thinkingLevel !== undefined) && candidate?.finishReason === "MAX_TOKENS") {
+    throw new Error("Generation reached its output limit before finishing");
+  }
+  return (candidate?.content?.parts ?? [])
+    .filter((part: { thought?: boolean; text?: string }) => !part.thought && typeof part.text === "string")
+    .map((part: { text: string }) => part.text).join("");
 }
 
 /**
@@ -217,7 +246,7 @@ export async function geminiChat(
     body.system_instruction = { parts: [{ text: systemPrompt }] };
   }
 
-  const res = await fetch(`${VERTEX}/${model}:generateContent`, {
+  const res = await fetch(`${GENERATION_VERTEX}/${model}:generateContent`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

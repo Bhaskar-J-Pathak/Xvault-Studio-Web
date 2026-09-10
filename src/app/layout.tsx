@@ -117,7 +117,7 @@ const softwareSchema = {
   url: "https://xvault.dev",
   featureList: [
     "AI co-author that reads your full manuscript (Alex)",
-    "Ghost writing in your voice via Ctrl+K",
+    "Cursor-aware prose generation in your voice",
     "World board: automatic character, location, and faction extraction",
     "Story bible with semantic search across your manuscript",
     "Plot thread tracking and dead-branch detection",

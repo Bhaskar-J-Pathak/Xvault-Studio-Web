@@ -10,33 +10,27 @@ import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
-import { $getRoot, $getSelection, $isRangeSelection } from "lexical";
+import { $getRoot, $getSelection, $isRangeSelection, $setSelection } from "lexical";
+import { $readProseCursor, $readProseInsertionCursor, insertProse } from "@/lib/prose-cursor";
+import type { ProseCursorContext } from "@/lib/prose-cursor";
 import type { EditorState } from "lexical";
-
-// Generated prose must create editor paragraphs, not newlines inside a text node.
-function insertProse(selection: import("lexical").RangeSelection, text: string) {
-  const paragraphs = text.replace(/\r\n?/g, "\n").split(/\n+/);
-  paragraphs.forEach((paragraph, index) => {
-    if (index > 0) selection.insertParagraph();
-    selection.insertText(paragraph);
-  });
-}
 
 // ── Ghost writer types ────────────────────────────────────────────────────────
 type GhostMode = "write" | "rewrite" | "continue";
+type ProseLength = "short" | "medium" | "long";
+type EditorThemeName = EditorPrefs["theme"];
+const PROSE_LENGTH_KEY = "xv_prose_length";
 
 // ── Direct editor action (toolbar → Lexical, bypasses ghost overlay) ──────────
 type DirectAction =
   | { type: "replace";      original: string; replacement: string }
   | { type: "insert-after"; text: string };
-interface CursorContext {
-  beforeCursor: string;    // all text before cursor position
-  afterCursor: string;     // all text after cursor position
-  selectedText: string;    // selected text, empty if no selection
-}
+type CursorContext = ProseCursorContext & {
+  viewportAnchor?: { x: number; top: number; bottom: number };
+};
 import { createClient, creditsRemaining } from "@/lib/supabase";
 import type { Profile } from "@/lib/supabase";
-import { Loader2, Wand2, X, PenLine, Settings, MoreHorizontal, Share2 } from "lucide-react";
+import { Check, ChevronDown, GripHorizontal, Loader2, Wand2, X, PenLine, Settings, MoreHorizontal, Share2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
 import CoauthorSetup from "@/app/studio/[projectId]/_components/coauthor-setup";
@@ -304,7 +298,7 @@ function StoryBiblePlugin({
 }
 
 // ── Co-Author plugin ──────────────────────────────────────────────────────────
-// Handles: recent text tracking, proactive observer, Ctrl+K ghost writer
+// Handles recent text tracking, proactive observation, and AI writing actions.
 
 interface CoAuthorPluginProps {
   projectId:            string;
@@ -312,8 +306,8 @@ interface CoAuthorPluginProps {
   coauthor:             DbCoauthor | null;
   onRecentTextChange:   (text: string) => void;
   onObservation:        (obs: string) => void;
-  onCtrlK:              (context: CursorContext) => void;
-  onContinue:           (context: CursorContext) => void;
+  onWrite:              (context: CursorContext) => void;
+  ghostContext:         CursorContext | null;
   ghostSuggestion:      string | null;
   ghostMode:            GhostMode;
   ghostOriginalText:    string;   // original selected text for rewrite accept
@@ -331,8 +325,8 @@ function CoAuthorPlugin({
   coauthor,
   onRecentTextChange,
   onObservation,
-  onCtrlK,
-  onContinue,
+  onWrite,
+  ghostContext,
   ghostSuggestion,
   ghostMode,
   ghostOriginalText,
@@ -357,10 +351,10 @@ function CoAuthorPlugin({
   onRecentTextRef.current    = onRecentTextChange;
   const onObservationRef     = useRef(onObservation);
   onObservationRef.current   = onObservation;
-  const onCtrlKRef           = useRef(onCtrlK);
-  onCtrlKRef.current         = onCtrlK;
-  const onContinueRef        = useRef(onContinue);
-  onContinueRef.current      = onContinue;
+  const onWriteRef           = useRef(onWrite);
+  onWriteRef.current         = onWrite;
+  const ghostContextRef = useRef(ghostContext);
+  ghostContextRef.current = ghostContext;
   const ghostSuggestionRef   = useRef(ghostSuggestion);
   ghostSuggestionRef.current = ghostSuggestion;
   const ghostModeRef         = useRef(ghostMode);
@@ -386,35 +380,19 @@ function CoAuthorPlugin({
     if (!triggerWriteRef) return;
     triggerWriteRef.current = () => {
       if (!coauthorRef.current) return;
-      let beforeCursor = "";
-      let afterCursor  = "";
-      let selectedText = "";
-      editor.getEditorState().read(() => {
-        const root     = $getRoot();
-        const fullText = root.getTextContent();
-        const sel      = $getSelection();
-        if ($isRangeSelection(sel)) {
-          selectedText = sel.getTextContent();
-          const anchorNode   = sel.anchor.getNode();
-          const anchorOffset = sel.anchor.offset;
-          const anchorText   = "getTextContent" in anchorNode
-            ? (anchorNode as unknown as { getTextContent: () => string }).getTextContent()
-            : "";
-          const beforeAnchor = anchorText.slice(0, anchorOffset);
-          const anchorIdx    = fullText.indexOf(beforeAnchor.slice(-100));
-          if (anchorIdx !== -1) {
-            beforeCursor = fullText.slice(0, anchorIdx + beforeAnchor.length);
-            afterCursor  = fullText.slice(anchorIdx + beforeAnchor.length + selectedText.length);
-          } else {
-            beforeCursor = fullText;
-          }
-        } else {
-          beforeCursor = fullText;
+      let context!: CursorContext;
+      editor.getEditorState().read(() => { context = $readProseInsertionCursor(); });
+      const domSelection = window.getSelection();
+      const editorRoot = editor.getRootElement();
+      if (domSelection?.rangeCount && editorRoot?.contains(domSelection.anchorNode)) {
+        const caretRange = domSelection.getRangeAt(0).cloneRange();
+        caretRange.collapse(false);
+        const rect = caretRange.getBoundingClientRect();
+        if (rect.height || rect.width) {
+          context.viewportAnchor = { x: rect.left, top: rect.top, bottom: rect.bottom };
         }
-      });
-      // The title-bar button promises a continuation; Ctrl+K still opens the
-      // instruction command bar through onCtrlK.
-      onContinueRef.current({ beforeCursor, afterCursor, selectedText });
+      }
+      onWriteRef.current(context);
     };
     return () => { if (triggerWriteRef) triggerWriteRef.current = null; };
   }, [editor, triggerWriteRef]);
@@ -474,49 +452,29 @@ function CoAuthorPlugin({
       const suggestion = ghostSuggestionRef.current;
       if (!suggestion) return;
       const mode = ghostModeRef.current;
-      const originalText = ghostOriginalTextRef.current;
 
+      if (suggestion.startsWith("[Error:")) return;
       editor.update(() => {
-        if (mode === "rewrite" && originalText) {
-          const root = $getRoot();
-          function replaceInNode(node: ReturnType<typeof $getRoot>): boolean {
-            const type = (node as { getType: () => string }).getType?.();
-            if (type === "text") {
-              const textNode = node as unknown as { getTextContent: () => string; setTextContent: (t: string) => void; getKey: () => string };
-              const text = textNode.getTextContent();
-              const idx = text.indexOf(originalText);
-              if (idx !== -1) {
-                // Select the matched passage so paragraph insertion preserves
-                // the surrounding text and creates real paragraph nodes.
-                const lexicalNode = node as unknown as import("lexical").TextNode;
-                const selection = lexicalNode.select(idx, idx + originalText.length);
-                insertProse(selection, suggestion!);
-                return true;
-              }
-            }
-            if ("getChildren" in node) {
-              for (const child of (node as { getChildren: () => ReturnType<typeof $getRoot>[] }).getChildren()) {
-                if (replaceInNode(child)) return true;
-              }
-            }
-            return false;
-          }
-          const replaced = replaceInNode(root as ReturnType<typeof $getRoot>);
-          if (!replaced) {
-            const sel = $getSelection();
-            if ($isRangeSelection(sel)) insertProse(sel, suggestion);
-          }
-        } else {
-          const sel = $getSelection();
-          if ($isRangeSelection(sel)) {
-            // For continue mode, collapse to the focus (end of any selection)
-            // so the suggestion is inserted after the selection, not replacing it.
-            if (!sel.isCollapsed()) {
-              sel.anchor.set(sel.focus.key, sel.focus.offset, sel.focus.type);
-            }
-            insertProse(sel, suggestion);
-          }
+        const context = ghostContextRef.current;
+        if (!context?.selection || $getRoot().getTextContent() !== context.documentText) {
+          window.alert("The chapter changed after generation. Generate again at your desired cursor position.");
+          return;
         }
+        const selection = context.selection.clone();
+        if (mode !== "rewrite" && !selection.isCollapsed()) {
+          const end = selection.isBackward() ? selection.anchor : selection.focus;
+          selection.anchor.set(end.key, end.offset, end.type);
+          selection.focus.set(end.key, end.offset, end.type);
+        }
+        $setSelection(selection);
+        let prose = suggestion;
+        if (mode !== "rewrite") {
+          const before = context.beforeCursor + context.selectedText;
+          // Normalization trims model output; restore whitespace at the join.
+          if (before && !/\s$/.test(before) && !/^[\s,.;:!?"”’]/.test(prose)) prose = " " + prose;
+          if (context.afterCursor && !/^\s|^[,.;:!?"”’]/.test(context.afterCursor)) prose += " ";
+        }
+        insertProse(selection, prose);
       });
       onGhostAcceptedRef.current();
     };
@@ -597,69 +555,11 @@ function CoAuthorPlugin({
     });
   }, [editor, projectId, chapterId]);
 
-  // Keyboard: Ctrl+K to open command bar, Tab to accept, Escape to dismiss
+  // Suggestion keyboard actions. Writing and refinement are button-driven so
+  // they do not conflict with browser search/address shortcuts.
   useEffect(() => {
     return editor.registerRootListener((rootElement, prevRootElement) => {
       function handleKeyDown(e: KeyboardEvent) {
-        // Ctrl+K — capture cursor context and open command bar
-        if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!coauthorRef.current) return;
-
-          // Capture full text split at cursor position
-          let beforeCursor = "";
-          let afterCursor = "";
-          let selectedText = "";
-
-          editor.getEditorState().read(() => {
-            const root = $getRoot();
-            const fullText = root.getTextContent();
-            const sel = $getSelection();
-
-            if ($isRangeSelection(sel)) {
-              selectedText = sel.getTextContent();
-
-              // Walk all text nodes to find byte-offset of anchor
-              const allTextNodes: string[] = [];
-              function walk(node: ReturnType<typeof $getRoot>) {
-                if ("getTextContent" in node && typeof (node as { getType: () => string }).getType === "function") {
-                  const type = (node as { getType: () => string }).getType();
-                  if (type === "text") {
-                    allTextNodes.push((node as unknown as { getTextContent: () => string }).getTextContent());
-                  }
-                }
-                if ("getChildren" in node && typeof (node as { getChildren: () => unknown[] }).getChildren === "function") {
-                  for (const child of (node as { getChildren: () => ReturnType<typeof $getRoot>[] }).getChildren()) {
-                    walk(child);
-                  }
-                }
-              }
-              walk(root as ReturnType<typeof $getRoot>);
-
-              // Simple approach: split full text at anchor node
-              const anchorNode = sel.anchor.getNode();
-              const anchorOffset = sel.anchor.offset;
-              const anchorText = "getTextContent" in anchorNode
-                ? (anchorNode as unknown as { getTextContent: () => string }).getTextContent()
-                : "";
-
-              const beforeAnchor = anchorText.slice(0, anchorOffset);
-              const anchorIdx = fullText.indexOf(beforeAnchor.slice(-100));
-              if (anchorIdx !== -1) {
-                beforeCursor = fullText.slice(0, anchorIdx + beforeAnchor.length);
-                afterCursor = fullText.slice(anchorIdx + beforeAnchor.length + selectedText.length);
-              } else {
-                // Fallback: use full text as beforeCursor
-                beforeCursor = fullText;
-              }
-            }
-          });
-
-          onCtrlKRef.current({ beforeCursor, afterCursor, selectedText });
-          return;
-        }
-
         // Tab — accept ghost text
         if (e.key === "Tab" && ghostSuggestionRef.current) {
           e.preventDefault();
@@ -714,38 +614,16 @@ function SelectionPlugin({
       let afterCursor   = "";
       let selectedText  = "";
 
-      editor.getEditorState().read(() => {
-        const root     = $getRoot();
-        const fullText = root.getTextContent();
-        const sel      = $getSelection();
-
-        if ($isRangeSelection(sel)) {
-          selectedText = sel.getTextContent();
-          if (!selectedText.trim()) return;
-
-          const anchorNode   = sel.anchor.getNode();
-          const anchorOffset = sel.anchor.offset;
-          const anchorText   = "getTextContent" in anchorNode
-            ? (anchorNode as unknown as { getTextContent: () => string }).getTextContent()
-            : "";
-          const beforeAnchor = anchorText.slice(0, anchorOffset);
-          const anchorIdx    = fullText.indexOf(beforeAnchor.slice(-100));
-
-          if (anchorIdx !== -1) {
-            beforeCursor = fullText.slice(0, anchorIdx + beforeAnchor.length);
-            afterCursor  = fullText.slice(anchorIdx + beforeAnchor.length + selectedText.length);
-          } else {
-            beforeCursor = fullText;
-          }
-        }
-      });
+      let context!: CursorContext;
+      editor.getEditorState().read(() => { context = $readProseCursor(); });
+      selectedText = context.selectedText;
 
       if (!selectedText.trim()) {
         cbRef.current(null);
         return;
       }
 
-      cbRef.current({ rect, context: { beforeCursor, afterCursor, selectedText } });
+      cbRef.current({ rect, context });
     }
 
     document.addEventListener("selectionchange", handleSelectionChange);
@@ -815,7 +693,7 @@ export default function ZenEditor({
   onboardingDone = true,
 }: Props) {
   const ph = usePostHog();
-  const ctrlkTracked = useRef(false);
+  const writeTracked = useRef(false);
 
   const [wordCount,        setWordCount]        = useState(initialWordCount);
   const [saveStatus,       setSaveStatus]       = useState<SaveStatus>("idle");
@@ -962,17 +840,34 @@ export default function ZenEditor({
     });
   }
 
-  // Ghost writer (Ctrl+K)
+  // AI prose generation
   const [commandBarOpen,    setCommandBarOpen]    = useState(false);
   const [cursorContext,     setCursorContext]      = useState<CursorContext | null>(null);
+  const [ghostContext, setGhostContext] = useState<CursorContext | null>(null);
   const [ghostSuggestion,   setGhostSuggestion]   = useState<string | null>(null);
   const [ghostMode,         setGhostMode]         = useState<GhostMode>("write");
+  const [proseLength,       setProseLength]       = useState<ProseLength>("medium");
   const [ghostOriginalText, setGhostOriginalText] = useState("");
   const [ghostLoading,      setGhostLoading]      = useState(false);
   const [triggerAcceptGhost, setTriggerAcceptGhost] = useState(0);
 
   // Write button → CoAuthorPlugin bridge
   const triggerWriteRef = useRef<(() => void) | null>(null);
+  const writeViewportAnchorRef = useRef<CursorContext["viewportAnchor"]>(undefined);
+
+  const captureWriteViewportAnchor = useCallback(() => {
+    writeViewportAnchorRef.current = undefined;
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    const range = selection.getRangeAt(0).cloneRange();
+    const editorElement = document.querySelector('[aria-label="Story editor"]');
+    if (!editorElement?.contains(range.startContainer)) return;
+    range.collapse(false);
+    const rect = range.getBoundingClientRect();
+    if (rect.height || rect.width) {
+      writeViewportAnchorRef.current = { x: rect.left, top: rect.top, bottom: rect.bottom };
+    }
+  }, []);
 
   // Editor preferences (font / line-spacing / theme)
   const [editorPrefs, setEditorPrefs] = useState<EditorPrefs>(DEFAULT_PREFS);
@@ -983,7 +878,16 @@ export default function ZenEditor({
     try {
       const stored = localStorage.getItem(PREFS_KEY);
       if (stored) setEditorPrefs({ ...DEFAULT_PREFS, ...JSON.parse(stored) });
+      const storedLength = localStorage.getItem(PROSE_LENGTH_KEY);
+      if (storedLength === "short" || storedLength === "medium" || storedLength === "long") {
+        setProseLength(storedLength);
+      }
     } catch { /* ignore */ }
+  }, []);
+
+  const handleProseLengthChange = useCallback((length: ProseLength) => {
+    setProseLength(length);
+    try { localStorage.setItem(PROSE_LENGTH_KEY, length); } catch { /* ignore */ }
   }, []);
 
   // Propagate theme to the entire studio (sidebar, shell, etc.)
@@ -1010,14 +914,6 @@ export default function ZenEditor({
     try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* ignore */ }
   }
 
-  // Track whether user has ever used the selection toolbar (for footer hint).
-  // Must start as false on both server and client to avoid a hydration mismatch;
-  // the localStorage value is read only after mount.
-  const [barEverSeen, setBarEverSeen] = useState(false);
-  useEffect(() => {
-    if (localStorage.getItem("xv_bar_seen") === "true") setBarEverSeen(true);
-  }, []);
-
   // Selection toolbar + What If + Rewrite
   const [selectionData,  setSelectionData]  = useState<{ rect: DOMRect; context: CursorContext } | null>(null);
   const [lockedToolbar,  setLockedToolbar]  = useState<{ rect: DOMRect; context: CursorContext } | null>(null);
@@ -1029,31 +925,36 @@ export default function ZenEditor({
   const [rewriteLoading, setRewriteLoading] = useState(false);
   const [directAction,   setDirectAction]   = useState<DirectAction | null>(null);
 
-  useEffect(() => {
-    if (selectionData && !barEverSeen) {
-      setBarEverSeen(true);
-      localStorage.setItem("xv_bar_seen", "true");
-    }
-  }, [selectionData, barEverSeen]);
-
   const handleCreditUpdate = useCallback((remaining: number) => {
     setCredits(remaining);
     if (remaining <= 0) setShowUpgradeModal(true);
   }, []);
 
-  const handleCtrlK = useCallback((context: CursorContext) => {
-    if (ghostLoading) return;
-    if (!ctrlkTracked.current) {
-      ctrlkTracked.current = true;
-      ph?.capture("feature_used", { feature: "ctrlk_first_use" });
-    }
-    setCursorContext(context);
-    setCommandBarOpen(true);
-  }, [ghostLoading, ph]);
+  const [refineError, setRefineError] = useState<string | null>(null);
 
-  const handleGhostRequest = useCallback(async (instruction: string, context: CursorContext) => {
-    const mode: GhostMode = context.selectedText ? "rewrite" : instruction ? "write" : "continue";
+  const handleWriteOpen = useCallback((context: CursorContext) => {
+    if (ghostLoading) return;
+    if (!writeTracked.current) {
+      writeTracked.current = true;
+      ph?.capture("feature_used", { feature: "write_first_use" });
+    }
+    // Refinement is intentionally button-only because browser search shortcuts
+    // must never change an existing suggestion.
+    if (ghostSuggestion) return;
+    setCursorContext({
+      ...context,
+      viewportAnchor: writeViewportAnchorRef.current ?? context.viewportAnchor,
+    });
+    writeViewportAnchorRef.current = undefined;
+    setCommandBarOpen(true);
+  }, [ghostLoading, ghostSuggestion, ph]);
+
+  const handleGhostRequest = useCallback(async (instruction: string, context: CursorContext, draft?: string) => {
+    const mode: GhostMode = draft ? ghostMode : context.selectedText ? "rewrite" : instruction ? "write" : "continue";
+    setRefineError(null);
     setCommandBarOpen(false);
+    setGhostContext(context);
+    setGhostSuggestion(null);
     setGhostMode(mode);
     setGhostOriginalText(context.selectedText);
     setGhostLoading(true);
@@ -1066,29 +967,34 @@ export default function ZenEditor({
           chapterId,
           mode,
           instruction:  instruction || undefined,
-          beforeCursor: context.beforeCursor,
+          draft,
+          length: proseLength,
+          beforeCursor: mode === "continue" ? context.beforeCursor + context.selectedText : context.beforeCursor,
           afterCursor:  context.afterCursor,
           selectedText: context.selectedText || undefined,
         }),
       });
       const data = await res.json() as { suggestion?: string; error?: string; remaining?: number };
       if (data.remaining !== undefined) handleCreditUpdate(data.remaining);
-      if (!res.ok) {
+      if (!res.ok || !data.suggestion) {
         ph?.capture("api_error", { feature: "ghost_write", status: res.status, error: data.error, mode });
         const msg = res.status === 429
           ? (data.error ?? "You've run out of AI credits.")
           : (data.error ?? `Something went wrong (${res.status}). Try again.`);
-        setGhostSuggestion(`[Error: ${msg}]`);
+        if (draft) { setGhostSuggestion(draft); setRefineError(msg); }
+        else setGhostSuggestion(`[Error: ${msg}]`);
         return;
       }
       if (data.suggestion) setGhostSuggestion(data.suggestion);
     } catch (err) {
       ph?.capture("api_error", { feature: "ghost_write", error: "network_error", detail: String(err), mode });
-      setGhostSuggestion(`[Error: ${err instanceof Error ? err.message : "Network error. Check your connection."}]`);
+      const message = err instanceof Error ? err.message : "Network error. Check your connection.";
+      if (draft) { setGhostSuggestion(draft); setRefineError(message); }
+      else setGhostSuggestion(`[Error: ${message}]`);
     } finally {
       setGhostLoading(false);
     }
-  }, [projectId, chapterId, ph]);
+  }, [projectId, chapterId, ph, ghostMode, proseLength, handleCreditUpdate]);
 
   // ── Selection toolbar callbacks ──────────────────────────────────────────────
 
@@ -1104,6 +1010,7 @@ export default function ZenEditor({
 
   const handleToolbarContinue = useCallback(async (context: CursorContext) => {
     dismissToolbar();
+    setGhostContext(context);
     setGhostMode("continue");
     setGhostOriginalText("");
     setGhostSuggestion(null);
@@ -1116,6 +1023,7 @@ export default function ZenEditor({
           projectId,
           chapterId,
           mode:         "continue",
+          length:       proseLength,
           // Move past the selection so generation continues after it
           beforeCursor: context.beforeCursor + context.selectedText,
           afterCursor:  context.afterCursor,
@@ -1136,35 +1044,12 @@ export default function ZenEditor({
       setGhostSuggestion(`[Error: ${message}]`);
     }
     finally { setGhostLoading(false); }
-  }, [projectId, chapterId, handleCreditUpdate, ph]);
+  }, [projectId, chapterId, proseLength, handleCreditUpdate, ph]);
 
   const handleToolbarRewrite = useCallback(async (context: CursorContext) => {
-    // Keep toolbar visible (locked) — result shows in toolbar panel, not ghost overlay
-    setRewriteLoading(true);
-    setRewriteResult(null);
-    setWhatIfExpanded(false);
-    setWhatIfBranches(null);
-    try {
-      const res = await fetch("/api/ai/coauthor/suggest", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          projectId,
-          chapterId,
-          mode:         "rewrite",
-          instruction:  "Rewrite — different take, same voice and POV",
-          beforeCursor: context.beforeCursor,
-          afterCursor:  context.afterCursor,
-          selectedText: context.selectedText,
-        }),
-      });
-      const data = await res.json() as { suggestion?: string; remaining?: number };
-      if (data.remaining !== undefined) handleCreditUpdate(data.remaining);
-      if (data.suggestion) setRewriteResult(data.suggestion);
-    } catch { /* silently ignore */ }
-    finally { setRewriteLoading(false); }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, chapterId, handleCreditUpdate]);
+    dismissToolbar();
+    await handleGhostRequest("Rewrite the selected passage with clearer phrasing while preserving its meaning, events, voice, POV, tense, and approximate length.", context);
+  }, [handleGhostRequest]);
 
   const handleWhatIfSubmit = useCallback(async (context: CursorContext, input: string) => {
     if (!input.trim()) return;
@@ -1254,25 +1139,34 @@ export default function ZenEditor({
           className="shrink-0 flex items-center justify-between px-4 md:px-8 py-3 border-b"
           style={{ backgroundColor: th.bg, borderBottomColor: th.border }}
         >
-          <h1 className="text-sm font-semibold tracking-tight truncate" style={{ color: th.text }}>
-            {chapterTitle}
-          </h1>
+          <div className="min-w-0">
+            <h1 className="text-sm md:text-[15px] font-semibold tracking-tight truncate" style={{ color: th.text }}>
+              {chapterTitle}
+            </h1>
+            <p className="hidden md:block mt-0.5 text-[10px]" style={{ color: th.textMuted }}>
+              {wordCount.toLocaleString()} words
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <SaveIndicator status={saveStatus} theme={th} />
 
-            {/* Continue button (Ctrl+K) — desktop only; mobile uses Write FAB */}
+            {/* Primary creation action — desktop only; mobile uses Write FAB */}
             <button
+              onPointerDown={captureWriteViewportAnchor}
               onClick={() => {
                 if (!coauthor) { setShowCoauthorSetup(true); return; }
                 triggerWriteRef.current?.();
               }}
               disabled={ghostLoading}
-              title="Continue writing from cursor (Ctrl+K)"
-              className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium xv-chrome-btn transition-colors disabled:opacity-40"
+              title="Write with AI at the current cursor"
+              className="hidden md:flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold shadow-sm transition-opacity hover:opacity-80 disabled:opacity-40"
+              style={{ backgroundColor: th.text, color: th.bg }}
             >
-              <span className="text-[10px] leading-none">✦</span>
-              Continue
+              <Wand2 size={13} />
+              Write
             </button>
+
+            <span className="hidden md:block h-5 w-px" style={{ backgroundColor: th.border }} />
 
             {/* Line edit — desktop only; mobile uses ••• menu */}
             <button
@@ -1305,13 +1199,14 @@ export default function ZenEditor({
             <button
               onClick={openCoauthorPanel}
               title={coauthor ? `${coauthor.name} (co-author)` : "Set up co-author"}
-              className={`hidden md:flex w-6 h-6 items-center justify-center rounded-lg transition-colors ${
+              className={`hidden md:flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[11px] font-medium transition-colors ${
                 coauthor && !coauthorSlim
                   ? "bg-amber-100 text-amber-600"
                   : "xv-chrome-btn"
               }`}
             >
               <Wand2 size={13} />
+              <span className="hidden xl:inline">{coauthor?.name ?? "Co-author"}</span>
             </button>
 
             {/* Settings — visible on all sizes */}
@@ -1372,10 +1267,13 @@ export default function ZenEditor({
               />
             </div>
 
-            {/* Ctrl+K command bar */}
+            {/* Write / rewrite command bar */}
             {commandBarOpen && cursorContext && (
               <InlineCommandBar
                 context={cursorContext}
+                themeName={editorPrefs.theme}
+                length={proseLength}
+                onLengthChange={handleProseLengthChange}
                 onSubmit={(instruction) => handleGhostRequest(instruction, cursorContext)}
                 onCancel={() => setCommandBarOpen(false)}
               />
@@ -1384,6 +1282,13 @@ export default function ZenEditor({
             {/* Ghost text overlay */}
             {(ghostLoading || ghostSuggestion) && (
               <GhostTextOverlay
+                themeName={editorPrefs.theme}
+                refineError={refineError}
+                onRefine={(instruction) => {
+                  if (ghostContext && ghostSuggestion && !ghostLoading) {
+                    void handleGhostRequest(instruction, ghostContext, ghostSuggestion);
+                  }
+                }}
                 loading={ghostLoading}
                 suggestion={ghostSuggestion}
                 mode={ghostMode}
@@ -1430,8 +1335,8 @@ export default function ZenEditor({
               setPendingObservation(obs);
               if (!userClosedPanel.current) setCoauthorSlim(false);
             }}
-            onCtrlK={handleCtrlK}
-            onContinue={(context) => handleGhostRequest("", context)}
+            onWrite={handleWriteOpen}
+            ghostContext={ghostContext}
             ghostSuggestion={ghostSuggestion}
             ghostMode={ghostMode}
             ghostOriginalText={ghostOriginalText}
@@ -1525,10 +1430,14 @@ export default function ZenEditor({
                 {credits <= 0 ? "No credits · Upgrade" : `${credits} credit${credits !== 1 ? "s" : ""}${credits <= 20 ? " · Low" : ""}`}
               </span>
             </button>
-            <span className="hidden md:inline text-xs xv-chrome-label font-mono">
-              {barEverSeen
-                ? "Tab accept · Esc dismiss"
-                : "Select text for Rewrite / What If  ·  Continue (Ctrl+K)"}
+            <span className="hidden md:inline text-xs xv-chrome-label">
+              {ghostLoading
+                ? "Generating prose…"
+                : ghostSuggestion
+                  ? "Tab insert · Esc dismiss"
+                  : lockedToolbar || selectionData
+                    ? "Choose Continue after, Rewrite, or What If"
+                    : "Select text for passage tools"}
             </span>
           </div>
         </div>
@@ -1593,15 +1502,21 @@ export default function ZenEditor({
         )}
       </div>
 
-      {/* ── Mobile: Write FAB (✦) — stacked above the co-author bubble ── */}
+      {/* ── Mobile: primary Write action, stacked above the co-author bubble ── */}
       {(!coauthor || coauthorSlim) && (
         <button
           id="tutorial-write-fab"
-          className={`md:hidden fixed ${coauthor ? "bottom-[7.5rem]" : "bottom-16"} right-4 z-40 w-12 h-12 rounded-full bg-white border border-neutral-200 shadow-lg flex items-center justify-center active:scale-95 transition-transform`}
-          onClick={() => handleCtrlK({ beforeCursor: "", afterCursor: "", selectedText: "" })}
+          className={`md:hidden fixed ${coauthor ? "bottom-[7.5rem]" : "bottom-16"} right-4 z-40 h-11 rounded-full px-4 shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform`}
+          style={{ backgroundColor: th.text, color: th.bg }}
+          onPointerDown={captureWriteViewportAnchor}
+          onClick={() => {
+            if (!coauthor) { setShowCoauthorSetup(true); return; }
+            triggerWriteRef.current?.();
+          }}
           aria-label="Write with AI"
         >
-          <Wand2 size={18} className="text-[#1A1A1A]" />
+          <Wand2 size={16} />
+          <span className="text-sm font-semibold">Write</span>
         </button>
       )}
 
@@ -1792,25 +1707,127 @@ export default function ZenEditor({
   );
 }
 
-// ── Inline command bar (Ctrl+K) ───────────────────────────────────────────────
+// ── Inline Write / Rewrite command bar ───────────────────────────────────────
 
 function InlineCommandBar({
   context,
+  themeName,
+  length,
+  onLengthChange,
   onSubmit,
   onCancel,
 }: {
   context: CursorContext;
+  themeName: EditorThemeName;
+  length: ProseLength;
+  onLengthChange: (length: ProseLength) => void;
   onSubmit: (instruction: string) => void;
   onCancel: () => void;
 }) {
   const [input, setInput] = useState("");
+  const [lengthMenuOpen, setLengthMenuOpen] = useState(false);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const lengthMenuRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ pointerId: -1, offsetX: 0, offsetY: 0 });
+  const panelTheme = THEME_MAP[themeName];
+  const elevatedBg = themeName === "dark" ? "#252525" : themeName === "sepia" ? "#F2EAD8" : "#FAFAFA";
+  const controlBg = themeName === "dark" ? "#2C2C2C" : panelTheme.bg;
+  const selectedBg = themeName === "dark" ? "rgba(224,221,213,0.10)" : themeName === "sepia" ? "rgba(107,62,26,0.09)" : "rgba(26,26,26,0.06)";
+
+  const lengthOptions: ReadonlyArray<{ value: ProseLength; label: string; range: string; detail: string }> = [
+    { value: "short", label: "Short", range: "100–200 words", detail: "A quick beat or exchange" },
+    { value: "medium", label: "Medium", range: "250–450 words", detail: "A developed scene beat" },
+    { value: "long", label: "Long", range: "500–800 words", detail: "An extended scene passage" },
+  ];
+  const selectedLength = lengthOptions.find(option => option.value === length) ?? lengthOptions[1];
+
+  const clampPosition = useCallback((x: number, y: number) => {
+    const rect = panelRef.current?.getBoundingClientRect();
+    const width = rect?.width ?? Math.min(560, window.innerWidth * 0.92);
+    const height = rect?.height ?? 150;
+    const gutter = 12;
+    return {
+      x: Math.min(Math.max(gutter, x), Math.max(gutter, window.innerWidth - width - gutter)),
+      y: Math.min(Math.max(gutter, y), Math.max(gutter, window.innerHeight - height - gutter)),
+    };
+  }, []);
 
   useEffect(() => {
     // Small delay so focus doesn't get grabbed back by the editor
     const t = setTimeout(() => inputRef.current?.focus(), 50);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    const anchor = context.viewportAnchor;
+    // On wide screens, the manuscript has useful margin space beside it. Use
+    // that as the fallback so an unavailable native caret rect never causes
+    // the palette to cover the line the writer is working on.
+    let initial = window.innerWidth >= 1200
+      ? { x: window.innerWidth - rect.width - 56, y: Math.max(80, (window.innerHeight - rect.height) / 2) }
+      : { x: (window.innerWidth - rect.width) / 2, y: window.innerHeight - rect.height - 24 };
+    if (anchor) {
+      const gap = 18;
+      if (anchor.x + gap + rect.width <= window.innerWidth - 12) {
+        initial = { x: anchor.x + gap, y: anchor.top - 18 };
+      } else if (anchor.x - gap - rect.width >= 12) {
+        initial = { x: anchor.x - gap - rect.width, y: anchor.top - 18 };
+      } else if (anchor.bottom + gap + rect.height <= window.innerHeight - 12) {
+        initial = { x: anchor.x - rect.width / 2, y: anchor.bottom + gap };
+      } else {
+        initial = { x: anchor.x - rect.width / 2, y: anchor.top - rect.height - gap };
+      }
+    }
+    setPosition(clampPosition(initial.x, initial.y));
+  }, [clampPosition, context.viewportAnchor]);
+
+  useEffect(() => {
+    function closeLengthMenu(event: PointerEvent) {
+      if (!lengthMenuRef.current?.contains(event.target as Node)) setLengthMenuOpen(false);
+    }
+    function keepPaletteVisible() {
+      setPosition(current => current ? clampPosition(current.x, current.y) : current);
+    }
+    document.addEventListener("pointerdown", closeLengthMenu);
+    window.addEventListener("resize", keepPaletteVisible);
+    return () => {
+      document.removeEventListener("pointerdown", closeLengthMenu);
+      window.removeEventListener("resize", keepPaletteVisible);
+    };
+  }, [clampPosition]);
+
+  function startDragging(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button")) return;
+    const rect = panelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragging(true);
+  }
+
+  function movePalette(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragging || event.pointerId !== dragRef.current.pointerId) return;
+    setPosition(clampPosition(
+      event.clientX - dragRef.current.offsetX,
+      event.clientY - dragRef.current.offsetY,
+    ));
+  }
+
+  function stopDragging(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerId !== dragRef.current.pointerId) return;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    setDragging(false);
+  }
 
   const hasSelection = !!context.selectedText.trim();
   const selWordCount = hasSelection
@@ -1837,41 +1854,57 @@ function InlineCommandBar({
     }
     if (e.key === "Escape") {
       e.preventDefault();
-      onCancel();
+      if (lengthMenuOpen) setLengthMenuOpen(false);
+      else onCancel();
     }
   }
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[min(640px,92%)] z-[100]">
-      <div className="rounded-xl border border-neutral-300 bg-white shadow-2xl overflow-hidden">
-        {/* Context badge */}
-        <div className="px-3.5 py-2 border-b border-neutral-100 bg-neutral-50 flex items-center gap-2.5 min-w-0">
-          <span className="text-[11px] font-semibold text-neutral-400 shrink-0">
+    <div
+      ref={panelRef}
+      className={`fixed w-[min(560px,92%)] z-[100] ${position ? "" : "bottom-6 left-1/2 -translate-x-1/2"}`}
+      style={position ? { left: position.x, top: position.y } : undefined}
+      role="dialog"
+      aria-label="Write with AI"
+    >
+      <div className="rounded-xl border shadow-2xl" style={{ backgroundColor: panelTheme.bg, borderColor: panelTheme.border, color: panelTheme.text }}>
+        {/* Context badge + drag handle */}
+        <div
+          className={`px-3.5 py-2 border-b rounded-t-xl flex items-center gap-2.5 min-w-0 select-none touch-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+          style={{ backgroundColor: elevatedBg, borderColor: panelTheme.border }}
+          title="Drag to move"
+          onPointerDown={startDragging}
+          onPointerMove={movePalette}
+          onPointerUp={stopDragging}
+          onPointerCancel={stopDragging}
+        >
+          <GripHorizontal size={14} className="shrink-0 opacity-40" aria-hidden />
+          <span className="text-[11px] font-semibold shrink-0" style={{ color: panelTheme.textMuted }}>
             {hasSelection
               ? `✦ Rewrite · ${selWordCount} word${selWordCount !== 1 ? "s" : ""}`
               : "✦ Write"}
           </span>
           {/* Selection preview */}
           {hasSelection && (
-            <span className="hidden md:inline text-[11px] text-neutral-300 italic truncate">
+            <span className="hidden md:inline text-[11px] italic truncate opacity-50">
               &ldquo;{context.selectedText.trim().slice(0, 80)}{context.selectedText.length > 80 ? "…" : ""}&rdquo;
             </span>
           )}
           {/* Cursor position preview — the key UX fix */}
           {!hasSelection && cursorPreview && (
-            <span className="hidden md:inline text-[11px] text-neutral-300 italic truncate">
+            <span className="hidden md:inline text-[11px] italic truncate opacity-50">
               &ldquo;{cursorPreview}&rdquo; &#x2502;
             </span>
           )}
           {!hasSelection && !cursorPreview && (
-            <span className="hidden md:inline text-[11px] text-neutral-300">
+            <span className="hidden md:inline text-[11px] opacity-50">
               start of document
             </span>
           )}
           {/* Mobile: close */}
           <button
             onClick={onCancel}
-            className="md:hidden ml-auto flex-shrink-0 p-0.5 text-neutral-400 hover:text-neutral-700 transition-colors"
+            className="ml-auto flex-shrink-0 p-0.5 opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
             aria-label="Cancel"
           >
             <X size={14} />
@@ -1880,7 +1913,7 @@ function InlineCommandBar({
 
         {/* Input row */}
         <div className="flex items-center gap-2.5 px-3.5 py-3">
-          <Wand2 size={14} className="text-neutral-400 flex-shrink-0" />
+          <Wand2 size={14} className="flex-shrink-0 opacity-55" />
           <input
             ref={inputRef}
             value={input}
@@ -1891,26 +1924,74 @@ function InlineCommandBar({
                 ? "How should I change this? e.g. make it more tense, simplify the wording…"
                 : "What should I write? e.g. a confrontation where Maya reveals the truth…"
             }
-            className="flex-1 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-transparent"
+            className="flex-1 text-sm focus:outline-none bg-transparent"
+            style={{ color: panelTheme.text, caretColor: panelTheme.text }}
           />
-          {/* Desktop: keyboard hints */}
-          <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
-            <kbd className="text-[10px] font-mono bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">
-              ↵ write
-            </kbd>
-            <kbd className="text-[10px] font-mono bg-neutral-100 text-neutral-400 px-1.5 py-0.5 rounded">
-              Esc
-            </kbd>
-          </div>
-          {/* Mobile: submit button */}
           <button
             onClick={() => { const v = input.trim(); if (v) onSubmit(v); }}
             disabled={!input.trim()}
-            className="md:hidden flex-shrink-0 px-3 py-1.5 rounded-lg bg-neutral-900 text-white text-xs font-semibold disabled:opacity-30 transition-opacity"
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-30 transition-opacity hover:opacity-80"
+            style={{ backgroundColor: panelTheme.text, color: panelTheme.bg }}
           >
             Write
           </button>
         </div>
+
+        {!hasSelection && (
+          <div className="flex items-center justify-between gap-3 px-3.5 pb-3">
+            <div ref={lengthMenuRef} className="relative" role="group" aria-label="Generation length">
+              <button
+                type="button"
+                onClick={() => setLengthMenuOpen(open => !open)}
+                aria-haspopup="listbox"
+                aria-expanded={lengthMenuOpen}
+                className="flex min-w-[176px] items-center justify-between gap-3 rounded-lg border px-2.5 py-1.5 text-left transition-opacity hover:opacity-80"
+                style={{ backgroundColor: controlBg, borderColor: panelTheme.border, color: panelTheme.text }}
+              >
+                <span>
+                  <span className="block text-[11px] font-semibold leading-none">{selectedLength.label}</span>
+                  <span className="mt-1 block text-[9px] leading-none" style={{ color: panelTheme.textMuted }}>{selectedLength.range}</span>
+                </span>
+                <ChevronDown size={13} className={`opacity-50 transition-transform ${lengthMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              {lengthMenuOpen && (
+                <div
+                  role="listbox"
+                  aria-label="Choose generation length"
+                  className="absolute bottom-full left-0 z-10 mb-1.5 w-[250px] overflow-hidden rounded-xl border p-1.5 shadow-xl"
+                  style={{ backgroundColor: panelTheme.bg, borderColor: panelTheme.border }}
+                >
+                  {lengthOptions.map(option => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="option"
+                      aria-selected={length === option.value}
+                      onClick={() => {
+                        onLengthChange(option.value);
+                        setLengthMenuOpen(false);
+                      }}
+                      className="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-opacity hover:opacity-75"
+                      style={{ backgroundColor: length === option.value ? selectedBg : "transparent" }}
+                    >
+                      <Check size={13} className={`mt-0.5 shrink-0 ${length === option.value ? "" : "text-transparent"}`} style={length === option.value ? { color: panelTheme.text } : undefined} />
+                      <span className="min-w-0">
+                        <span className="flex items-baseline gap-1.5 text-xs font-semibold" style={{ color: panelTheme.text }}>
+                          {option.label}
+                          <span className="text-[10px] font-normal" style={{ color: panelTheme.textMuted }}>{option.range}</span>
+                        </span>
+                        <span className="mt-0.5 block text-[10px]" style={{ color: panelTheme.textMuted }}>{option.detail}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <span className="hidden md:inline text-[10px]" style={{ color: panelTheme.textMuted }}>
+              Enter to write · Esc to close
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1919,6 +2000,9 @@ function InlineCommandBar({
 // ── Ghost text overlay ────────────────────────────────────────────────────────
 
 function GhostTextOverlay({
+  themeName,
+  onRefine,
+  refineError,
   loading,
   suggestion,
   mode,
@@ -1927,6 +2011,9 @@ function GhostTextOverlay({
   onDismiss,
   onAccept,
 }: {
+  themeName: EditorThemeName;
+  onRefine: (instruction: string) => void;
+  refineError: string | null;
   loading: boolean;
   suggestion: string | null;
   mode: GhostMode;
@@ -1935,6 +2022,14 @@ function GhostTextOverlay({
   onDismiss: () => void;
   onAccept?: () => void;
 }) {
+  const [refining, setRefining] = useState(false);
+  const [refinement, setRefinement] = useState("");
+  const refineInput = useRef<HTMLInputElement>(null);
+  const panelTheme = THEME_MAP[themeName];
+  const elevatedBg = themeName === "dark" ? "#252525" : themeName === "sepia" ? "#F2EAD8" : "#FAFAFA";
+  const controlBg = themeName === "dark" ? "#2C2C2C" : panelTheme.bg;
+  useEffect(() => { if (refining && !loading) refineInput.current?.focus(); }, [refining, loading]);
+  const isError = !!suggestion?.startsWith("[Error:");
   const wordCount = suggestion ? suggestion.trim().split(/\s+/).length : 0;
   const modeLabel =
     mode === "rewrite" ? "rewrites" :
@@ -1942,25 +2037,25 @@ function GhostTextOverlay({
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[min(640px,92%)] z-[100]">
-      <div className="rounded-2xl border border-neutral-200 bg-white shadow-xl overflow-hidden">
+      <div className="rounded-2xl border shadow-xl overflow-hidden" style={{ backgroundColor: panelTheme.bg, borderColor: panelTheme.border, color: panelTheme.text }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 bg-neutral-50">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ backgroundColor: elevatedBg, borderColor: panelTheme.border }}>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-neutral-900 flex items-center justify-center">
-              <span className="text-white text-[8px] font-bold">
+            <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: panelTheme.text }}>
+              <span className="text-[8px] font-bold" style={{ color: panelTheme.bg }}>
                 {coauthorName.charAt(0).toUpperCase()}
               </span>
             </div>
-            <span className="text-xs font-medium text-neutral-600">
+            <span className="text-xs font-medium" style={{ color: panelTheme.text }}>
               {coauthorName} {modeLabel}
               {!loading && suggestion && (
-                <span className="text-neutral-400 font-normal ml-1">· {wordCount} words</span>
+                <span className="font-normal ml-1" style={{ color: panelTheme.textMuted }}>· {wordCount} words</span>
               )}
             </span>
           </div>
           <button
             onClick={onDismiss}
-            className="text-xs text-neutral-400 hover:text-neutral-700 transition-colors"
+            className="text-xs opacity-55 hover:opacity-100 transition-opacity"
           >
             Esc to dismiss
           </button>
@@ -1969,8 +2064,8 @@ function GhostTextOverlay({
         {/* Original text (rewrite mode) */}
         {mode === "rewrite" && originalText && !loading && suggestion && (
           <div className="px-4 pt-3 pb-1">
-            <p className="text-[11px] text-neutral-400 mb-1 font-mono uppercase tracking-wide">Original</p>
-            <p className="text-[14px] leading-relaxed text-neutral-400 line-through decoration-red-300 font-display">
+            <p className="text-[11px] mb-1 font-mono uppercase tracking-wide" style={{ color: panelTheme.textMuted }}>Original</p>
+            <p className="text-[14px] leading-relaxed line-through decoration-red-300 font-display" style={{ color: panelTheme.textMuted }}>
               {originalText.length > 300 ? originalText.slice(0, 300) + "…" : originalText}
             </p>
           </div>
@@ -1979,7 +2074,7 @@ function GhostTextOverlay({
         {/* Generated content */}
         <div className={`px-4 py-3 ${mode === "rewrite" && originalText && !loading && suggestion ? "pt-2" : ""} min-h-[60px] max-h-[280px] overflow-y-auto`}>
           {loading ? (
-            <div className="flex items-center gap-2 text-neutral-400">
+            <div className="flex items-center gap-2" style={{ color: panelTheme.textMuted }}>
               <Loader2 size={14} className="animate-spin" />
               <span className="text-sm italic">
                 {mode === "rewrite" ? "Rewriting…" : mode === "write" ? "Writing…" : "Continuing…"}
@@ -1988,9 +2083,9 @@ function GhostTextOverlay({
           ) : (
             <>
               {mode === "rewrite" && originalText && (
-                <p className="text-[11px] text-neutral-400 mb-1 font-mono uppercase tracking-wide">New</p>
+                <p className="text-[11px] mb-1 font-mono uppercase tracking-wide" style={{ color: panelTheme.textMuted }}>New</p>
               )}
-              <p className="text-[15px] leading-relaxed text-neutral-700 font-display whitespace-pre-wrap">
+              <p className="text-[15px] leading-relaxed font-display whitespace-pre-wrap" style={{ color: panelTheme.text }}>
                 {suggestion}
               </p>
             </>
@@ -1998,32 +2093,60 @@ function GhostTextOverlay({
         </div>
 
         {/* Actions */}
-        {suggestion && !loading && (
-          <div className="border-t border-neutral-100 bg-neutral-50">
+        {suggestion && !loading && !isError && (
+          <div className="border-t" style={{ backgroundColor: elevatedBg, borderColor: panelTheme.border }}>
+            <div className="px-4 py-2.5">
+              <button
+                type="button"
+                onClick={() => setRefining(value => !value)}
+                aria-expanded={refining}
+                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-opacity hover:opacity-75"
+                style={{ backgroundColor: controlBg, borderColor: panelTheme.border, color: panelTheme.text }}
+              >
+                <Wand2 size={13} />
+                Refine
+              </button>
+              {refining && (
+                <form className="mt-2 flex flex-wrap gap-2" onSubmit={(event) => {
+                  event.preventDefault();
+                  if (refinement.trim()) onRefine(refinement.trim());
+                }}>
+                  <input ref={refineInput} aria-label="How should this draft change?" value={refinement} onChange={event => setRefinement(event.target.value)}
+                    placeholder="e.g. No new powers. Have Arthur try to escape."
+                    className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
+                    style={{ backgroundColor: controlBg, borderColor: panelTheme.border, color: panelTheme.text, caretColor: panelTheme.text }}
+                    onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); setRefining(false); } }} />
+                  <button type="submit" disabled={!refinement.trim()} className="rounded-lg px-3 py-2 text-sm disabled:opacity-40 hover:opacity-80" style={{ backgroundColor: panelTheme.text, color: panelTheme.bg }}>Refine draft · 1 credit</button>
+                  <p className="w-full text-xs" style={{ color: panelTheme.textMuted }}>Revises this suggestion before you insert it.</p>
+                </form>
+              )}
+              {refineError && <p role="alert" className="mt-2 text-sm text-red-600">{refineError}</p>}
+            </div>
             {/* Desktop: keyboard hints */}
             <div className="hidden md:flex items-center gap-2 px-4 py-2.5">
-              <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Tab</kbd>
-              <span className="text-xs text-neutral-500">
+              <kbd className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: controlBg, color: panelTheme.text }}>Tab</kbd>
+              <span className="text-xs" style={{ color: panelTheme.textMuted }}>
                 {mode === "rewrite" ? "to replace" : "to insert"}
               </span>
-              <span className="text-neutral-300 mx-1">·</span>
-              <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Esc</kbd>
-              <span className="text-xs text-neutral-500">to dismiss</span>
-              <span className="text-neutral-300 mx-1">·</span>
-              <kbd className="text-xs font-mono bg-neutral-200 text-neutral-600 px-1.5 py-0.5 rounded">Ctrl+K</kbd>
-              <span className="text-xs text-neutral-500">to refine</span>
+              <span className="mx-1 opacity-30">·</span>
+              <kbd className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: controlBg, color: panelTheme.text }}>Esc</kbd>
+              <span className="text-xs" style={{ color: panelTheme.textMuted }}>to dismiss</span>
+              <span className="mx-1 opacity-30">·</span>
+              <button type="button" onClick={onAccept} className="text-xs font-medium hover:opacity-75" style={{ color: panelTheme.text }}>{mode === "rewrite" ? "Replace selection" : "Insert at cursor"}</button>
             </div>
             {/* Mobile: touch buttons */}
             <div className="md:hidden flex gap-2 px-4 py-2.5">
               <button
                 onClick={onAccept}
-                className="flex-1 py-2 rounded-lg bg-neutral-900 text-white text-sm font-semibold active:bg-neutral-700 transition-colors"
+                className="flex-1 py-2 rounded-lg text-sm font-semibold active:opacity-75 transition-opacity"
+                style={{ backgroundColor: panelTheme.text, color: panelTheme.bg }}
               >
                 {mode === "rewrite" ? "Replace" : "Insert"}
               </button>
               <button
                 onClick={onDismiss}
-                className="flex-1 py-2 rounded-lg bg-neutral-100 text-neutral-700 text-sm font-semibold active:bg-neutral-200 transition-colors"
+                className="flex-1 py-2 rounded-lg text-sm font-semibold active:opacity-75 transition-opacity"
+                style={{ backgroundColor: controlBg, color: panelTheme.text }}
               >
                 Dismiss
               </button>

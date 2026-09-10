@@ -20,7 +20,7 @@ const FAQS = [
   },
   {
     q: "How do inline suggestions preserve my voice?",
-    a: "Press Ctrl+K anywhere in the editor. Alex generates suggestions trained on your existing chapters, not generic AI output. The more you've written, the better it understands your rhythm, vocabulary, and style. Every suggestion is optional and editable.",
+    a: "Place the cursor anywhere in the editor and click Write. Alex uses your existing chapters to match the story and your voice. Choose a length, preview the result, then insert, refine, or dismiss it.",
   },
   {
     q: "Can I export my manuscript?",

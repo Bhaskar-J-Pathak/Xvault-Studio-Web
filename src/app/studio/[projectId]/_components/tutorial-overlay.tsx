@@ -6,7 +6,7 @@
  * Steps:
  *  0 → on mount, immediately syncs to step 1 then shows step 1 card
  *  1 — Co-author intro
- *  2 — Ctrl+K / ✦ ghostwriter
+ *  2 — Write action
  *  3 — Global Change
  *  4 — World Board
  *  5 — Story Bible → on Done: done=true, step=9
@@ -43,9 +43,9 @@ const STEPS_DESKTOP: Record<number, StepContent> = {
     body: "Alex has read everything you've written. Ask questions, get feedback, or brainstorm ideas in the chat panel on the right.",
   },
   2: {
-    icon: "⌨️",
-    title: "Press Ctrl+K to generate prose",
-    body: "Click anywhere in the editor and press Ctrl+K. Give Alex an instruction and it writes directly at your cursor. Tab to accept, Esc to dismiss.",
+    icon: "✦",
+    title: "Write at any point in your scene",
+    body: "Place the cursor where the new prose belongs, then click Write in the header. Tell Alex what should happen, choose a length, and preview it before inserting.",
   },
   3: {
     icon: "🔄",
@@ -72,8 +72,8 @@ const STEPS_MOBILE: Record<number, StepContent> = {
   },
   2: {
     icon: "✦",
-    title: "Tap ✦ to generate prose",
-    body: "Tap the ✦ button above the chat bubble, give Alex an instruction, and it writes directly into your story. Tap Insert to accept.",
+    title: "Tap Write to generate prose",
+    body: "Place the cursor where the new prose belongs, tap Write, give Alex an instruction, and choose a length. Tap Insert when the preview is right.",
   },
   3: {
     icon: "🔄",

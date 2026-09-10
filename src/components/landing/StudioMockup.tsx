@@ -11,7 +11,7 @@ const GHOST_TEXT  = "brushing cold stone as the vault door swung open.";
 // Phases:
 // 0 — blank
 // 1 — typing canvas text
-// 2 — Ctrl+K badge
+// 2 — Write badge
 // 3 — Alex remembers panel populates
 // 4 — ghost suggestion + voice match bar
 // 5 — accepted
@@ -62,7 +62,7 @@ export default function StudioMockup() {
       }, 34);
     });
 
-    after(2600, () => setPhase(2)); // Ctrl+K
+    after(2600, () => setPhase(2)); // Write
     after(3300, () => setPhase(3)); // Alex remembers
     after(5200, () => setPhase(4)); // ghost + voice match
     after(7000, () => setPhase(5)); // accepted
@@ -124,7 +124,7 @@ export default function StudioMockup() {
             {phase >= 5 && <span>{GHOST_TEXT}</span>}
           </p>
 
-          {/* Ctrl+K badge */}
+          {/* Write badge */}
           <AnimatePresence>
             {phase === 2 && (
               <motion.div
@@ -135,7 +135,7 @@ export default function StudioMockup() {
                 className="mt-5 flex items-center gap-2"
               >
                 <kbd className="inline-flex items-center rounded border border-stone-200 bg-stone-100 px-2 py-0.5 font-mono text-[0.58rem] font-semibold text-stone-600 shadow-sm">
-                  Ctrl+K
+                  Write
                 </kbd>
                 <span className="text-[0.57rem] text-stone-400">ask Alex to continue</span>
               </motion.div>

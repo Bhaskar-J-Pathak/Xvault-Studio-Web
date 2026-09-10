@@ -13,7 +13,7 @@
 
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/auth";
-import { geminiGenerate } from "@/lib/ai";
+import { geminiGenerate, WORLDBOARD_MODEL } from "@/lib/ai";
 import {
   buildEntitySummary,
   buildExtractionPrompt,
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       "You are a JSON extraction API for fiction manuscript analysis. Output valid JSON only.",
       4096,
       true,
-      "gemini-2.5-pro"
+      WORLDBOARD_MODEL
     );
   } catch (err) {
     return Response.json(

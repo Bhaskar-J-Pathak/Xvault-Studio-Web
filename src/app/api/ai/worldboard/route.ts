@@ -4,12 +4,12 @@
  * Runs a delta extraction pass over new manuscript text.
  * Populates entities, relationships, plot threads, and flags inconsistencies.
  *
- * Cost: 4 credits per extraction pass. Uses Gemini 2.5 Pro for extraction quality.
+ * Cost: 4 credits per extraction pass. Uses the configured World Board model.
  */
 
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
-import { geminiGenerate } from "@/lib/ai";
+import { geminiGenerate, WORLDBOARD_MODEL } from "@/lib/ai";
 import {
   buildEntitySummary,
   buildExtractionPrompt,
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   const summary = buildEntitySummary(existingEntities ?? [], openThreads ?? []);
   const prompt  = buildExtractionPrompt(deltaText, summary);
 
-  // ── Call Gemini 2.5 Pro for extraction ────────────────────────────────────
+  // ── Run structured extraction ─────────────────────────────────────────────
   let rawResponse: string;
   try {
     rawResponse = await geminiGenerate(
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       "You are a JSON extraction API for fiction manuscript analysis. Output valid JSON only.",
       8192,
       true,
-      "gemini-2.5-pro"   // Pro quality — at $22/user subscription, extraction cost is ~$0.90/novel
+      WORLDBOARD_MODEL
     );
   } catch (err) {
     console.error("[worldboard] AI extraction failed:", err);
@@ -116,7 +116,8 @@ export async function POST(request: NextRequest) {
       chapterNumber,
       extracted,
       existingEntities ?? [],
-      supabase
+      supabase,
+      openThreads ?? []
     );
   } catch (err) {
     console.error("[worldboard] Failed to save extraction:", err);

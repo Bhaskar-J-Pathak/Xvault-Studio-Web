@@ -136,7 +136,7 @@ function AlexChatDemo({ live }: { live: boolean }) {
       {/* Status bar */}
       <div className="bg-[#FAFAF8] border-t border-black/[0.06] flex items-center justify-between px-4 py-1.5">
         <span className="text-[0.52rem] text-[#1A1A1A]/30">4,218 words · Ch. 3</span>
-        <span className="text-[0.52rem] text-[#1A1A1A]/25 font-mono">Ctrl+K · Tab · Esc</span>
+        <span className="text-[0.52rem] text-[#1A1A1A]/25 font-mono">Write · Refine · Insert</span>
       </div>
     </div>
   );
@@ -238,7 +238,7 @@ function GhostWritingDemo({ live }: { live: boolean }) {
       {/* Status bar */}
       <div className="bg-[#FAFAF8] border-t border-black/[0.06] flex items-center justify-between px-4 py-1.5">
         <span className="text-[0.52rem] text-[#1A1A1A]/30">2,847 words · Ch. 4</span>
-        <span className="text-[0.52rem] text-[#1A1A1A]/25 font-mono">Ctrl+K write · Tab accept · Esc dismiss</span>
+        <span className="text-[0.52rem] text-[#1A1A1A]/25 font-mono">Write at cursor · Refine · Insert</span>
       </div>
     </div>
   );
@@ -708,7 +708,7 @@ const CHAPTERS: ChapterData[] = [
       { text: "Your voice," },
       { text: "amplified.", gradient: true },
     ],
-    description: "Press Ctrl+K. Describe what should happen next. The AI writes it in your voice, trained on your existing chapters, not a generic model. Tab to accept, Esc to dismiss. No rewriting the suggestion to sound like you. It already does.",
+    description: "Place the cursor and click Write. Describe what should happen next, choose a length, then preview, refine, or insert prose informed by your existing chapters and voice.",
     details: [
       "Voice match score shown before you accept",
       "Trained on your prose, not generic internet text",

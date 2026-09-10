@@ -17,7 +17,8 @@ export async function assembleCoauthorContext(
   coauthorName: string,
   coauthorPersonality: string | null,
   recentText: string,
-  chapterId?: string
+  chapterId?: string,
+  purpose: "conversation" | "prose" = "conversation"
 ): Promise<CoauthorContext> {
   // Fetch everything in parallel, including full chapter content if chapterId provided
   const [
@@ -53,6 +54,7 @@ export async function assembleCoauthorContext(
           .from("chapters")
           .select("content, title, position")
           .eq("id", chapterId)
+          .eq("project_id", projectId)
           .single()
       : Promise.resolve({ data: null }),
   ]);
@@ -136,10 +138,7 @@ export async function assembleCoauthorContext(
     ? coauthorPersonality.trim()
     : "Warm, honest, and sharp. Supportive but real — will tell the writer when something isn't working.";
 
-  const systemPrompt = `Your name is ${coauthorName}.
-Your personality: ${personality}
-
-You are co-authoring "${project?.title ?? "this story"}" with the writer.
+  const storyContext = `You are co-authoring "${project?.title ?? "this story"}" with the writer.
 ${genreNote}
 ${synopsisNote}${intentNote}${styleNote}
 KEY CHARACTERS:
@@ -148,7 +147,43 @@ ${worldBlock ? `\nWORLD ELEMENTS:\n${worldBlock}\n` : ""}
 OPEN PLOT THREADS:
 ${threadBlock}
 
-${contextBlock}
+${contextBlock}`;
+
+  if (purpose === "prose") {
+    let previousText = "";
+    if (chapter) {
+      const { data: previous, error } = await supabase.from("chapters")
+        .select("title, content, position")
+        .eq("project_id", projectId)
+        .lt("position", chapter.position)
+        .order("position", { ascending: false }).limit(2);
+      if (error) throw new Error("Could not load preceding chapters");
+      let budget = 12000;
+      const excerpts: string[] = [];
+      for (const item of previous ?? []) {
+        if (budget <= 0) break;
+        const text = lexicalToText(item.content as Record<string, unknown>).slice(-budget);
+        budget -= text.length;
+        excerpts.unshift(`Chapter ${item.position + 1}: ${item.title}\n${text}`);
+      }
+      previousText = excerpts.join("\n\n");
+    }
+    return {
+      coauthorName,
+      systemPrompt: `${storyContext.replace(contextBlock, "")}
+PRECEDING CHAPTERS (background facts, not the insertion point):
+${previousText || "No preceding chapters available."}
+CURRENT CHAPTER BEFORE THE CURSOR (live editor text takes precedence over saved summaries):
+${recentText.slice(-12000)}
+---
+You write manuscript-ready novel prose. Preserve continuity, established abilities, character knowledge, relationships, POV, tense, and voice. Summaries and profiles may describe later events: never give a character knowledge or abilities before they acquire them in the scene. The cursor is the only insertion point; text after it is a boundary to connect to, not events to repeat.`,
+    };
+  }
+
+  const systemPrompt = `Your name is ${coauthorName}.
+Your personality: ${personality}
+
+${storyContext}
 ---
 CORE RULES — always follow these, delivered in your personality:
 - Speak naturally and casually. No bullet points unless the writer asks for a list.

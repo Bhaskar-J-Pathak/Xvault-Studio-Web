@@ -70,7 +70,7 @@ const PROBLEMS = [
     num: "02",
     problem: "AI suggestions sound nothing like me. My editor could spot them from a mile away.",
     solution: "Suggest a Line",
-    detail: "Press Ctrl+K. The AI is trained on your existing chapters, so every suggestion sounds like you.",
+    detail: "Place the cursor and click Write. The AI uses your existing chapters so suggestions follow your story and voice.",
     badge: "bg-rose-50 text-rose-700 border-rose-200",
     dot: "bg-rose-500",
   },
