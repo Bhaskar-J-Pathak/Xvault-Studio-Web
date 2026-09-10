@@ -37,6 +37,26 @@ function normalizeProse(text: string): string {
     .trim();
 }
 
+// A prose instruction sometimes contains shorthand such as "Arthur: ask where
+// Nyx went". Models can copy that shape even when told to write fiction. Catch
+// speaker labels before the result reaches the manuscript.
+const SCRIPT_DIALOGUE_LINE = /^\s*([A-Z][\p{L}'’-]*(?:\s+[A-Z][\p{L}'’-]*){0,3})\s*:\s*(\S.*)$/gmu;
+
+function hasScriptStyleDialogue(text: string): boolean {
+  SCRIPT_DIALOGUE_LINE.lastIndex = 0;
+  return SCRIPT_DIALOGUE_LINE.test(text);
+}
+
+/** Last-resort conversion if the model also ignores the repair request. */
+function convertScriptDialogueToProse(text: string): string {
+  SCRIPT_DIALOGUE_LINE.lastIndex = 0;
+  return text.replace(SCRIPT_DIALOGUE_LINE, (_line, speaker: string, rawSpeech: string) => {
+    const speech = rawSpeech.trim().replace(/^["“”]+|["“”]+$/g, "").trim();
+    const tag = /\?\s*$/.test(speech) ? "asked" : "said";
+    return `“${speech}” ${speaker} ${tag}.`;
+  });
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -187,6 +207,7 @@ INSTRUCTION: ${instruction.trim()}
 Write ${wordTarget} words of story prose to be inserted at the cursor. The writer's excerpt is binding: match its voice, POV, tense, sentence rhythm, diction, paragraph shape, dialogue punctuation, and degree of detail exactly. Do not make it sound more polished, more dramatic, or more literary than the writer's own text.
 Craft rules: no em-dashes, no AI-cliché phrases (see system rules), no bare emotion labels — ground them in action or sensation, no adverbs on dialogue tags, write specific and concrete not vague. Vary sentence length and structure.
 If the passage includes dialogue: make every line sound spoken not written. Characters deflect, trail off, give non-answers, use fragments and contractions. No one is too eloquent for their situation. Put every spoken line in double quotation marks. Use "said" or "asked" for tags, and action beats over adverbs.
+The instruction may use shorthand such as "Arthur: ask Nyx a question." Treat that only as a description of what should happen. Never copy speaker labels or write "Character: dialogue". Convert every such exchange into normal novel narration, quoted speech, dialogue tags, and action beats.
 Output ONLY the story text — no preamble, no labels, no commentary, no Markdown, and no asterisks for action beats or emphasis. Do not repeat the text before the cursor. Pick up naturally from it.`;
 
   } else {
@@ -247,6 +268,8 @@ ANTI-CLICHÉ RULES (strictly enforced — these are the marks of AI-generated sl
 - Write specific and concrete, never vague: "the smell of diesel and wet asphalt" beats "the smell of the city."
 
 DIALOGUE RULES (enforced whenever dialogue appears):
+- This is a novel, never a screenplay, stage script, roleplay log, or transcript. Never begin a line with a speaker's name and a colon. Wrong: "Arthur: Where are you going?" Correct: "Where are you going?" Arthur asked.
+- User instructions can contain speaker-label shorthand. Interpret the content, but always transform it into normal narrated fiction.
 - Read every line of dialogue aloud in your head. If it sounds like someone writing, rewrite it until it sounds like someone speaking.
 - Real people do not finish their thoughts in neat complete sentences. They trail off with ellipses, get interrupted, change direction mid-sentence.
 - Characters almost never directly answer the question they were asked. They deflect, pivot, answer a different question, or go quiet.
@@ -279,9 +302,45 @@ OUTPUT RULE: Output ONLY the story prose — zero preamble, zero labels, zero me
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
+  if (hasScriptStyleDialogue(suggestion)) {
+    try {
+      suggestion = await geminiGenerate(
+        `Convert the draft below from screenplay or transcript formatting into normal novel prose.
+
+Requirements:
+- Preserve every story event, meaning, character, POV, tense, and the writer's established voice.
+- Put spoken words in double quotation marks.
+- Use natural dialogue tags and action beats.
+- Start a new paragraph whenever the speaker changes.
+- Never output speaker labels such as "Arthur:" or "Nyx:".
+- Do not add, remove, summarize, or explain anything.
+- Output only the repaired manuscript prose.
+
+WRITER'S STYLE SAMPLE:
+---
+${styleSample}
+---
+
+DRAFT TO REPAIR:
+---
+${suggestion}
+---`,
+        suggestionSystem,
+        maxTokens,
+        false,
+        "gemini-2.5-flash"
+      );
+    } catch (err) {
+      console.error("[coauthor/suggest] Script-format repair failed:", err);
+    }
+  }
+
   await commitRateLimit(user.id, createServiceClient(), isLongWrite ? 2 : 1);
 
   suggestion = normalizeProse(suggestion);
+  if (hasScriptStyleDialogue(suggestion)) {
+    suggestion = convertScriptDialogueToProse(suggestion);
+  }
   if (!suggestion) return Response.json({ error: "Empty suggestion" }, { status: 500 });
 
   return Response.json({ ok: true, suggestion, remaining });
