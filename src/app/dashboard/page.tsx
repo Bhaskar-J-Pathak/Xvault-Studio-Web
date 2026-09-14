@@ -7,10 +7,13 @@ import NewProjectCard from "./_components/new-project-card";
 import ProjectCardActions from "./_components/project-card-actions";
 import ReferralLinker from "./_components/referral-linker";
 import UpgradeBanner from "./_components/upgrade-banner";
+import DashboardClient from "./_components/dashboard-client";
+import ContestInvite from "./_components/contest-invite";
 import { getUser, getProfile, createServerSupabaseClient, createServiceClient } from "@/lib/auth";
-import { isInTrial, creditsRemaining, creditsCap, TRIAL_CREDITS } from "@/lib/supabase";
+import { CONTEST_ENDS_AT, isInTrial, isInActiveContest, trialDaysLeft, contestDaysLeft, creditsRemaining, creditsCap, TRIAL_CREDITS } from "@/lib/supabase";
 import { sendWelcomeEmail } from "@/lib/email";
 import type { DbProject } from "@/types/database";
+import { isContestEnabled } from "@/lib/contest";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -78,6 +81,9 @@ export default async function DashboardPage({
   let inTrial    = profile ? isInTrial(profile as Parameters<typeof isInTrial>[0]) : false;
   let credits    = profile ? creditsRemaining(profile as Parameters<typeof creditsRemaining>[0]) : 0;
   const cap      = profile ? creditsCap(profile as Parameters<typeof creditsCap>[0]) : TRIAL_CREDITS;
+  const inContest = profile ? isInActiveContest(profile as Parameters<typeof isInActiveContest>[0]) : false;
+  const contestDays = profile ? contestDaysLeft(profile as Parameters<typeof contestDaysLeft>[0]) : 0;
+  const canEnterContest = isContestEnabled() && profile?.contest_slug !== "xvault-10k-2026" && new Date() <= new Date(CONTEST_ENDS_AT);
 
   // Preview mode — lifetime accounts only, so real users are never affected
   const isLifetime = profile?.is_lifetime === true;
@@ -123,17 +129,21 @@ export default async function DashboardPage({
         </div>
 
         {/* ── Trial / upgrade banner ── */}
-        {profile && inTrial && (
+        {profile && canEnterContest && <ContestInvite />}
+        {profile && inContest && (
+          <UpgradeBanner variant="contest" credits={credits} cap={cap} daysLeft={contestDays} />
+        )}
+        {profile && inTrial && !inContest && (
           <UpgradeBanner
             variant={credits <= 20 ? "trial-urgent" : "trial"}
             credits={credits}
             cap={cap}
-            daysLeft={Math.max(0, Math.ceil((new Date(profile.trial_ends_at!).getTime() - Date.now()) / 86_400_000))}
+            daysLeft={trialDaysLeft(profile)}
           />
         )}
 
         {/* ── Post-trial free user banner ── */}
-        {profile && !inTrial && (profile.plan === "free" || (isLifetime && preview === "expired")) && (
+        {profile && !inTrial && !inContest && (profile.plan === "free" || (isLifetime && preview === "expired")) && (
           <UpgradeBanner variant="expired" />
         )}
 
@@ -158,15 +168,20 @@ export default async function DashboardPage({
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-32 text-center">
+    <div className="flex flex-col items-center justify-center py-20 sm:py-28 text-center">
       <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/[0.06] ring-1 ring-black/[0.06] dark:ring-white/[0.10] shadow-sm flex items-center justify-center mb-5">
         <BookOpen size={18} className="text-[#A1A1AA] dark:text-white/40" />
       </div>
-      <h2 className="text-[16px] font-semibold text-[#0F0F0F] dark:text-white/85 tracking-tight mb-2">
-        Your first story starts here
+      <h2 className="text-[20px] font-semibold text-[#0F0F0F] dark:text-white/90 tracking-tight mb-2">
+        Bring your story into Xvault
       </h2>
-      <p className="text-[13px] text-[#71717A] dark:text-white/50 max-w-[240px] leading-relaxed">
-        Paste a scene you&apos;re stuck on, or start from a blank page.
+      <p className="text-[13px] text-[#71717A] dark:text-white/50 max-w-[420px] leading-relaxed mb-7">
+        Import a manuscript to see its characters, relationships, and story context,
+        or open a clean page for something new.
+      </p>
+      <DashboardClient />
+      <p className="mt-5 text-[11px] text-[#A1A1AA] dark:text-white/30">
+        Import supports .docx and .txt files. Your original file is not changed.
       </p>
     </div>
   );

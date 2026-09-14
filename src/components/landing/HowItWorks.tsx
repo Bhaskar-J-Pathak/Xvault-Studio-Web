@@ -45,7 +45,7 @@ const STEPS = [
     borderColor: "border-amber-200/70",
     label:       "Write",
     title:       "Canvas on the left. Alex on the right.",
-    body:        "The studio is a clean writing canvas with no distractions. Alex lives in a panel alongside it, loaded with your entire manuscript. Place the cursor and click Write for an inline suggestion. No switching tabs, no copy-pasting context. Everything in one place.",
+    body:        "The studio is a clean writing canvas with no distractions. Alex lives in a panel alongside it, loaded with your manuscript context. Place the cursor and click Write to preview, refine, and insert a prose draft. No switching tabs or copy-pasting context.",
     detail:      "Write at the cursor · Alex always in context",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">

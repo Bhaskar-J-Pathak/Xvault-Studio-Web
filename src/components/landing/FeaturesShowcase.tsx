@@ -12,6 +12,19 @@ const violetGrad: React.CSSProperties = {
   backgroundClip: "text",
 };
 
+function MiniStudioSidebar({ active = "Chapter 4" }: { active?: string }) {
+  const tools = ["World Board", "Story Bible", "Story Pulse"];
+  return (
+    <aside className="w-[105px] shrink-0 border-r border-black/[0.07] bg-[#f7f6f4] p-2.5 text-[#1a1a1a]">
+      <p className="truncate font-serif text-[0.58rem] font-semibold">The Glass Meridian</p>
+      <p className="mb-2 mt-3 text-[0.4rem] font-semibold uppercase tracking-[.14em] text-black/35">Story tools</p>
+      {tools.map(tool => <div key={tool} className={`mb-0.5 rounded-md px-2 py-1.5 text-[0.48rem] ${active === tool ? "bg-[#1a1a1a] text-white" : "text-black/55"}`}>{tool}</div>)}
+      <p className="mb-1 mt-3 text-[0.4rem] font-semibold uppercase tracking-[.14em] text-black/35">Chapters</p>
+      <div className={`rounded-md px-2 py-1.5 text-[0.48rem] ${active.startsWith("Chapter") ? "bg-[#1a1a1a] text-white" : "text-black/55"}`}>Chapter 4</div>
+    </aside>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Demo 01 — Alex Chat
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,17 +41,9 @@ function AlexChatDemo({ live }: { live: boolean }) {
 
   return (
     <div className="rounded-xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.14)] border border-black/[0.07]">
-      {/* Title bar */}
       <div className="bg-white border-b border-black/[0.06] flex items-center justify-between px-3.5 py-2.5">
-        <div className="flex gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-        </div>
-        <span className="text-[0.58rem] font-medium text-[#1A1A1A]/30">The Glass Meridian, Ch. 3</span>
-        <div className="h-5 w-5 rounded-lg bg-amber-100 flex items-center justify-center">
-          <span className="text-[0.55rem] text-amber-600">✦</span>
-        </div>
+        <div><span className="text-[0.58rem] font-semibold text-[#1A1A1A]">Chapter 3</span><span className="ml-2 text-[0.48rem] text-black/35">4,218 words</span></div>
+        <div className="flex items-center gap-2 text-[0.48rem] text-black/55"><span>Write</span><span>Edit</span><span>Share</span><span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-white">A</span></div>
       </div>
 
       {/* Split view: editor (left) + co-author panel (right) */}
@@ -147,98 +152,34 @@ function AlexChatDemo({ live }: { live: boolean }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function GhostWritingDemo({ live }: { live: boolean }) {
-  const TYPED = "The fog came in low, swallowing the harbor whole. Mara stood at the railing, watching the lights ";
-  const GHOST = "of the other ship blink once, twice, then disappear entirely.";
-  const [chars, setChars] = useState(0);
+  const GHOST = "The other ship's lights blinked once through the fog, then vanished. Mara tightened her grip on the wet rail.";
   const [showGhost, setShowGhost] = useState(false);
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
-    if (!live) { setChars(0); setShowGhost(false); setAccepted(false); return; }
-    let i = 0;
-    const iv = setInterval(() => {
-      i++;
-      setChars(i);
-      if (i >= TYPED.length) {
-        clearInterval(iv);
-        setTimeout(() => setShowGhost(true), 600);
-        setTimeout(() => setAccepted(true), 2500);
-      }
-    }, 26);
-    return () => clearInterval(iv);
+    if (!live) { setShowGhost(false); setAccepted(false); return; }
+    const first = setTimeout(() => setShowGhost(true), 450);
+    const second = setTimeout(() => setAccepted(true), 2800);
+    return () => { clearTimeout(first); clearTimeout(second); };
   }, [live]);
 
   return (
-    <div className="rounded-xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.14)] border border-black/[0.07]">
-      {/* Title bar */}
-      <div className="bg-white border-b border-black/[0.06] flex items-center justify-between px-3.5 py-2.5">
-        <div className="flex gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
+    <div className="overflow-hidden rounded-xl border border-black/[0.07] bg-white shadow-[0_24px_64px_rgba(0,0,0,0.14)]">
+      <div className="flex h-[310px]">
+        <MiniStudioSidebar />
+        <div className="relative flex min-w-0 flex-1 flex-col">
+          <div className="flex h-10 items-center justify-between border-b border-black/[0.07] px-4 text-[#1a1a1a]"><div><p className="font-serif text-[0.58rem] font-semibold">Chapter 4</p><p className="text-[0.42rem] opacity-45">2,847 words</p></div><span className="rounded-lg border border-black/10 px-3 py-1 text-[0.48rem] font-medium">Write</span></div>
+          <div className="flex-1 px-7 py-5 font-serif text-[0.72rem] leading-[1.9] text-[#1a1a1a]/85">
+            <p>The fog came in low, swallowing the harbour whole. Mara stood at the railing, watching the dark water below.</p>
+            {accepted && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">{GHOST}</motion.p>}
+          </div>
+          <AnimatePresence>{showGhost && !accepted && <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-x-3 bottom-3 overflow-hidden rounded-xl border border-black/10 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-black/[0.07] bg-[#fafafa] px-3 py-2 text-[0.48rem] text-[#1a1a1a]"><span className="font-semibold">Alex writes · 20 words</span><span className="opacity-50">Esc to dismiss</span></div>
+            <p className="px-3 py-2.5 font-serif text-[0.62rem] leading-relaxed text-[#1a1a1a]">{GHOST}</p>
+            <div className="flex items-center gap-2 border-t border-black/[0.07] bg-[#fafafa] px-3 py-2"><button className="rounded-md border border-black/10 px-2 py-1 text-[0.46rem] font-semibold text-[#1a1a1a]">Refine</button><span className="ml-auto text-[0.43rem] text-black/45">Tab to insert</span><button className="text-[0.46rem] font-semibold text-[#1a1a1a]">Insert at cursor</button></div>
+          </motion.div>}</AnimatePresence>
+          <div className="flex justify-between border-t border-black/[0.07] px-4 py-1.5 text-[0.42rem] text-black/40"><span>2,847 words</span><span>483 credits</span></div>
         </div>
-        <span className="text-[0.58rem] font-medium text-[#1A1A1A]/30">Chapter 4 · The Fog</span>
-        <div className="h-5 w-5 rounded-lg bg-amber-100 flex items-center justify-center">
-          <span className="text-[0.55rem] text-amber-600">✦</span>
-        </div>
-      </div>
-
-      {/* Editor canvas */}
-      <div className="bg-white px-10 py-7">
-        <p className="font-serif text-[0.84rem] leading-[2.1] text-[#1A1A1A] min-h-[5rem]">
-          {TYPED.slice(0, chars)}
-          {chars < TYPED.length && (
-            <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 0.85, repeat: Infinity }}
-              className="inline-block h-[14px] w-[2px] translate-y-[2px] rounded-sm bg-violet-600"
-            />
-          )}
-          {showGhost && !accepted && (
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.65 }}
-              className="text-violet-400/55"
-            >
-              {GHOST}
-            </motion.span>
-          )}
-          {accepted && <span>{GHOST}</span>}
-        </p>
-
-        <AnimatePresence>
-          {showGhost && !accepted && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              transition={{ delay: 0.25, duration: 0.35 }}
-              className="mt-4 flex flex-wrap items-center gap-3"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-[0.6rem] text-neutral-400">Voice match</span>
-                <div className="h-1 w-16 overflow-hidden rounded-full bg-neutral-100">
-                  <motion.div initial={{ width: 0 }} animate={{ width: "93%" }}
-                    transition={{ delay: 0.5, duration: 0.7, ease: "easeOut" }}
-                    className="h-full rounded-full bg-violet-500"
-                  />
-                </div>
-                <span className="text-[0.6rem] font-semibold text-violet-600">93%</span>
-              </div>
-              <kbd className="inline-flex items-center rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 font-mono text-[0.6rem] font-semibold text-neutral-500">
-                Tab to accept
-              </kbd>
-            </motion.div>
-          )}
-          {accepted && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35 }}
-              className="mt-4 flex items-center gap-1.5"
-            >
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span className="text-[0.6rem] text-neutral-400">Accepted · written in your voice</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Status bar */}
-      <div className="bg-[#FAFAF8] border-t border-black/[0.06] flex items-center justify-between px-4 py-1.5">
-        <span className="text-[0.52rem] text-[#1A1A1A]/30">2,847 words · Ch. 4</span>
-        <span className="text-[0.52rem] text-[#1A1A1A]/25 font-mono">Write at cursor · Refine · Insert</span>
       </div>
     </div>
   );
@@ -251,14 +192,9 @@ function GhostWritingDemo({ live }: { live: boolean }) {
 function WorldBoardDemo({ live }: { live: boolean }) {
   return (
     <div className="rounded-xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.14)] border border-black/[0.07]">
-      {/* Title bar */}
-      <div className="bg-[#F7F6F4] border-b border-black/[0.06] flex items-center gap-2 px-3.5 py-2.5">
-        <div className="flex gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-        </div>
-        <span className="text-[0.58rem] text-black/25 mx-auto">World Board: The Glass Meridian</span>
+      <div className="bg-white border-b border-black/[0.06] flex items-center justify-between px-3.5 py-2.5">
+        <div><span className="text-[0.58rem] font-semibold text-[#1A1A1A]">The Glass Meridian</span><span className="ml-2 text-[0.46rem] text-black/35">World Board</span></div>
+        <span className="text-[0.46rem] text-black/35">3 entities · 3 relationships</span>
       </div>
 
       {/* Content: mini sidebar + world board */}
@@ -371,14 +307,9 @@ const THREADS = [
 function StoryBibleDemo({ live }: { live: boolean }) {
   return (
     <div className="rounded-xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.14)] border border-black/[0.07]">
-      {/* Title bar */}
-      <div className="bg-[#F7F6F4] border-b border-black/[0.06] flex items-center gap-2 px-3.5 py-2.5">
-        <div className="flex gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-        </div>
-        <span className="text-[0.58rem] text-black/25 mx-auto">Story Bible: The Glass Meridian</span>
+      <div className="bg-white border-b border-black/[0.06] flex items-center justify-between px-3.5 py-2.5">
+        <div><span className="text-[0.58rem] font-semibold text-[#1A1A1A]">The Glass Meridian</span><span className="ml-2 text-[0.46rem] text-black/35">Story Bible</span></div>
+        <span className="text-[0.46rem] text-black/35">Saved automatically</span>
       </div>
 
       {/* Content: mini sidebar + story bible */}
@@ -473,17 +404,9 @@ function GlobalReplaceDemo({ live }: { live: boolean }) {
 
   return (
     <div className="rounded-xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.14)] border border-black/[0.07]">
-      {/* Title bar */}
       <div className="bg-white border-b border-black/[0.06] flex items-center justify-between px-3.5 py-2.5">
-        <div className="flex gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-        </div>
-        <span className="text-[0.58rem] font-medium text-[#1A1A1A]/30">Global Replace: All Chapters</span>
-        <div className="h-5 w-5 rounded-lg bg-amber-100 flex items-center justify-center">
-          <span className="text-[0.55rem] text-amber-600">✦</span>
-        </div>
+        <div><span className="text-[0.58rem] font-semibold text-[#1A1A1A]">Global Replace</span><span className="ml-2 text-[0.46rem] text-black/35">All chapters</span></div>
+        <span className="text-[0.46rem] text-black/35">Preview before applying</span>
       </div>
 
       {/* Replace panel */}
@@ -548,127 +471,31 @@ function GlobalReplaceDemo({ live }: { live: boolean }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Demo 06 — Custom Alex
+// Chapter data
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ALEX_PRESETS = [
-  { name: "The Honest Friend", desc: "Warm and real. Will tell you when something isn't working, but always kindly. Asks good questions." },
-  { name: "The Editor",        desc: "Sharp and structural. Thinks in story arcs, chapter beats, and character motivation. Direct." },
-  { name: "The Hype Person",   desc: "Enthusiastic and encouraging. Celebrates every win. Always in your corner." },
-  { name: "The Contrarian",    desc: "Pushes back on everything. Plays devil's advocate. Asks the hard questions you're avoiding." },
-];
-
-function CustomAlexDemo({ live }: { live: boolean }) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    if (!live) { setSelected(null); setSaved(false); return; }
-    const t1 = setTimeout(() => setSelected(1), 900);
-    const t2 = setTimeout(() => setSaved(true), 2400);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [live]);
-
+function StoryPulseDemo({ live }: { live: boolean }) {
   return (
-    <div className="rounded-xl overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.14)] border border-black/[0.07]">
-      {/* Title bar */}
-      <div className="bg-[#FAFAF8] border-b border-black/[0.06] flex items-center gap-2 px-3.5 py-2.5">
-        <div className="flex gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-        </div>
-        <span className="text-[0.58rem] text-black/25 mx-auto">Configure Alex: The Glass Meridian</span>
-      </div>
-
-      {/* Config panel */}
-      <div className="bg-white px-5 pt-5 pb-5">
-
-        {/* Heading */}
-        <div className="mb-4">
-          <p className="text-[0.72rem] font-semibold text-[#1A1A1A]">Your story studio</p>
-          <p className="text-[0.58rem] text-neutral-400 mt-0.5">Give them a name and a personality. One setup per story.</p>
-        </div>
-
-        {/* Name */}
-        <div className="mb-4">
-          <label className="block text-[0.5rem] font-semibold uppercase tracking-widest text-neutral-400 mb-1.5">Name</label>
-          <div className="rounded-lg border border-neutral-200 px-3 py-2 text-[0.7rem] text-neutral-900 font-medium">Alex</div>
-        </div>
-
-        {/* Personality presets */}
-        <div className="mb-3">
-          <label className="block text-[0.5rem] font-semibold uppercase tracking-widest text-neutral-400 mb-2">
-            Personality: pick a starting point
-          </label>
-          <div className="grid grid-cols-2 gap-1.5">
-            {ALEX_PRESETS.map((preset, i) => (
-              <motion.button
-                key={preset.name}
-                animate={selected === i
-                  ? { backgroundColor: "#171717", color: "#ffffff", borderColor: "#171717" }
-                  : { backgroundColor: "#ffffff", color: "#525252", borderColor: "#e5e5e5" }
-                }
-                transition={{ duration: 0.22 }}
-                className="rounded-lg border px-2.5 py-2 text-left leading-snug"
-                style={{ fontSize: "0.57rem", fontWeight: 500 }}
-              >
-                {preset.name}
-              </motion.button>
-            ))}
+    <div className="overflow-hidden rounded-xl border border-black/[0.07] bg-white shadow-[0_24px_64px_rgba(0,0,0,0.14)]">
+      <div className="flex h-[310px]">
+        <MiniStudioSidebar active="Story Pulse" />
+        <div className="min-w-0 flex-1 overflow-hidden p-4 text-[#1a1a1a]">
+          <div className="flex items-start justify-between"><div><p className="text-[0.45rem] font-semibold uppercase tracking-[.15em] text-violet-600">♡ Emotional continuity</p><h3 className="mt-1 font-serif text-base">Story Pulse</h3><p className="mt-1 max-w-[230px] text-[0.48rem] leading-relaxed opacity-55">Follow how each character feels, wants, fears and changes.</p></div><button className="rounded-lg bg-[#1a1a1a] px-3 py-1.5 text-[0.45rem] font-medium text-white">Analyze again</button></div>
+          <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50/70 px-3 py-2 text-[0.45rem] text-violet-700">Analyzes 11 saved chapters · costs 11 AI credits</div>
+          <div className="mt-3 grid grid-cols-[82px_1fr] gap-3">
+            <div className="rounded-xl border border-black/[0.07] bg-white p-2"><p className="mb-1 text-[0.4rem] font-semibold uppercase tracking-wider opacity-45">Characters</p><div className="rounded-md bg-violet-100 px-2 py-1.5 text-[0.48rem] font-medium text-violet-800">Nadia Vale</div><div className="px-2 py-1.5 text-[0.48rem] opacity-55">Marcus Hale</div></div>
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={live ? { opacity: 1, y: 0 } : {}} className="rounded-xl border border-black/[0.07] bg-white p-3">
+              <div className="flex justify-between"><div><p className="text-[0.4rem] font-semibold uppercase tracking-wider text-violet-600">Chapter 11 · The crossing</p><p className="mt-1 text-[0.58rem] font-semibold">Sudden certainty</p></div><span className="text-[0.4rem] opacity-45">inferred</span></div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-[0.43rem]"><div className="rounded-md bg-emerald-50 p-2"><b className="text-emerald-700">Wants</b><p className="mt-0.5 opacity-60">To trust Marcus</p></div><div className="rounded-md bg-rose-50 p-2"><b className="text-rose-700">Fears</b><p className="mt-0.5 opacity-60">Being betrayed again</p></div></div>
+              <blockquote className="mt-2 border-l-2 border-violet-300 pl-2 font-serif text-[0.43rem] italic leading-relaxed opacity-65">“She placed the archive key in his palm.”</blockquote>
+              <div className="mt-2 rounded-md bg-amber-50 p-2 text-[0.42rem] leading-relaxed text-amber-800"><b>Possible emotional discontinuity</b><br />The move from hesitation to certainty has no visible turning point.</div>
+            </motion.div>
           </div>
         </div>
-
-        {/* Personality description (populated from preset) */}
-        <div className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50/60 px-3 py-2.5 min-h-[44px] flex items-start">
-          <AnimatePresence mode="wait">
-            {selected !== null ? (
-              <motion.p
-                key={selected}
-                initial={{ opacity: 0, y: 3 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.28 }}
-                className="text-[0.6rem] leading-[1.7] text-neutral-600"
-              >
-                {ALEX_PRESETS[selected].desc}
-              </motion.p>
-            ) : (
-              <motion.p key="placeholder" className="text-[0.6rem] text-neutral-300">
-                Or describe them yourself: how they speak, what they care about, how blunt they are…
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Save button */}
-        <motion.div
-          animate={saved ? { backgroundColor: "#16a34a" } : { backgroundColor: "#171717" }}
-          transition={{ duration: 0.3 }}
-          className="w-full rounded-lg py-2.5 flex items-center justify-center gap-2"
-        >
-          <AnimatePresence mode="wait">
-            {saved ? (
-              <motion.span key="saved" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="text-[0.62rem] font-semibold text-white">
-                ✓ Co-author updated
-              </motion.span>
-            ) : (
-              <motion.span key="unsaved" exit={{ opacity: 0 }}
-                className="text-[0.62rem] font-semibold text-white">
-                Let&apos;s write together
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.div>
       </div>
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Chapter data
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface HeadingLine {
   text: string;
@@ -687,6 +514,21 @@ interface ChapterData {
 const CHAPTERS: ChapterData[] = [
   {
     num: "01",
+    tag: "Story Pulse",
+    lines: [
+      { text: "Track the part" },
+      { text: "readers feel.", gradient: true },
+    ],
+    description: "Plot facts are only half the story. Story Pulse follows each major character's emotional state, desire, fear, and change across chapters, then flags shifts that may not feel earned on the page.",
+    details: [
+      "Chapter-by-chapter emotional arcs, not generic sentiment scores",
+      "Every observation is grounded in evidence from your manuscript",
+      "Catch flattened motivations before a late-stage rewrite",
+    ],
+    Demo: StoryPulseDemo,
+  },
+  {
+    num: "02",
     tag: "Story Studio",
     lines: [
       { text: "Alex knows your story." },
@@ -697,12 +539,12 @@ const CHAPTERS: ChapterData[] = [
     details: [
       "Remembers characters, locations, and factions from your draft",
       "Cites the exact chapter and paragraph it's referencing",
-      "Never hallucinates. Only answers from your manuscript.",
+      "Answers are grounded in your manuscript context",
     ],
     Demo: AlexChatDemo,
   },
   {
-    num: "02",
+    num: "03",
     tag: "AI Writing",
     lines: [
       { text: "Your voice," },
@@ -710,14 +552,14 @@ const CHAPTERS: ChapterData[] = [
     ],
     description: "Place the cursor and click Write. Describe what should happen next, choose a length, then preview, refine, or insert prose informed by your existing chapters and voice.",
     details: [
-      "Voice match score shown before you accept",
-      "Trained on your prose, not generic internet text",
-      "Ghost text appears inline. No modal, no context switch.",
+      "Uses nearby prose and prior chapters to follow your style",
+      "Preview, refine, or dismiss before anything enters the draft",
+      "Starts exactly where your cursor is placed",
     ],
     Demo: GhostWritingDemo,
   },
   {
-    num: "03",
+    num: "04",
     tag: "World Building",
     lines: [
       { text: "Your universe," },
@@ -732,7 +574,7 @@ const CHAPTERS: ChapterData[] = [
     Demo: WorldBoardDemo,
   },
   {
-    num: "04",
+    num: "05",
     tag: "Plot Intelligence",
     lines: [
       { text: "Plot threads," },
@@ -747,7 +589,7 @@ const CHAPTERS: ChapterData[] = [
     Demo: StoryBibleDemo,
   },
   {
-    num: "05",
+    num: "06",
     tag: "Global Editing",
     lines: [
       { text: "Rename a character." },
@@ -762,21 +604,6 @@ const CHAPTERS: ChapterData[] = [
     ],
     Demo: GlobalReplaceDemo,
   },
-  {
-    num: "06",
-    tag: "Personalise",
-    lines: [
-      { text: "Your studio." },
-      { text: "Your rules.", gradient: true },
-    ],
-    description: "Alex ships with a personality that works for most writers. But sometimes you need someone different in your corner. Choose the editor who dissects your structure, the honest friend who tells you the truth, or the contrarian who questions every choice. Name them anything. Tune them to how you write best.",
-    details: [
-      "4 built-in personas, each with a distinct approach to feedback",
-      "Or write your own: describe exactly how blunt, warm, or demanding you want",
-      "Per-story setting: different projects can have a different style",
-    ],
-    Demo: CustomAlexDemo,
-  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -784,7 +611,7 @@ const CHAPTERS: ChapterData[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Slightly deeper lavender per card so stacked cards are distinguishable
-const CARD_BG = ["#EAE6FF", "#E5E0FF", "#E0DAFF", "#DDD6FE", "#D9D3FD", "#D5CEFC"] as const;
+const CARD_BG = ["#EEEAFE", "#EAE6FF", "#E5E0FF", "#E0DAFF", "#DDD6FE", "#D9D3FD"] as const;
 
 function FeatureChapter({
   chapter,

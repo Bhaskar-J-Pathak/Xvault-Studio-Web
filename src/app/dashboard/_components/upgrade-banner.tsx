@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Zap, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-type Variant = "trial" | "trial-urgent" | "expired";
+type Variant = "trial" | "trial-urgent" | "contest" | "expired";
 
 interface Props {
   variant: Variant;
@@ -16,7 +16,8 @@ interface Props {
 export default function UpgradeBanner({ variant, credits, cap, daysLeft }: Props) {
   const isUrgent  = variant === "trial-urgent";
   const isExpired = variant === "expired";
-  const isTrial   = !isExpired;
+  const isContest = variant === "contest";
+  const isTrial   = !isExpired && !isContest;
 
   return (
     <motion.div
@@ -47,7 +48,9 @@ export default function UpgradeBanner({ variant, credits, cap, daysLeft }: Props
 
       {/* Text */}
       <p className="flex-1 min-w-0 text-[12.5px] text-[#71717A] dark:text-white/50 leading-snug">
-        {isTrial ? (
+        {isContest ? (
+          <><span className="font-semibold font-mono text-[13px] text-[#0F0F0F] dark:text-white/85">{credits}</span>{" "}of <span className="font-mono">{cap}</span>{" "}challenge credits remaining<span className="mx-1.5 text-[#D4D4D8] dark:text-white/20">·</span><span className="font-semibold font-mono text-[#0F0F0F] dark:text-white/85">{daysLeft}</span>{" "}days left</>
+        ) : isTrial ? (
           <>
             <span className={`font-semibold font-mono text-[13px] ${
               isUrgent
@@ -80,7 +83,7 @@ export default function UpgradeBanner({ variant, credits, cap, daysLeft }: Props
       </p>
 
       {/* CTA */}
-      <Link
+      {!isContest && <Link
         href="/pricing"
         className={`group shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-semibold text-white
           transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
@@ -95,7 +98,7 @@ export default function UpgradeBanner({ variant, credits, cap, daysLeft }: Props
           size={11}
           className="transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
         />
-      </Link>
+      </Link>}
     </motion.div>
   );
 }

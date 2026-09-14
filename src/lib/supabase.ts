@@ -24,6 +24,34 @@ export interface Profile {
   is_lifetime?: boolean;
   subscription_status?: string | null;
   dodo_subscription_id?: string | null;
+  contest_slug?: string | null;
+  contest_credits_remaining?: number;
+  contest_credits_used?: number;
+  contest_ends_at?: string | null;
+  contest_project_id?: string | null;
+}
+
+export const CONTEST_CREDITS = 500;
+export const CONTEST_STARTS_AT = "2026-09-15T00:00:00.000Z";
+export const CONTEST_ENDS_AT = "2026-09-30T23:59:59.999Z";
+
+export function isContestOpen(now = new Date()): boolean {
+  return now >= new Date(CONTEST_STARTS_AT) && now <= new Date(CONTEST_ENDS_AT);
+}
+
+export function isInActiveContest(profile: Profile): boolean {
+  return Boolean(
+    profile.contest_slug &&
+    profile.contest_ends_at &&
+    new Date() >= new Date(CONTEST_STARTS_AT) &&
+    new Date(profile.contest_ends_at) > new Date()
+  );
+}
+
+export function contestDaysLeft(profile: Profile): number {
+  if (!profile.contest_ends_at) return 0;
+  const ms = new Date(profile.contest_ends_at).getTime() - Date.now();
+  return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 }
 
 /** Monthly credit limits per plan (post-trial). */
@@ -87,7 +115,10 @@ export function getCreditLimit(profile: {
  * - Trial users: (100 + bonus) - ai_requests_total
  * - Everyone else (including Founder's Circle): (plan limit + bonus) - this_month
  */
-export function creditsRemaining(profile: Profile): number {
+export function creditsRemaining(profile: Profile, projectId?: string): number {
+  if (isInActiveContest(profile) && (!projectId || projectId === profile.contest_project_id)) {
+    return Math.max(0, profile.contest_credits_remaining ?? 0);
+  }
   const bonus = profile.bonus_credits ?? 0;
 
   if (isInTrial(profile)) {
@@ -99,7 +130,8 @@ export function creditsRemaining(profile: Profile): number {
 }
 
 /** Total credit cap for display. */
-export function creditsCap(profile: Profile): number {
+export function creditsCap(profile: Profile, projectId?: string): number {
+  if (isInActiveContest(profile) && (!projectId || projectId === profile.contest_project_id)) return CONTEST_CREDITS;
   if (isInTrial(profile)) {
     return TRIAL_CREDITS + (profile.bonus_credits ?? 0);
   }

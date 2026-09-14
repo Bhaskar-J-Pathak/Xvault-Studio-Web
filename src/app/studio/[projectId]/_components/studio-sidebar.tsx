@@ -187,7 +187,9 @@ export default function StudioSidebar({
           Story tools
         </p>
         <Link
+          data-tour="worldboard"
           href={`/studio/${projectId}/worldboard`}
+          onClick={onMobileClose}
           title="Characters, places, relationships, and plot threads"
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/worldboard`
@@ -199,7 +201,9 @@ export default function StudioSidebar({
           World Board
         </Link>
         <Link
+          data-tour="story-bible"
           href={`/studio/${projectId}/bible`}
+          onClick={onMobileClose}
           title="Story intent, character profiles, summaries, and voice"
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/bible`
@@ -211,7 +215,9 @@ export default function StudioSidebar({
           Story Bible
         </Link>
         <Link
+          data-tour="story-pulse"
           href={`/studio/${projectId}/pulse`}
+          onClick={onMobileClose}
           title="Emotional continuity across your chapters"
           className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
             pathname === `/studio/${projectId}/pulse`

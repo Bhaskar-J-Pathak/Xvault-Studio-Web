@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
   if (!usable.length) return Response.json({ error: "Story Pulse needs a saved chapter with at least 100 words." }, { status: 400 });
 
   const service = createServiceClient();
-  const { block, remaining } = await checkRateLimit(user.id, service, usable.length);
+  const { block, remaining } = await checkRateLimit(user.id, service, usable.length, body.projectId);
   if (block) return block;
 
   const history: PulseObservation[] = [];
@@ -141,7 +141,7 @@ Rules:
 
     history.push(...observations);
     saved += rows.length;
-    await commitRateLimit(user.id, service, 1);
+    await commitRateLimit(user.id, service, 1, body.projectId);
   }
 
   return Response.json({ ok: true, chaptersAnalyzed: usable.length, observations: saved, remaining });

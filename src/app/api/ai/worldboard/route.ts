@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   let rateLimitResult: { block: Response | null; remaining: number };
   try {
-    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk);
+    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk, projectId);
   } catch (err) {
     console.error("[worldboard] Rate limit check failed:", err);
     return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Extraction completed but could not be finalized. Please retry." }, { status: 500 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk);
+  await commitRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk, projectId);
   return Response.json({
     ok:                true,
     entitiesProcessed: extracted.entities.length,

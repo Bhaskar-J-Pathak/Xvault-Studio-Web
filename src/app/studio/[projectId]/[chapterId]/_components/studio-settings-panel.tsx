@@ -1,6 +1,7 @@
 "use client";
 
-import { X, Check } from "lucide-react";
+import Link from "next/link";
+import { X, Check, Map, Crown } from "lucide-react";
 
 export interface EditorPrefs {
   font:             "serif" | "sans" | "mono";
@@ -12,7 +13,7 @@ export interface EditorPrefs {
 export const DEFAULT_PREFS: EditorPrefs = {
   font:             "serif",
   lineSpacing:      "relaxed",
-  theme:            "light",
+  theme:            "sepia",
   indentParagraphs: false,
 };
 
@@ -43,9 +44,11 @@ interface Props {
   onClose:  () => void;
   credits:  number;
   isTrial:  boolean;
+  isContest?: boolean;
   cap:      number;
   prefs:    EditorPrefs;
   onChange: (p: EditorPrefs) => void;
+  onRestartTour: () => void;
 }
 
 export default function StudioSettingsPanel({
@@ -53,9 +56,11 @@ export default function StudioSettingsPanel({
   onClose,
   credits,
   isTrial,
+  isContest = false,
   cap,
   prefs,
   onChange,
+  onRestartTour,
 }: Props) {
   if (!open) return null;
 
@@ -92,7 +97,7 @@ export default function StudioSettingsPanel({
           <div className="px-4 py-3 border-b border-black/[0.06]">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-semibold text-[#A1A1AA] uppercase tracking-widest">
-                {isTrial ? "Trial credits" : "AI Credits"}
+                {isContest ? "Challenge credits" : isTrial ? "Trial credits" : "AI Credits"}
               </span>
               <span className="text-[11px] font-semibold text-[#1A1A1A] tabular-nums">
                 {credits}<span className="text-[#C4C4C7] font-normal"> / {cap}</span>
@@ -199,7 +204,7 @@ export default function StudioSettingsPanel({
           </div>
 
           {/* Indent paragraphs */}
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 border-b border-black/[0.06]">
             <button
               onClick={() => onChange({ ...prefs, indentParagraphs: !prefs.indentParagraphs })}
               className="w-full flex items-center justify-between"
@@ -220,6 +225,33 @@ export default function StudioSettingsPanel({
                 />
               </div>
             </button>
+          </div>
+
+          <div className="border-b border-black/[0.06] px-4 py-3">
+            <button
+              onClick={() => { onClose(); onRestartTour(); }}
+              className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left transition-colors hover:bg-black/[0.04]"
+            >
+              <Map size={14} className="shrink-0 text-[#71717A]" />
+              <div>
+                <p className="text-[11px] font-medium text-[#1A1A1A]">Replay feature tour</p>
+                <p className="mt-0.5 text-[10px] text-[#A1A1AA]">See where each writing tool lives</p>
+              </div>
+            </button>
+          </div>
+
+          <div className="px-4 py-3">
+            <Link
+              href="/pricing"
+              onClick={onClose}
+              className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left transition-colors hover:bg-black/[0.04]"
+            >
+              <Crown size={14} className="shrink-0 text-violet-500" />
+              <div>
+                <p className="text-[11px] font-medium text-[#1A1A1A]">Plans &amp; billing</p>
+                <p className="mt-0.5 text-[10px] text-[#A1A1AA]">Compare Hobbyist and lifetime access</p>
+              </div>
+            </Link>
           </div>
 
         </div>

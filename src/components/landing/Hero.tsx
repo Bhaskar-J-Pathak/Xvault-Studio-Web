@@ -8,10 +8,10 @@ import { MagneticButton } from "./MagneticButton";
 import { gsap, useGSAP } from "@/lib/gsap";
 
 const features = [
-  "Story Memory",
+  "Story Pulse",
   "Automatic Worldbuilder",
-  "Global Editor",
-  "Voice Matching",
+  "Manuscript Memory",
+  "Voice-Aware Writing",
 ];
 
 export default function Hero() {
@@ -166,8 +166,8 @@ export default function Hero() {
 
           {/* Subtext */}
           <p className="hero-sub max-w-[44ch] text-[1.0625rem] leading-[1.85] text-violet-900/50">
-            Continuity, what-ifs, and stuck scenes. Without handing the book
-            to a chatbot.
+            The writing studio that remembers the plot and follows the emotional
+            heartbeat of every character across your manuscript.
           </p>
 
           {/* CTA */}

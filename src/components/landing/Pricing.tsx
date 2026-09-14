@@ -66,21 +66,21 @@ const PLANS: Plan[] = [
   {
     id: "founder_circle",
     title: "FOUNDER'S CIRCLE",
-    tagline: "Limited Lifetime Access",
-    desc: "For writers who want to shape Xvault directly while they build their novel.",
+    tagline: "Pay once. Keep the full writing studio.",
+    desc: "For early writers who want more room to write and a real person helping when something does not work.",
     lifetimePrice: 49,
     credits: 500,
-    buttonText: "Become a founding member",
+    buttonText: "Claim lifetime access",
     productId: process.env.NEXT_PUBLIC_DODO_LINK_LIFETIME!,
     badge: "ONLY 30 SEATS",
     isLifetime: true,
     features: [
-      { text: "500 AI credits / month (resets)" },
+      { text: "500 AI credits every month (no rollover)" },
       { text: "Unlimited active manuscripts" },
-      { text: "Direct access to founder (lifetime)" },
-      { text: "Priority feature requests" },
-      { text: "Early access to new tools" },
-      { text: "Personal onboarding call" },
+      { text: "Personal onboarding call with the founder" },
+      { text: "Message the founder directly when blocked" },
+      { text: "All current prose and continuity tools" },
+      { text: "A voice in what Xvault builds next" },
     ],
   },
 ];
@@ -100,18 +100,18 @@ function SeatsBar({ seats }: { seats: SeatInfo }) {
       ? "bg-gradient-to-r from-red-500 to-orange-500"
       : left <= 10
       ? "bg-gradient-to-r from-amber-500 to-yellow-400"
-      : "bg-gradient-to-r from-orange-500 to-amber-400";
+      : "bg-gradient-to-r from-violet-600 to-purple-500";
 
   const textColor =
-    soldOut ? "text-red-600" : left <= 5 ? "text-red-600" : "text-orange-700";
+    soldOut ? "text-red-600" : left <= 5 ? "text-red-600" : "text-violet-700";
 
   if (loading) {
     return (
       <div className="mt-4 mb-2 space-y-2">
-        <div className="h-2 rounded-full bg-orange-100 overflow-hidden">
-          <div className="h-full w-1/3 rounded-full bg-orange-200 animate-pulse" />
+        <div className="h-2 rounded-full bg-violet-100 overflow-hidden">
+          <div className="h-full w-1/3 rounded-full bg-violet-200 animate-pulse" />
         </div>
-        <div className="h-3 w-40 rounded bg-orange-100 animate-pulse" />
+        <div className="h-3 w-40 rounded bg-violet-100 animate-pulse" />
       </div>
     );
   }
@@ -120,8 +120,8 @@ function SeatsBar({ seats }: { seats: SeatInfo }) {
   // Until the first seat is claimed, state the availability rather than inventing urgency.
   if (taken === 0) {
     return (
-      <p className="mt-4 mb-2 text-xs font-medium text-orange-700">
-        30 founding seats are available
+      <p className="mt-4 mb-2 text-xs font-medium text-violet-700">
+        Limited to the first 30 founding writers
       </p>
     );
   }
@@ -129,7 +129,7 @@ function SeatsBar({ seats }: { seats: SeatInfo }) {
   return (
     <div className="mt-4 mb-2 space-y-1.5">
       {/* Bar */}
-      <div className="h-2 rounded-full bg-orange-100 overflow-hidden">
+      <div className="h-2 rounded-full bg-violet-100 overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all duration-700", barColor)}
           style={{ width: `${pct}%` }}
@@ -139,7 +139,7 @@ function SeatsBar({ seats }: { seats: SeatInfo }) {
       <p className={cn("text-xs font-medium", textColor)}>
         {soldOut
           ? "All 30 seats have been claimed"
-          : `${taken}/${TOTAL_SEATS} seats claimed · ${left} remaining`}
+          : `${left} of ${TOTAL_SEATS} founding memberships remain`}
       </p>
     </div>
   );
@@ -190,7 +190,7 @@ function PlanCard({
       ? "bg-gradient-to-r from-red-500 to-orange-500 text-white"
       : left <= 10
       ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-white"
-      : "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
+      : "bg-violet-600 text-white"
     : "bg-violet-100 text-violet-700";
 
   const handleCheckout = async () => {
@@ -299,7 +299,7 @@ function PlanCard({
               soldOut
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : isLifetime
-                ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:brightness-110"
+                ? "bg-violet-600 text-white hover:bg-violet-500"
                 : "border border-violet-300 hover:bg-violet-50 text-violet-700",
               (loading) && "opacity-70 cursor-not-allowed"
             )}
@@ -422,11 +422,12 @@ export default function Pricing() {
     <section className="relative bg-[#F8F5FF] py-20 lg:py-28">
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-5xl font-light tracking-tight text-[#1A0A3C]">
-            Start writing free. Upgrade when you need more.
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-violet-600">Simple, honest pricing</p>
+          <h2 className="mx-auto mt-4 max-w-3xl text-4xl font-light tracking-tight text-[#1A0A3C] sm:text-5xl">
+            Keep the story tools that understand your manuscript.
           </h2>
-          <p className="mt-4 text-lg text-violet-700/70">
-            Get 14 days and 100 AI credits free — no credit card required.
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-violet-700/65 sm:text-lg">
+            Start free, subscribe monthly, or join the first 30 writers who keep Xvault for one payment.
           </p>
           <Link
             href="/auth?mode=signup&next=/start"
@@ -441,12 +442,12 @@ export default function Pricing() {
         </div>
 
         <p className="text-center text-sm text-violet-700/60 -mt-8 mb-14">
-          Paid plans are monthly or one-time; you’ll create a free account before checkout.
+          Founder&apos;s Circle is a one-time $49 payment. It is not a recurring subscription.
         </p>
 
         {/* Cards - 2 columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {PLANS.map((plan) => (
+          {[...PLANS].sort((a, b) => Number(Boolean(b.isLifetime)) - Number(Boolean(a.isLifetime))).map((plan) => (
             <PlanCard
               key={plan.id}
               plan={plan}
@@ -461,9 +462,10 @@ export default function Pricing() {
             {checkoutError}
           </p>
         )}
-        <p className="mx-auto mt-10 max-w-2xl text-center text-sm leading-relaxed text-violet-900/60">
-          Not sure yet? Start free and explore Alex, your Story Bible, and the World Board before choosing a plan.
-        </p>
+        <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-violet-200/70 bg-white/65 px-6 py-5 text-center">
+          <p className="text-sm font-medium text-violet-950/80">Founder access is deliberately personal.</p>
+          <p className="mt-1.5 text-sm leading-6 text-violet-900/55">You get a one-to-one onboarding call, and if Xvault blocks your writing, you can message the founder directly. Not sure yet? Use the free trial first. Your manuscript can be exported at any time.</p>
+        </div>
       </div>
     </section>
   );

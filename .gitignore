@@ -3,6 +3,7 @@ node_modules/
 .pnpm-store/
 docs/
 scripts/evaluate-*.cjs
+tsconfig.tsbuildinfo
 
 # Next.js
 .next/

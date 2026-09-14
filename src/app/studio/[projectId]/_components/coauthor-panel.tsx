@@ -307,7 +307,7 @@ export default function CoauthorPanel({
     return (
       <>
         {/* Desktop: collapsed strip */}
-        <div id={id} className="coauthor-panel hidden md:flex flex-col h-full border-l border-neutral-200 bg-[#FAFAF8] w-[52px] items-center py-4 gap-3">
+        <div id={id} data-tour="coauthor" className="coauthor-panel hidden md:flex flex-col h-full border-l border-neutral-200 bg-[#FAFAF8] w-[52px] items-center py-4 gap-3">
           <button
             onClick={() => onSlimChange(false)}
             className="text-neutral-400 hover:text-neutral-700 transition-colors"
@@ -325,6 +325,7 @@ export default function CoauthorPanel({
         {/* Mobile: floating action button */}
         <button
           id={id}
+          data-tour="coauthor"
           onClick={() => onSlimChange(false)}
           className="md:hidden fixed bottom-16 right-4 z-40 w-12 h-12 rounded-full bg-[#1A1A1A] text-white shadow-lg flex items-center justify-center transition-transform active:scale-95"
           aria-label={`Open ${coauthor.name}`}
@@ -347,7 +348,7 @@ export default function CoauthorPanel({
         onClick={() => onSlimChange(true)}
         aria-hidden="true"
       />
-      <div id={id} className="
+      <div id={id} data-tour="coauthor" className="
         coauthor-panel
         flex flex-col border-l border-neutral-200 bg-[#FAFAF8]
         fixed inset-x-0 bottom-0 z-50 h-[78dvh] rounded-t-2xl shadow-2xl

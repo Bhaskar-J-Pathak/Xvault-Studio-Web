@@ -1,63 +1,69 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Upload } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ArrowRight, FilePlus2, Upload } from "lucide-react";
 import ImportModal from "./import-modal";
+import EditProjectModal from "./edit-project-modal";
+import { usePostHog } from "posthog-js/react";
 
 interface Props {
   isBeta?: boolean;
 }
 
 export default function DashboardClient({ isBeta = false }: Props) {
-  const router = useRouter();
+  const ph = usePostHog();
   const [importOpen, setImportOpen] = useState(false);
-  const [creating,   setCreating]   = useState(false);
-
-  async function handleNewProject() {
-    if (creating) return;
-    setCreating(true);
-    try {
-      const res  = await fetch("/api/projects", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ title: "Untitled" }),
-      });
-      const json = await res.json() as { id?: string; error?: string };
-      if (!res.ok || !json.id) throw new Error(json.error ?? "Could not create project.");
-      router.push(`/studio/${json.id}`);
-    } catch {
-      setCreating(false);
-    }
-  }
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   return (
     <>
-      <div className="flex items-center gap-1.5">
+      <div className="grid w-full max-w-[520px] grid-cols-1 sm:grid-cols-2 gap-3">
         <button
-          onClick={isBeta ? undefined : () => setImportOpen(true)}
+          onClick={isBeta ? undefined : () => {
+            ph?.capture("first_session_path_selected", { path: "import_manuscript" });
+            setImportOpen(true);
+          }}
           disabled={isBeta}
           title={isBeta ? "Import is not available during the beta" : undefined}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
+          className={`group flex items-center gap-3 rounded-2xl border px-4 py-4 text-left transition-all ${
             isBeta
               ? "text-[#C4C4C7] dark:text-white/20 cursor-not-allowed"
-              : "text-[#71717A] dark:text-white/40 hover:bg-black/[0.05] dark:hover:bg-white/[0.05] hover:text-[#0F0F0F] dark:hover:text-white/80"
+              : "border-violet-200 bg-violet-50/60 text-[#0F0F0F] hover:border-violet-300 hover:bg-violet-50 dark:border-violet-500/25 dark:bg-violet-500/10 dark:text-white/90"
           }`}
         >
-          <Upload size={13} />
-          Import
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white">
+            <Upload size={16} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] font-semibold">Import manuscript</span>
+            <span className="mt-0.5 block text-[11px] text-[#71717A] dark:text-white/45">See what Xvault finds</span>
+          </span>
+          <ArrowRight size={14} className="text-violet-500 transition-transform group-hover:translate-x-0.5" />
         </button>
         <button
-          onClick={handleNewProject}
-          disabled={creating}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F0F0F] dark:bg-white/[0.08] text-white dark:text-white/80 text-[13px] font-medium hover:bg-[#2A2A2A] dark:hover:bg-white/[0.12] disabled:opacity-40 transition-colors"
+          onClick={() => {
+            ph?.capture("first_session_path_selected", { path: "blank_project" });
+            setNewProjectOpen(true);
+          }}
+          className="group flex items-center gap-3 rounded-2xl border border-black/[0.08] bg-white px-4 py-4 text-left text-[#0F0F0F] shadow-sm transition-all hover:border-black/[0.15] hover:shadow-md disabled:opacity-40 dark:border-white/[0.10] dark:bg-white/[0.05] dark:text-white/90"
         >
-          <Plus size={14} />
-          {creating ? "Creating…" : "New"}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0F0F0F] text-white dark:bg-white/10">
+            <FilePlus2 size={16} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] font-semibold">Start something new</span>
+            <span className="mt-0.5 block text-[11px] text-[#71717A] dark:text-white/45">Name and set up your manuscript</span>
+          </span>
+          <ArrowRight size={14} className="text-[#A1A1AA] transition-transform group-hover:translate-x-0.5" />
         </button>
       </div>
 
       {importOpen && <ImportModal onClose={() => setImportOpen(false)} />}
+      <EditProjectModal
+        project={null}
+        open={newProjectOpen}
+        onClose={() => setNewProjectOpen(false)}
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog";
 import { getAllGuides } from "@/lib/guides";
+import { isContestEnabled } from "@/lib/contest";
 
 const BASE = "https://xvault.dev";
 
@@ -42,6 +43,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    ...(isContestEnabled() ? [{
+      url: `${BASE}/contest`,
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    }] : []),
     {
       url: `${BASE}/blog`,
       changeFrequency: "weekly",

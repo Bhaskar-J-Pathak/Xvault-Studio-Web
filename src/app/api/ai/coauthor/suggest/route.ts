@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
   // Length is an explicit user choice. Every prose generation costs one credit.
-  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 1);
+  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 1, projectId);
   if (block) return block;
 
   const contextText = beforeCursor || recentText;
@@ -386,6 +386,6 @@ ${suggestion}
   }
   if (!suggestion) return Response.json({ error: "Empty suggestion" }, { status: 500 });
 
-  await commitRateLimit(user.id, createServiceClient(), 1);
+  await commitRateLimit(user.id, createServiceClient(), 1, projectId);
   return Response.json({ ok: true, suggestion, remaining, length: proseLength });
 }

@@ -42,18 +42,17 @@ export default function StoryPulseView({
 
   return (
     <main
-      className="h-full overflow-y-auto"
-      style={{ backgroundColor: "#FAFAF8", color: "#1A1A1A" }}
+      className="story-pulse h-full overflow-y-auto"
     >
       <div className="max-w-5xl mx-auto px-6 md:px-10 py-10">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-9">
           <div>
             <div className="flex items-center gap-2 text-violet-600 mb-2"><HeartPulse size={16} /><span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Emotional continuity</span></div>
-            <h1 className="font-serif text-3xl text-[#1A1A1A]">Story Pulse</h1>
-            <p className="mt-2 text-sm text-[#1A1A1A]/65 max-w-xl">Follow how each character feels, wants, fears and changes across the manuscript. Possible jumps are suggestions, never verdicts.</p>
+            <h1 className="pulse-title font-serif text-3xl text-[#1A1A1A]">Story Pulse</h1>
+            <p className="pulse-body mt-2 text-sm text-[#1A1A1A]/65 max-w-xl">Follow how each character feels, wants, fears and changes across the manuscript. Possible jumps are suggestions, never verdicts.</p>
           </div>
           <button onClick={analyze} disabled={analyzing || usableChapters.length === 0 || setupRequired}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1A1A1A] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40">
+            className="pulse-primary inline-flex items-center justify-center gap-2 rounded-xl bg-[#1A1A1A] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40">
             {analyzing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
             {analyzing ? "Reading emotional arcs…" : initialObservations.length ? "Analyze again" : "Analyze manuscript"}
           </button>
@@ -67,27 +66,27 @@ export default function StoryPulseView({
         {error && <p role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
         {!initialObservations.length ? (
-          <section className="rounded-2xl border border-black/[0.07] bg-white px-8 py-16 text-center">
+          <section className="pulse-card rounded-2xl border border-black/[0.07] bg-white px-8 py-16 text-center">
             <HeartPulse size={30} className="mx-auto mb-4 text-violet-300" />
             <h2 className="font-serif text-xl">See the emotional story between the plot points</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-black/45">Run the first analysis to create evidence-linked emotional timelines for the characters in your saved chapters.</p>
+            <p className="pulse-muted mx-auto mt-2 max-w-md text-sm text-black/45">Run the first analysis to create evidence-linked emotional timelines for the characters in your saved chapters.</p>
           </section>
         ) : (
           <div className="grid md:grid-cols-[220px_1fr] gap-6">
-            <aside className="rounded-2xl border border-black/[0.07] bg-white p-3 h-fit">
-              <p className="px-2 py-2 text-[10px] font-semibold uppercase tracking-widest text-black/50">Characters</p>
-              {characters.map((name) => <button key={name} onClick={() => setSelected(name)} className={`w-full rounded-lg px-3 py-2 text-left text-sm ${active === name ? "bg-violet-100 text-violet-800 font-medium" : "text-[#1A1A1A]/70 hover:bg-black/[0.03] hover:text-[#1A1A1A]"}`}>{name}</button>)}
+            <aside className="pulse-card rounded-2xl border border-black/[0.07] bg-white p-3 h-fit">
+              <p className="pulse-muted px-2 py-2 text-[10px] font-semibold uppercase tracking-widest text-black/50">Characters</p>
+              {characters.map((name) => <button key={name} onClick={() => setSelected(name)} className={`pulse-character w-full rounded-lg px-3 py-2 text-left text-sm ${active === name ? "pulse-character-active bg-violet-100 text-violet-800 font-medium" : "text-[#1A1A1A]/70 hover:bg-black/[0.03] hover:text-[#1A1A1A]"}`}>{name}</button>)}
             </aside>
             <section>
-              <h2 className="font-serif text-2xl text-[#1A1A1A] mb-5">{active}&apos;s emotional arc</h2>
+              <h2 className="pulse-title font-serif text-2xl text-[#1A1A1A] mb-5">{active}&apos;s emotional arc</h2>
               <div className="space-y-4">
                 {timeline.map((row) => {
                   const chapter = chapterById.get(row.chapter_id);
-                  return <article key={row.id} className="rounded-2xl border border-black/[0.07] bg-white p-5">
-                    <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-violet-600">Chapter {(chapter?.position ?? 0) + 1} · {chapter?.title}</p><h3 className="mt-1.5 text-base font-semibold text-[#1A1A1A]">{row.emotional_state}</h3></div><span className="rounded-full bg-black/[0.04] px-2 py-1 text-[10px] text-black/55">{row.confidence}</span></div>
-                    {(row.desire || row.fear) && <div className="mt-4 grid sm:grid-cols-2 gap-3 text-xs"><div className="rounded-lg bg-emerald-50 p-3"><span className="font-semibold text-emerald-700">Wants</span><p className="mt-1 text-black/60">{row.desire || "Not clear"}</p></div><div className="rounded-lg bg-rose-50 p-3"><span className="font-semibold text-rose-700">Fears</span><p className="mt-1 text-black/60">{row.fear || "Not clear"}</p></div></div>}
-                    {row.change_summary && <p className="mt-4 text-sm text-black/60"><span className="font-medium text-black/75">What changed:</span> {row.change_summary}</p>}
-                    <blockquote className="mt-4 flex gap-2 border-l-2 border-violet-300 pl-3 text-xs italic leading-relaxed text-black/65"><Quote size={12} className="mt-0.5 shrink-0 text-violet-500" />“{row.evidence_quote}”</blockquote>
+                  return <article key={row.id} className="pulse-card rounded-2xl border border-black/[0.07] bg-white p-5">
+                    <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-widest text-violet-600">Chapter {(chapter?.position ?? 0) + 1} · {chapter?.title}</p><h3 className="pulse-title mt-1.5 text-base font-semibold text-[#1A1A1A]">{row.emotional_state}</h3></div><span className="pulse-chip rounded-full bg-black/[0.04] px-2 py-1 text-[10px] text-black/55">{row.confidence}</span></div>
+                    {(row.desire || row.fear) && <div className="mt-4 grid sm:grid-cols-2 gap-3 text-xs"><div className="pulse-detail-box rounded-lg bg-emerald-50 p-3"><span className="font-semibold text-emerald-700">Wants</span><p className="pulse-detail mt-1 text-black/60">{row.desire || "Not clear"}</p></div><div className="pulse-detail-box rounded-lg bg-rose-50 p-3"><span className="font-semibold text-rose-700">Fears</span><p className="pulse-detail mt-1 text-black/60">{row.fear || "Not clear"}</p></div></div>}
+                    {row.change_summary && <p className="pulse-body mt-4 text-sm text-black/60"><span className="pulse-title font-medium text-black/75">What changed:</span> {row.change_summary}</p>}
+                    <blockquote className="pulse-body mt-4 flex gap-2 border-l-2 border-violet-300 pl-3 text-xs italic leading-relaxed text-black/65"><Quote size={12} className="mt-0.5 shrink-0 text-violet-500" />“{row.evidence_quote}”</blockquote>
                     {row.continuity_note && row.severity !== "none" && <div className={`mt-4 flex gap-2 rounded-xl p-3 text-xs ${row.severity === "warning" ? "bg-amber-50 text-amber-800" : "bg-blue-50 text-blue-800"}`}><TriangleAlert size={14} className="shrink-0" /><div><strong>{row.severity === "warning" ? "Possible emotional discontinuity" : "Worth reviewing"}</strong><p className="mt-1 opacity-80">{row.continuity_note}</p></div></div>}
                   </article>;
                 })}

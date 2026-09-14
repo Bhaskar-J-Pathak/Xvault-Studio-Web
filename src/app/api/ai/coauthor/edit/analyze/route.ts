@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
   if (!chapter) return Response.json({ error: "Chapter not found" }, { status: 404 });
 
   const serviceClient = createServiceClient();
-  const { block, remaining } = await checkRateLimit(user.id, serviceClient, 3);
+  const { block, remaining } = await checkRateLimit(user.id, serviceClient, 3, projectId);
   if (block) return block;
 
   // Extract paragraphs with their indices
@@ -136,7 +136,7 @@ If nothing genuinely needs editing, return { "edits": [], "summary": "Prose is a
     return Response.json({ error: "AI analysis failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, serviceClient, 3);
+  await commitRateLimit(user.id, serviceClient, 3, projectId);
 
   // Strip markdown code fences (```json … ```) that Gemini sometimes adds
   const cleaned = raw

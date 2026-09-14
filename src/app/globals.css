@@ -741,3 +741,116 @@ button, a, input, textarea, select {
   border-top: 1px solid #e7e5e4;
   margin: 2.5em 0;
 }
+/* Non-blocking feature-tour focus. The control remains clickable. */
+.xv-tour-highlight {
+  z-index: 101 !important;
+  outline: 2px solid rgb(139 92 246 / 0.8);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px rgb(139 92 246 / 0.12), 0 8px 28px rgb(76 29 149 / 0.18);
+  animation: xv-tour-pulse 1.8s ease-in-out infinite;
+}
+
+/* Static controls need positioning for z-index. Fixed mobile action buttons
+   must keep their own positioning while highlighted. */
+.xv-tour-highlight:not(.fixed) {
+  position: relative;
+}
+
+/* Tailwind's fixed utility and the tour class can be emitted in either order
+   during development. Keep floating mobile controls anchored to the viewport. */
+.fixed.xv-tour-highlight {
+  position: fixed !important;
+}
+
+@keyframes xv-tour-pulse {
+  0%, 100% { outline-color: rgb(139 92 246 / 0.55); }
+  50% { outline-color: rgb(139 92 246 / 1); }
+}
+
+@keyframes xv-tour-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xv-tour-highlight { animation: none; }
+}
+
+html[data-editor-theme="sepia"] .xv-tour-card {
+  background: #F8F4E8 !important;
+  border-color: rgb(107 62 26 / 0.14) !important;
+}
+
+html[data-editor-theme="sepia"] .xv-tour-title { color: #6B3E1A !important; }
+html[data-editor-theme="sepia"] .xv-tour-body,
+html[data-editor-theme="sepia"] .xv-tour-meta,
+html[data-editor-theme="sepia"] .xv-tour-skip { color: rgb(107 62 26 / 0.58) !important; }
+html[data-editor-theme="sepia"] .xv-tour-next { background: #6B3E1A !important; color: #F8F4E8 !important; }
+
+html[data-editor-theme="dark"] .xv-tour-card {
+  background: #1C1C1C !important;
+  border-color: rgb(255 255 255 / 0.10) !important;
+}
+
+html[data-editor-theme="dark"] .xv-tour-title { color: #E0DDD5 !important; }
+html[data-editor-theme="dark"] .xv-tour-body,
+html[data-editor-theme="dark"] .xv-tour-meta,
+html[data-editor-theme="dark"] .xv-tour-skip { color: rgb(224 221 213 / 0.55) !important; }
+html[data-editor-theme="dark"] .xv-tour-next { background: #7C3AED !important; color: white !important; }
+
+/* Story Pulse shares the editor's persisted visual theme. */
+.story-pulse {
+  background-color: #FAFAF8;
+  color: #1A1A1A;
+}
+
+html[data-editor-theme="sepia"] .story-pulse {
+  background-color: #F8F4E8;
+  color: #6B3E1A;
+}
+html[data-editor-theme="sepia"] .story-pulse .pulse-card {
+  background-color: #FFFBEF !important;
+  border-color: rgba(107,62,26,0.12) !important;
+}
+html[data-editor-theme="sepia"] .story-pulse .pulse-title { color: #6B3E1A !important; }
+html[data-editor-theme="sepia"] .story-pulse .pulse-body,
+html[data-editor-theme="sepia"] .story-pulse .pulse-muted,
+html[data-editor-theme="sepia"] .story-pulse .pulse-detail,
+html[data-editor-theme="sepia"] .story-pulse .pulse-character { color: rgba(107,62,26,0.66) !important; }
+html[data-editor-theme="sepia"] .story-pulse .pulse-chip,
+html[data-editor-theme="sepia"] .story-pulse .pulse-detail-box { background-color: rgba(107,62,26,0.055) !important; }
+html[data-editor-theme="sepia"] .story-pulse .pulse-character:hover { background-color: rgba(107,62,26,0.06) !important; }
+html[data-editor-theme="sepia"] .story-pulse .pulse-character-active,
+html[data-editor-theme="sepia"] .story-pulse .pulse-primary { background-color: #6B3E1A !important; color: #F8F4E8 !important; }
+
+html[data-editor-theme="dark"] .story-pulse {
+  background-color: #111111;
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .story-pulse .pulse-card {
+  background-color: #1C1C1C !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+html[data-editor-theme="dark"] .story-pulse .pulse-title { color: #E0DDD5 !important; }
+html[data-editor-theme="dark"] .story-pulse .pulse-body,
+html[data-editor-theme="dark"] .story-pulse .pulse-muted,
+html[data-editor-theme="dark"] .story-pulse .pulse-detail,
+html[data-editor-theme="dark"] .story-pulse .pulse-character { color: rgba(224,221,213,0.65) !important; }
+html[data-editor-theme="dark"] .story-pulse .pulse-chip,
+html[data-editor-theme="dark"] .story-pulse .pulse-detail-box { background-color: rgba(255,255,255,0.06) !important; color: rgba(224,221,213,0.58) !important; }
+html[data-editor-theme="dark"] .story-pulse .pulse-character:hover { background-color: rgba(255,255,255,0.07) !important; }
+html[data-editor-theme="dark"] .story-pulse .pulse-character-active { background-color: rgba(139,92,246,0.22) !important; color: #DDD6FE !important; }
+html[data-editor-theme="dark"] .story-pulse .pulse-primary { background-color: #E0DDD5 !important; color: #1C1C1C !important; }
+
+html[data-editor-theme="sepia"] .xv-retention-card,
+html[data-editor-theme="sepia"] .xv-retention-trigger { background: #FFFBEF !important; border-color: rgba(107,62,26,.13) !important; color: #6B3E1A !important; }
+html[data-editor-theme="sepia"] .xv-retention-title { color: #6B3E1A !important; }
+html[data-editor-theme="sepia"] .xv-retention-body,
+html[data-editor-theme="sepia"] .xv-retention-muted { color: rgba(107,62,26,.58) !important; }
+html[data-editor-theme="sepia"] .xv-retention-input { background: rgba(107,62,26,.04) !important; border-color: rgba(107,62,26,.13) !important; color: #6B3E1A !important; }
+html[data-editor-theme="dark"] .xv-retention-card,
+html[data-editor-theme="dark"] .xv-retention-trigger { background: #202020 !important; border-color: rgba(255,255,255,.10) !important; color: #E0DDD5 !important; }
+html[data-editor-theme="dark"] .xv-retention-title { color: #E0DDD5 !important; }
+html[data-editor-theme="dark"] .xv-retention-body,
+html[data-editor-theme="dark"] .xv-retention-muted { color: rgba(224,221,213,.58) !important; }
+html[data-editor-theme="dark"] .xv-retention-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.10) !important; color: #E0DDD5 !important; }

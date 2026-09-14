@@ -50,7 +50,7 @@ const faqSchema = {
       name: "How much does Xvault Studio cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Xvault Studio costs $11.99 per month or $119 per year for the Hobbyist plan. There is also a one-time Founder's Circle lifetime access for $49. A free 14-day trial with 100 AI credits is available with no credit card required.",
+        text: "Xvault Studio costs $11.99 per month for the Hobbyist plan. There is also a one-time Founder's Circle lifetime access for $49. A free 14-day trial with 100 AI credits is available with no credit card required.",
       },
     },
     {

@@ -14,7 +14,12 @@ if (typeof window !== "undefined") {
     capture_pageview: false,      // we fire manually so we get the right URL
     capture_pageleave: true,      // track when users close/navigate away
     capture_dead_clicks: false,   // disable — avoids "failed to load script" error
-    session_recording: { maskAllInputs: false }, // enable session recordings
+    // Manuscripts, prompts, and form values must never appear in session replay.
+    session_recording: {
+      maskAllInputs: true,
+      maskTextSelector: "[data-private]",
+    },
+    respect_dnt: true,
     loaded: (ph) => {
       if (process.env.NODE_ENV === "development") ph.debug();
     },

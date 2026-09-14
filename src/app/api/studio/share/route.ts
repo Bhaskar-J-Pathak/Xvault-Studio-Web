@@ -88,7 +88,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Failed to create share" }, { status: 500 });
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://xvault.dev";
+  // Use the request origin when no canonical site URL is configured. This
+  // keeps preview and local links usable instead of silently pointing away.
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL?.trim() || request.nextUrl.origin).replace(/\/$/, "");
   const url = `${baseUrl}/share/${token}`;
 
   return Response.json({ ok: true, token, url });

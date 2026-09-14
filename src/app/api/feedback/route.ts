@@ -33,6 +33,9 @@ export async function POST(request: NextRequest) {
     bugs?:     string;
     wishlist?: string;
     page?:     string;
+    kind?:     "general" | "founder_help" | "expectation";
+    message?:  string;
+    expectation?: string;
   };
   try {
     body = await request.json();
@@ -41,6 +44,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { mood, page } = body;
+  const kind = body.kind ?? "general";
 
   if (!mood || !["good", "meh", "bad"].includes(mood)) {
     return Response.json({ error: "Invalid mood" }, { status: 400 });
@@ -54,12 +58,19 @@ export async function POST(request: NextRequest) {
   const bugs     = truncate(body.bugs);
   const wishlist = truncate(body.wishlist);
 
-  if (!loved || !broke || !bugs || !wishlist) {
-    return Response.json({ error: "All four feedback fields are required" }, { status: 400 });
+  const message = truncate(body.message);
+  const expectation = truncate(body.expectation);
+  const isContextual = kind === "founder_help" || kind === "expectation";
+
+  if (isContextual ? !message : (!loved || !broke || !bugs || !wishlist)) {
+    return Response.json({ error: isContextual ? "Please include a message" : "All four feedback fields are required" }, { status: 400 });
   }
 
   // Serialize structured fields into the text column for storage
   const parts = [
+    isContextual && `[Type]\n${kind}`,
+    expectation && `[Expectation]\n${expectation}`,
+    message && `[Message]\n${message}`,
     loved    && `[What I loved]\n${loved}`,
     broke    && `[What broke]\n${broke}`,
     bugs     && `[Bugs]\n${bugs}`,
@@ -105,7 +116,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Email notification only when there's at least one answered question
-  if (loved || broke || bugs || wishlist) {
+  if (loved || broke || bugs || wishlist || message) {
     let userEmail: string | null = null;
     if (userId) {
       const { data: profile } = await serviceClient
@@ -117,7 +128,10 @@ export async function POST(request: NextRequest) {
     }
 
     sendFeedbackNotification({
+      kind,
       mood,
+      message,
+      expectation,
       loved,
       broke,
       bugs,

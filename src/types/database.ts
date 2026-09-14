@@ -16,6 +16,11 @@ export interface DbProfile {
   onboarding_step: number;
   onboarding_done: boolean;
   updated_at: string;
+  contest_slug?: string | null;
+  contest_credits_remaining?: number;
+  contest_credits_used?: number;
+  contest_ends_at?: string | null;
+  contest_project_id?: string | null;
 }
 
 export interface DbProject {
@@ -180,7 +185,7 @@ export interface SampleThread {
 // Return type from the consume_ai_request RPC
 export type RateLimitResult =
   | { allowed: true; remaining: number }
-  | { allowed: false; reason: "plan_limit" | "trial_limit"; remaining: number };
+  | { allowed: false; reason: "plan_limit" | "trial_limit" | "contest_limit"; remaining: number };
 
 export interface DbFeedback {
   id: string;

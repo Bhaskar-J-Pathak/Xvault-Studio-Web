@@ -160,8 +160,17 @@ const MOOD_LABEL: Record<string, string> = {
   bad:  "😞 Bad",
 };
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function section(label: string, content: string): string {
-  const safe = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const safe = escapeHtml(content);
   return `
     <tr>
       <td style="padding-bottom:20px;">
@@ -172,7 +181,10 @@ function section(label: string, content: string): string {
 }
 
 export async function sendFeedbackNotification({
+  kind,
   mood,
+  message,
+  expectation,
   loved,
   broke,
   bugs,
@@ -180,7 +192,10 @@ export async function sendFeedbackNotification({
   page,
   userEmail,
 }: {
+  kind:        "general" | "founder_help" | "expectation";
   mood:       string;
+  message?:   string;
+  expectation?: string;
   loved?:     string;
   broke?:     string;
   bugs?:      string;
@@ -188,7 +203,19 @@ export async function sendFeedbackNotification({
   page:       string | null;
   userEmail:  string | null;
 }): Promise<void> {
+  const kindLabel = kind === "founder_help"
+    ? "Founder help request"
+    : kind === "expectation"
+      ? "Experience feedback"
+      : "Product feedback";
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://xvault.dev").replace(/\/$/, "");
+  const pageUrl = page?.startsWith("/") ? `${appUrl}${page}` : null;
+  const safeUserEmail = userEmail ? escapeHtml(userEmail) : null;
+  const safePage = page ? escapeHtml(page) : null;
+  const safePageUrl = pageUrl ? escapeHtml(pageUrl) : null;
   const sections = [
+    expectation && section("What they expected", expectation),
+    message && section(kind === "founder_help" ? "What they need help with" : "Their message", message),
     loved    && section("What they loved",              loved),
     broke    && section("What broke / frustrated them", broke),
     bugs     && section("Bugs reported",                bugs),
@@ -198,27 +225,33 @@ export async function sendFeedbackNotification({
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8" /></head>
-<body style="margin:0;padding:0;background:#f6f4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<body style="margin:0;padding:0;background:#f5f3ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 20px;">
     <tr><td align="center">
-      <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;border:1px solid #e8e4df;overflow:hidden;">
-        <tr><td style="height:4px;background:#7c3aed;"></td></tr>
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;border:1px solid #ddd6fe;overflow:hidden;box-shadow:0 16px 40px rgba(76,29,149,.08);">
+        <tr><td style="height:5px;background:#7c3aed;"></td></tr>
         <tr><td style="padding:32px 36px 28px;">
-          <p style="margin:0 0 4px 0;font-size:11px;font-weight:600;color:#7c3aed;letter-spacing:0.07em;text-transform:uppercase;">Beta Feedback</p>
-          <h2 style="margin:0 0 28px 0;font-size:20px;font-weight:700;color:#1a1a1a;letter-spacing:-0.3px;">${MOOD_LABEL[mood] ?? mood}</h2>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:26px;"><tr>
+            <td><p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:.09em;text-transform:uppercase;">${kindLabel}</p><h2 style="margin:0;font-size:22px;font-weight:700;color:#1a1a1a;letter-spacing:-.4px;">${MOOD_LABEL[mood] ?? mood}</h2></td>
+            <td align="right"><span style="display:inline-block;border-radius:999px;background:#f5f3ff;color:#6d28d9;padding:7px 11px;font-size:11px;font-weight:600;">Xvault Studio</span></td>
+          </tr></table>
           <table width="100%" cellpadding="0" cellspacing="0">
             ${sections || `<tr><td style="padding-bottom:20px;font-size:14px;color:#6b7280;">(No details provided)</td></tr>`}
           </table>
           <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e8e4df;padding-top:20px;">
             <tr>
-              <td style="font-size:12px;color:#9ca3af;padding-bottom:6px;">From</td>
-              <td align="right" style="font-size:12px;color:#6b7280;padding-bottom:6px;">${userEmail ?? "anonymous"}</td>
+              <td style="font-size:12px;color:#9ca3af;padding-bottom:8px;">Writer</td>
+              <td align="right" style="font-size:12px;color:#4b5563;padding-bottom:8px;">${safeUserEmail ?? "Anonymous visitor"}</td>
             </tr>
             ${page ? `<tr>
-              <td style="font-size:12px;color:#9ca3af;">Page</td>
-              <td align="right" style="font-size:12px;color:#6b7280;">${page}</td>
+              <td style="font-size:12px;color:#9ca3af;">Screen</td>
+              <td align="right" style="font-size:12px;color:#4b5563;">${safePage}</td>
             </tr>` : ""}
           </table>
+          ${(userEmail || pageUrl) ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;"><tr>
+            ${safeUserEmail ? `<td><a href="mailto:${safeUserEmail}" style="display:inline-block;border-radius:10px;background:#171717;color:#fff;padding:11px 16px;text-decoration:none;font-size:13px;font-weight:600;">Reply to writer</a></td>` : ""}
+            ${safePageUrl ? `<td align="right"><a href="${safePageUrl}" style="color:#6d28d9;text-decoration:none;font-size:13px;font-weight:600;">Open this screen →</a></td>` : ""}
+          </tr></table>` : ""}
         </td></tr>
       </table>
     </td></tr>
@@ -229,7 +262,8 @@ export async function sendFeedbackNotification({
   await resend.emails.send({
     from:    FROM,
     to:      FROM,
-    subject: `[Feedback] ${MOOD_LABEL[mood] ?? mood} — ${userEmail ?? "anon"}`,
+    replyTo: userEmail ?? FROM,
+    subject: `[${kindLabel}] ${MOOD_LABEL[mood] ?? mood} · ${userEmail ?? "anonymous"}`,
     html,
   });
 }

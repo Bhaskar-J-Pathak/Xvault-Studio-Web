@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     .single();
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
-  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 3);
+  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 3, projectId);
   if (block) return block;
 
   // Fetch all chapters with content
@@ -151,7 +151,7 @@ If nothing needs changing, return empty arrays and explain in summary.`;
     return Response.json({ error: "AI analysis failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), 3);
+  await commitRateLimit(user.id, createServiceClient(), 3, projectId);
 
   let plan: {
     subject: string;

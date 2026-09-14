@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -150,6 +151,7 @@ function AutoSavePlugin({
 
 const EXTRACTION_CHUNK_SIZE     = 5000;
 const EXTRACTION_WORD_THRESHOLD = 1500;
+const FIRST_EXTRACTION_WORD_THRESHOLD = 250;
 
 interface ExtractionPluginProps {
   projectId:            string;
@@ -182,7 +184,10 @@ function ExtractionPlugin({
       const wc    = countWords(editorState);
       const delta = wc - lastExtractedRef.current;
 
-      if (delta < EXTRACTION_WORD_THRESHOLD || extractingRef.current) return;
+      const threshold = lastExtractedRef.current === 0
+        ? FIRST_EXTRACTION_WORD_THRESHOLD
+        : EXTRACTION_WORD_THRESHOLD;
+      if (delta < threshold || extractingRef.current) return;
 
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(async () => {
@@ -219,8 +224,9 @@ function ExtractionPlugin({
             });
             if (res.ok) {
               lastExtractedRef.current += deltaWords.slice(i, i + EXTRACTION_CHUNK_SIZE).length;
-              const data = await res.json() as { remaining?: number };
+              const data = await res.json() as { remaining?: number; entitiesProcessed?: number; relationshipsAdded?: number; threadsTracked?: number };
               if (data.remaining !== undefined) onCreditUpdate?.(data.remaining);
+              window.dispatchEvent(new CustomEvent("worldboard-updated", { detail: data }));
             } else {
               const failure = await res.json().catch(() => ({}));
               window.dispatchEvent(new CustomEvent("worldboard-error", { detail: failure.error ?? "World Board extraction failed. Please retry from the World Board." }));
@@ -670,6 +676,7 @@ interface Props {
   initialCredits:       number;
   initialCreditCap:     number;
   isTrial:              boolean;
+  isContest?:           boolean;
   // Tutorial
   onboardingStep?:      number;
   onboardingDone?:      boolean;
@@ -689,6 +696,7 @@ export default function ZenEditor({
   initialCredits,
   initialCreditCap,
   isTrial,
+  isContest = false,
   onboardingStep = 9,
   onboardingDone = true,
 }: Props) {
@@ -696,14 +704,37 @@ export default function ZenEditor({
   const writeTracked = useRef(false);
 
   const [wordCount,        setWordCount]        = useState(initialWordCount);
+  const [firstProseAdded,  setFirstProseAdded]  = useState(initialWordCount > 0);
+  const previousWordCountRef = useRef(initialWordCount);
+
+  // Imports arrive with an initial word count. A large jump in a blank chapter
+  // is treated as a paste, so the feature tour starts after prose exists rather
+  // than interrupting someone who is typing their opening line.
+  useEffect(() => {
+    const previous = previousWordCountRef.current;
+    if (!firstProseAdded && initialWordCount === 0 && wordCount - previous >= 75) {
+      setFirstProseAdded(true);
+      ph?.capture("first_manuscript_text_added", { method: "paste", word_count: wordCount });
+    }
+    previousWordCountRef.current = wordCount;
+  }, [wordCount, firstProseAdded, initialWordCount, ph]);
   const [saveStatus,       setSaveStatus]       = useState<SaveStatus>("idle");
   const [extractionStatus, setExtractionStatus] = useState<"idle" | "extracting">("idle");
   const [extractionError, setExtractionError] = useState<string | null>(null);
+  const [firstInsight, setFirstInsight] = useState<{ entities: number; relationships: number; threads: number } | null>(null);
   useEffect(() => {
     const report = (event: Event) => setExtractionError(String((event as CustomEvent).detail));
+    const celebrate = (event: Event) => {
+      if (sessionStorage.getItem(`xv_first_insight_${projectId}`)) return;
+      const detail = (event as CustomEvent<{ entitiesProcessed?: number; relationshipsAdded?: number; threadsTracked?: number }>).detail;
+      sessionStorage.setItem(`xv_first_insight_${projectId}`, "1");
+      setFirstInsight({ entities: detail.entitiesProcessed ?? 0, relationships: detail.relationshipsAdded ?? 0, threads: detail.threadsTracked ?? 0 });
+      ph?.capture("first_value_moment_reached", { feature: "worldboard", ...detail });
+    };
     window.addEventListener("worldboard-error", report);
-    return () => window.removeEventListener("worldboard-error", report);
-  }, []);
+    window.addEventListener("worldboard-updated", celebrate);
+    return () => { window.removeEventListener("worldboard-error", report); window.removeEventListener("worldboard-updated", celebrate); };
+  }, [ph, projectId]);
 
   // Credits
   const [credits,          setCredits]          = useState(initialCredits);
@@ -724,7 +755,7 @@ export default function ZenEditor({
           { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
           (payload) => {
             const updated = payload.new as Profile;
-            const remaining = creditsRemaining(updated);
+            const remaining = creditsRemaining(updated, projectId);
             setCredits(remaining);
             if (remaining <= 0) setShowUpgradeModal(true);
           }
@@ -736,7 +767,7 @@ export default function ZenEditor({
       cancelled = true;
       if (channel) supabase.removeChannel(channel);
     };
-  }, []);
+  }, [projectId]);
 
   // Co-author
   const [coauthor,           setCoauthor]           = useState<DbCoauthor | null>(initialCoauthor);
@@ -802,16 +833,19 @@ export default function ZenEditor({
   const [shareTitle,       setShareTitle]       = useState("");
   const [shareAuthor,      setShareAuthor]      = useState("");
   const [shareCopied,      setShareCopied]      = useState(false);
+  const [shareError,       setShareError]       = useState("");
 
   function openShareModal() {
     setShareTitle(`Chapter ${chapterNumber} · ${chapterTitle}`);
     setShareUrl(null);
     setShareCopied(false);
+    setShareError("");
     setShowShareModal(true);
   }
 
   async function handleCreateShare() {
     setShareLoading(true);
+    setShareError("");
     try {
       const res = await fetch("/api/studio/share", {
         method:  "POST",
@@ -824,9 +858,12 @@ export default function ZenEditor({
         }),
       });
       const data = await res.json() as { url?: string; error?: string };
-      if (data.url) setShareUrl(data.url);
-    } catch {
-      // silently ignore
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "The share link could not be created.");
+      }
+      setShareUrl(data.url);
+    } catch (error) {
+      setShareError(error instanceof Error ? error.message : "The share link could not be created. Please try again.");
     } finally {
       setShareLoading(false);
     }
@@ -873,6 +910,7 @@ export default function ZenEditor({
   const [editorPrefs, setEditorPrefs] = useState<EditorPrefs>(DEFAULT_PREFS);
   const [settingsOpen,    setSettingsOpen]    = useState(false);
   const [mobileMoreOpen,  setMobileMoreOpen]  = useState(false);
+  const [tourReplayKey,   setTourReplayKey]   = useState(0);
 
   useEffect(() => {
     try {
@@ -893,7 +931,6 @@ export default function ZenEditor({
   // Propagate theme to the entire studio (sidebar, shell, etc.)
   useEffect(() => {
     document.documentElement.setAttribute("data-editor-theme", editorPrefs.theme);
-    return () => document.documentElement.removeAttribute("data-editor-theme");
   }, [editorPrefs.theme]);
 
   // Inject paragraph styles imperatively — bypasses React 19's <style> hoisting
@@ -1152,6 +1189,7 @@ export default function ZenEditor({
 
             {/* Primary creation action — desktop only; mobile uses Write FAB */}
             <button
+              data-tour="write"
               onPointerDown={captureWriteViewportAnchor}
               onClick={() => {
                 if (!coauthor) { setShowCoauthorSetup(true); return; }
@@ -1197,6 +1235,7 @@ export default function ZenEditor({
 
             {/* Co-author toggle — desktop only; mobile uses FAB */}
             <button
+              data-tour="coauthor"
               onClick={openCoauthorPanel}
               title={coauthor ? `${coauthor.name} (co-author)` : "Set up co-author"}
               className={`hidden md:flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[11px] font-medium transition-colors ${
@@ -1211,9 +1250,10 @@ export default function ZenEditor({
 
             {/* Settings — visible on all sizes */}
             <button
+              data-tour="settings"
               onClick={() => setSettingsOpen(s => !s)}
               title="Editor settings"
-              className={`flex w-8 h-8 md:w-6 md:h-6 items-center justify-center rounded-lg transition-colors xv-chrome-btn ${
+              className={`flex h-10 w-10 md:w-6 md:h-6 items-center justify-center rounded-lg transition-colors xv-chrome-btn ${
                 settingsOpen ? "xv-chrome-btn-active" : ""
               }`}
             >
@@ -1224,7 +1264,7 @@ export default function ZenEditor({
             <button
               onClick={() => setMobileMoreOpen(true)}
               title="More options"
-              className="md:hidden flex w-8 h-8 items-center justify-center rounded-lg xv-chrome-btn transition-colors"
+              className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg xv-chrome-btn transition-colors"
             >
               <MoreHorizontal size={16} />
             </button>
@@ -1233,7 +1273,7 @@ export default function ZenEditor({
 
         {/* Lexical editor */}
         <LexicalComposer initialConfig={initialConfig}>
-          <div id="tutorial-editor" className="flex-1 overflow-y-auto relative" onClick={() => !editorFocused && setEditorFocused(true)}>
+          <div id="tutorial-editor" data-tour="selection-tools" data-private className="flex-1 overflow-y-auto relative" onClick={() => !editorFocused && setEditorFocused(true)}>
 
             <div className="relative max-w-[680px] mx-auto px-8 py-14">
               <RichTextPlugin
@@ -1251,10 +1291,11 @@ export default function ZenEditor({
                 }
                 placeholder={
                   <div
-                    className="absolute top-0 left-0 pointer-events-none select-none"
+                    className="pointer-events-none absolute left-8 right-8 top-14 select-none"
                     style={{
                       fontSize:   "17px",
                       lineHeight: LINE_SPACING_MAP[editorPrefs.lineSpacing],
+                      textIndent: editorPrefs.indentParagraphs ? "2em" : "0",
                       color:      THEME_MAP[editorPrefs.theme].placeholder,
                       fontFamily: FONT_MAP[editorPrefs.font],
                     }}
@@ -1423,7 +1464,7 @@ export default function ZenEditor({
                   ? "text-amber-500"
                   : "xv-chrome-label"
               }`}
-              title={isTrial ? `Trial credits: ${credits} of 100 remaining` : `Credits this month: ${credits} remaining`}
+              title={isContest ? `Challenge credits: ${credits} of ${initialCreditCap} remaining` : isTrial ? `Trial credits: ${credits} of 100 remaining` : `Credits this month: ${credits} remaining`}
             >
               <span>✦</span>
               <span>
@@ -1441,6 +1482,14 @@ export default function ZenEditor({
             </span>
           </div>
         </div>
+
+        {firstInsight && <div className="fixed right-4 top-16 z-[175] w-[min(360px,calc(100vw-2rem))] rounded-2xl border p-4 shadow-2xl" style={{ backgroundColor: th.bg, borderColor: th.border, color: th.text }}>
+          <button onClick={() => setFirstInsight(null)} className="absolute right-3 top-3 opacity-45 hover:opacity-80"><X size={14}/></button>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-violet-500">Your story is taking shape</p>
+          <h3 className="mt-1 text-sm font-semibold">Xvault found {firstInsight.entities} story {firstInsight.entities === 1 ? "element" : "elements"}.</h3>
+          <p className="mt-1 text-xs leading-5 opacity-60">It also mapped {firstInsight.relationships} relationships and {firstInsight.threads} plot threads from this chapter.</p>
+          <a href={`/studio/${projectId}/worldboard`} className="mt-3 inline-flex rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white">See what Xvault understood</a>
+        </div>}
 
         {/* Mobile ••• bottom sheet */}
         {mobileMoreOpen && (
@@ -1484,17 +1533,20 @@ export default function ZenEditor({
             <div className="bg-white rounded-2xl shadow-2xl w-[min(400px,92%)] p-8 text-center">
               <div className="text-3xl mb-3">✦</div>
               <h2 className="text-lg font-semibold text-[#1A1A1A] mb-2">
-                You&apos;ve used all your beta credits
+                You&apos;ve used all your AI credits
               </h2>
               <p className="text-sm text-[#1A1A1A]/55 mb-6">
-                Thanks for exploring. You&apos;ve hit the limit for this beta. Paid plans are coming soon. Your work stays saved.
+                Your work is safely saved. Choose a plan to keep using Xvault&apos;s AI writing and story tools.
               </p>
               <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setShowUpgradeModal(false)}
+                <Link
+                  href="/pricing"
                   className="w-full py-2.5 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold hover:bg-[#1A1A1A]/80 transition-colors"
                 >
-                  Got it
+                  View plans
+                </Link>
+                <button onClick={() => setShowUpgradeModal(false)} className="py-2 text-xs text-[#71717A] hover:text-[#1A1A1A]">
+                  Not now
                 </button>
               </div>
             </div>
@@ -1506,7 +1558,8 @@ export default function ZenEditor({
       {(!coauthor || coauthorSlim) && (
         <button
           id="tutorial-write-fab"
-          className={`md:hidden fixed ${coauthor ? "bottom-[7.5rem]" : "bottom-16"} right-4 z-40 h-11 rounded-full px-4 shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform`}
+          data-tour="write"
+          className="fixed bottom-[7.5rem] right-4 z-40 flex h-11 items-center justify-center gap-2 rounded-full px-4 shadow-lg transition-transform active:scale-95 md:hidden"
           style={{ backgroundColor: th.text, color: th.bg }}
           onPointerDown={captureWriteViewportAnchor}
           onClick={() => {
@@ -1517,6 +1570,17 @@ export default function ZenEditor({
         >
           <Wand2 size={16} />
           <span className="text-sm font-semibold">Write</span>
+        </button>
+      )}
+
+      {!coauthor && (
+        <button
+          data-tour="coauthor"
+          onClick={() => setShowCoauthorSetup(true)}
+          className="fixed bottom-16 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#1A1A1A] text-sm font-semibold text-white shadow-lg transition-transform active:scale-95 md:hidden"
+          aria-label="Set up Alex, your co-author"
+        >
+          A
         </button>
       )}
 
@@ -1623,6 +1687,12 @@ export default function ZenEditor({
                     The latest saved version of this chapter will be shared.
                   </p>
 
+                  {shareError && (
+                    <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs leading-5 text-red-700">
+                      {shareError}
+                    </p>
+                  )}
+
                   <button
                     onClick={handleCreateShare}
                     disabled={shareLoading}
@@ -1684,11 +1754,13 @@ export default function ZenEditor({
       )}
 
       {/* ── Tutorial overlay (steps 0-5) ───────────────────────────────────── */}
-      {!onboardingDone && onboardingStep <= 5 && (
+      {((!onboardingDone && onboardingStep <= 7) || tourReplayKey > 0) && (
         <TutorialOverlay
+          key={`tour-${tourReplayKey}`}
           projectId={projectId}
-          initialStep={onboardingStep}
-          initialDone={onboardingDone}
+          initialStep={tourReplayKey > 0 ? 1 : onboardingStep}
+          initialDone={false}
+          autoOpen={tourReplayKey > 0 || firstProseAdded}
         />
       )}
 
@@ -1698,9 +1770,11 @@ export default function ZenEditor({
         onClose={() => setSettingsOpen(false)}
         credits={credits}
         isTrial={isTrial}
+        isContest={isContest}
         cap={initialCreditCap}
         prefs={editorPrefs}
         onChange={handlePrefsChange}
+        onRestartTour={() => setTourReplayKey(key => key + 1)}
       />
 
     </div>

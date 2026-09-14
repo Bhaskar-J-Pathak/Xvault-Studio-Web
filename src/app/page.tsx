@@ -3,7 +3,6 @@ import { LandingShell }   from "@/components/landing/LandingShell";
 import Navbar             from "@/components/landing/Navbar";
 import Hero               from "@/components/landing/Hero";
 import FeaturesShowcase   from "@/components/landing/FeaturesShowcase";
-import CoAuthorSection    from "@/components/landing/CoAuthorSection";
 import WhyXvault          from "@/components/landing/WhyXvault";
 import HowItWorks         from "@/components/landing/HowItWorks";
 import SocialProof        from "@/components/landing/SocialProof";
@@ -15,12 +14,12 @@ import Footer             from "@/components/landing/Footer";
 export const metadata: Metadata = {
   title: "Xvault Studio | AI Writing Studio for Novelists",
   description:
-    "Write your novel with AI that actually knows your story. It reads your entire manuscript so continuity, what-ifs, and stuck scenes stay yours. Free 14-day trial.",
+    "Write your novel with AI that remembers the plot and tracks each character's emotional arc. Story Pulse catches unearned turns before readers feel them. Free 14-day trial.",
   alternates: { canonical: "https://xvault.dev" },
   openGraph: {
     title: "Xvault Studio | AI Writing Studio for Novelists",
     description:
-      "Write your novel with AI that actually knows your story. It reads your entire manuscript so continuity, what-ifs, and stuck scenes stay yours. Free 14-day trial.",
+      "Write your novel with AI that remembers the plot and tracks each character's emotional arc. Story Pulse catches unearned turns before readers feel them. Free 14-day trial.",
     url: "https://xvault.dev",
     type: "website",
   },
@@ -51,7 +50,7 @@ const orgSchema = {
   url: "https://xvault.dev",
   logo: "https://xvault.dev/XVault.svg",
   description:
-    "AI writing studio for fiction novelists. Manuscript-aware story memory, automatic world board, story bible, and voice-matched prose generation.",
+    "AI writing studio for fiction novelists. Story Pulse tracks emotional arcs alongside manuscript-aware story memory, an automatic World Board, and voice-aware prose generation.",
   contactPoint: {
     "@type": "ContactPoint",
     email: "hello@xvaultstudio.com",
@@ -77,13 +76,13 @@ const howToSchema = {
       "@type": "HowToStep",
       position: 2,
       name: "Start your story",
-      text: "Give your project a title and open the studio. Alex reads everything you write from the first sentence. A short tutorial walks you through Alex, inline suggestions, World Board, and Story Bible as you go.",
+      text: "Give your project a title and open the studio. Alex reads everything you write from the first sentence. A short tutorial walks you through Alex, cursor-aware writing, World Board, Story Bible, and Story Pulse as you go.",
     },
     {
       "@type": "HowToStep",
       position: 3,
       name: "Write",
-      text: "Write on the canvas while Alex lives in a panel alongside it, loaded with your entire manuscript. Place the cursor and click Write for an inline prose suggestion. No switching tabs or copy-pasting context.",
+      text: "Write on the canvas while Alex lives in a panel alongside it, loaded with your manuscript context. Place the cursor and click Write to preview, refine, and insert a prose draft without leaving the studio.",
     },
     {
       "@type": "HowToStep",
@@ -180,7 +179,6 @@ export default function HomePage() {
       <main>
         <Hero />
         <FeaturesShowcase />
-        <CoAuthorSection />
         <WhyXvault />
         <HowItWorks />
         <SocialProof />

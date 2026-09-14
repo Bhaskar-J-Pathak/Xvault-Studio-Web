@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 
   let rateLimitResult: { block: Response | null; remaining: number };
   try {
-    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), totalCredits);
+    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), totalCredits, projectId);
   } catch (err) {
     console.error("[reextract] Rate limit check failed:", err);
     return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
       const { error: progressError } = await supabase.from("chapters")
         .update({ last_extracted_word: completedWords }).eq("id", chapter.id);
       if (progressError) return Response.json({ error: "Extracted data was saved, but extraction progress could not be saved." }, { status: 500 });
-      await commitRateLimit(user.id, createServiceClient(), CREDITS_PER_CHUNK);
+      await commitRateLimit(user.id, createServiceClient(), CREDITS_PER_CHUNK, projectId);
       wordOffset = completedWords;
 
     }

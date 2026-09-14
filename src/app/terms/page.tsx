@@ -8,266 +8,144 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://xvault.dev/terms" },
 };
 
-const EFFECTIVE_DATE = "June 15, 2026";
-const CONTACT_EMAIL  = "arthur@xvault.dev";
-const SITE_URL       = "https://xvault.studio";
+const EFFECTIVE_DATE = "September 14, 2026";
+const CONTACT_EMAIL = "arthur@xvault.dev";
+const SITE_URL = "https://xvault.dev";
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-[#f6f4f0]">
-
-      {/* Nav */}
-      <header className="border-b border-black/[0.06] bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="mx-auto max-w-3xl px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#F8F7FC] text-[#191724]">
+      <header className="sticky top-0 z-10 border-b border-violet-950/[0.07] bg-white/90 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <Link href="/" className="inline-flex items-center gap-2">
             <Image src="/XVault.svg" alt="Xvault Studio" width={26} height={26} />
-            <span className="font-semibold text-sm tracking-tight text-[#1a1a1a]">
-              Xvault Studio
-            </span>
+            <span className="text-sm font-semibold tracking-tight">Xvault Studio</span>
           </Link>
-          <Link
-            href="/"
-            className="text-xs text-[#1a1a1a]/50 hover:text-[#1a1a1a] transition-colors"
-          >
-            ← Back to home
-          </Link>
+          <Link href="/" className="text-xs text-violet-950/50 transition-colors hover:text-violet-700">Back to home</Link>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="mx-auto max-w-3xl px-6 py-16">
+      <main className="mx-auto max-w-4xl px-6 py-12 sm:py-16">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-violet-600">Terms</p>
+        <h1 className="max-w-2xl font-[family-name:var(--font-fraunces)] text-4xl font-medium tracking-[-0.035em] sm:text-5xl">Clear terms for your writing workspace.</h1>
+        <p className="mt-4 text-sm text-violet-950/48">Effective {EFFECTIVE_DATE}</p>
 
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#1a1a1a]/35 mb-3">
-          Legal
-        </p>
-        <h1 className="text-4xl font-bold tracking-tight text-[#1a1a1a] mb-4"
-            style={{ fontFamily: "var(--font-garamond), Georgia, serif" }}>
-          Terms of Service
-        </h1>
-        <p className="text-sm text-[#1a1a1a]/45 mb-12">
-          Effective date: {EFFECTIVE_DATE}
-        </p>
+        <section className="mt-9 rounded-3xl border border-violet-200/70 bg-white p-6 shadow-[0_18px_55px_rgba(70,45,120,0.07)] sm:p-8">
+          <p className="text-sm font-semibold text-violet-900">The short version</p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <Promise title="You own your work" text="Xvault claims no ownership over your manuscripts or AI-assisted writing." />
+            <Promise title="You stay in control" text="AI output is optional. Review, edit, keep, or discard it." />
+            <Promise title="Pricing stays explicit" text="Subscriptions recur; Founder's Circle is a one-time purchase with monthly resetting credits." />
+          </div>
+          <p className="mt-5 border-t border-violet-100 pt-5 text-xs leading-5 text-violet-950/45">This summary does not replace the complete Terms below.</p>
+        </section>
 
-        <div className="prose prose-stone max-w-none space-y-10 text-[0.9375rem] leading-relaxed text-[#1a1a1a]/75">
-
-          <Section title="1. Acceptance of terms">
-            <p>
-              By creating an account or using Xvault Studio at{" "}
-              <a href={SITE_URL} className="text-violet-600 underline underline-offset-2">
-                {SITE_URL}
-              </a>{" "}
-              (&quot;the Service&quot;), you agree to be bound by these Terms of Service
-              (&quot;Terms&quot;). If you do not agree, do not use the Service. These Terms
-              form a binding agreement between you and Xvault Studio
-              (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;).
-            </p>
+        <div className="mt-12 space-y-10 text-[0.9375rem] leading-7 text-violet-950/68">
+          <Section title="1. Agreement">
+            <p>By creating an account or using Xvault Studio at <a href={SITE_URL}>{SITE_URL}</a> (the &quot;Service&quot;), you agree to these Terms. If you do not agree, do not use the Service.</p>
           </Section>
 
-          <Section title="2. Beta status">
-            <p>
-              Xvault Studio is currently in <strong>beta</strong>. The Service is provided
-              as-is and may change, be interrupted, or be discontinued at any time.
-              Features shown in marketing materials may not yet be available or may work
-              differently during the beta period. We reserve the right to modify or
-              discontinue any feature without notice.
-            </p>
+          <Section title="2. Beta service">
+            <p>Xvault Studio is actively being developed. Features may evolve, and occasional interruptions or defects may occur. We may modify or retire features, but we will provide reasonable notice when a change materially affects a paid plan where practical. You should keep exports or backups of work that you cannot afford to lose.</p>
           </Section>
 
-          <Section title="3. Eligibility and accounts">
+          <Section title="3. Accounts and eligibility">
             <ul>
-              <li>You must be at least 13 years old to use the Service.</li>
-              <li>
-                You are responsible for maintaining the security of your account. We use
-                OTP (one-time passcode) authentication. Keep your email account secure.
-              </li>
-              <li>
-                You may only have one account per person. Creating multiple accounts to
-                gain additional free credits or trial access is prohibited.
-              </li>
-              <li>
-                We reserve the right to suspend or terminate accounts that violate these
-                Terms.
-              </li>
+              <li>You must be at least 13 and legally able to agree to these Terms. If local law requires parental consent at a higher age, that consent is required.</li>
+              <li>You may sign in by email passcode or a supported third-party provider such as Google. You are responsible for securing the email or provider account connected to Xvault.</li>
+              <li>One person may not create multiple accounts to obtain extra trials, credits, or promotions.</li>
+              <li>We may suspend access used fraudulently, unlawfully, or in material violation of these Terms.</li>
             </ul>
           </Section>
 
           <Section title="4. Your content">
-            <p>
-              You retain full ownership of all writing, stories, notes, and other content
-              you create within the Service (&quot;Your Content&quot;). We do not claim any
-              intellectual property rights over Your Content.
-            </p>
-            <p>
-              By using the Service, you grant us a limited, non-exclusive licence to store
-              and process Your Content solely to provide the Service, for example to save
-              your projects, generate AI responses in context, and create search embeddings
-              for Story Bible features. This licence ends when you delete your content or
-              account.
-            </p>
-            <p>
-              Your Content is not used to train AI models, shared with third parties for
-              marketing purposes, or accessed by our team except where strictly necessary
-              to resolve a technical issue you have reported.
-            </p>
+            <p>You retain ownership of manuscripts, notes, story data, and other content you create or upload. Xvault does not claim copyright in Your Content.</p>
+            <p>You give us a limited, non-exclusive licence to host, copy, and process Your Content only as needed to provide, secure, and support the Service. This includes supplying relevant context to an AI provider when you request an AI feature.</p>
+            <p>We do not use Your Content to train AI models or sell it. Our team may access it only when necessary to investigate a problem you ask us to resolve, secure the Service, or comply with law.</p>
+            <p>If you create a sharing link, you instruct us to make that shared copy available to anyone with the link. You remain responsible for having the rights to share it.</p>
           </Section>
 
-          <Section title="5. AI features and limitations">
-            <p>
-              The Service uses third-party AI models to power features including the
-              co-author, cursor-aware prose generation, Global Change, and Story Bible analysis.
-              You acknowledge that:
-            </p>
+          <Section title="5. AI features">
             <ul>
-              <li>AI-generated content may be inaccurate, incomplete, or unsuitable.</li>
-              <li>
-                You are solely responsible for reviewing and approving any AI-generated
-                text before incorporating it into your work.
-              </li>
-              <li>
-                AI credits are consumed each time you use an AI feature. Credit limits
-                vary by plan. Credits do not carry over between billing periods for paid
-                plans.
-              </li>
-              <li>
-                We do not guarantee any specific level of AI quality, availability, or
-                response time.
-              </li>
+              <li>AI output can be inaccurate, repetitive, or unsuitable. You are responsible for reviewing what you publish.</li>
+              <li>You are not required to accept generated text, and generated text does not replace professional legal, medical, or financial advice.</li>
+              <li>AI features consume the credit amount shown or described in the product. Credits have no cash value and cannot be transferred.</li>
+              <li>Availability and response time can be affected by third-party providers.</li>
             </ul>
           </Section>
 
-          <Section title="6. Trial period and paid plans">
-            <p>
-              New accounts receive a 14-day trial with 100 AI credits. After the trial
-              ends, AI features require a paid subscription. Trial credits are
-              non-transferable and cannot be exchanged for cash.
-            </p>
-            <p>
-              Paid subscriptions are billed in advance. All payments are processed by
-              Dodo Payments. We do not store payment card details. Refunds are handled
-              on a case-by-case basis. Contact{" "}
-              <a href={`mailto:${CONTACT_EMAIL}`} className="text-violet-600 underline underline-offset-2">
-                {CONTACT_EMAIL}
-              </a>{" "}
-              within 7 days of a charge if you believe an error occurred.
-            </p>
+          <Section title="6. Free access and paid plans">
+            <p>New accounts currently receive a 14-day trial with 100 AI credits. After the trial, the Free plan currently includes 50 AI credits each month. Trial and Free plan limits may change for future users, but changes do not create a cash entitlement.</p>
+            <p>The Hobbyist subscription renews monthly or annually according to the option shown at checkout. Its included credits reset each month and do not roll over. You can cancel future renewals, and cancellation takes effect at the end of the paid period unless applicable law requires otherwise.</p>
           </Section>
 
-          <Section title="7. Prohibited uses">
-            <p>You may not use the Service to:</p>
+          <Section title="7. Founder&apos;s Circle lifetime access">
+            <p>Founder&apos;s Circle is a one-time purchase, not a recurring subscription. It currently includes access to Xvault Studio, 500 AI credits that reset each month and do not roll over, and the founder benefits described on the pricing page.</p>
+            <p>&quot;Lifetime&quot; means for as long as Xvault Studio continues to operate the Service, not the lifetime of an individual. It covers the core Xvault Studio product and does not automatically include separate future products, third-party charges, or optional add-ons. A Founder&apos;s Circle seat is personal and may not be resold or transferred.</p>
+          </Section>
+
+          <Section title="8. Payments and refunds">
+            <p>Payments are processed by Dodo Payments. Xvault does not store your full payment card details. Prices, taxes, renewal terms, and any refund terms shown at checkout form part of your purchase. Nothing in these Terms limits refund or cancellation rights that cannot legally be excluded.</p>
+            <p>If a charge appears incorrect, contact <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> promptly so we can investigate.</p>
+          </Section>
+
+          <Section title="9. Acceptable use">
+            <p>You may not:</p>
             <ul>
-              <li>Generate, store, or distribute content that is illegal in your jurisdiction.</li>
-              <li>
-                Produce content that depicts or promotes harm to minors, non-consensual
-                acts, or targeted harassment of real individuals.
-              </li>
-              <li>Attempt to reverse-engineer, scrape, or abuse the AI APIs.</li>
-              <li>Circumvent rate limits, credit systems, or account restrictions.</li>
-              <li>Resell or sublicence access to the Service.</li>
-              <li>
-                Use automated scripts to interact with the Service in ways that disrupt
-                normal operation.
-              </li>
+              <li>Use the Service for unlawful content or conduct, targeted harassment, exploitation of minors, or non-consensual sexual content.</li>
+              <li>Upload content you do not have the right to process or share.</li>
+              <li>Evade credit limits, security controls, or account restrictions.</li>
+              <li>Scrape, reverse-engineer, disrupt, overload, resell, or sublicense the Service except where law expressly permits.</li>
             </ul>
           </Section>
 
-          <Section title="8. Intellectual property">
-            <p>
-              All software, design, branding, and non-user content on the Service is
-              owned by or licensed to Xvault Studio and is protected by intellectual
-              property law. You may not copy, modify, or distribute any part of the
-              Service without our written permission.
-            </p>
+          <Section title="10. Xvault intellectual property">
+            <p>The software, interface, branding, and non-user content are owned by or licensed to Xvault Studio. These Terms do not grant a right to copy or distribute them outside normal use of the Service.</p>
           </Section>
 
-          <Section title="9. Disclaimers">
-            <p>
-              The Service is provided <strong>&quot;as is&quot;</strong> and{" "}
-              <strong>&quot;as available&quot;</strong> without warranties of any kind,
-              express or implied, including but not limited to warranties of
-              merchantability, fitness for a particular purpose, or non-infringement.
-              We do not warrant that the Service will be uninterrupted, error-free, or
-              that any defects will be corrected.
-            </p>
+          <Section title="11. Service disclaimers">
+            <p>To the fullest extent permitted by law, the Service is provided &quot;as is&quot; and &quot;as available&quot;. We do not promise uninterrupted operation, error-free output, or that AI output will meet a particular creative or commercial goal. Consumer rights that cannot legally be excluded remain unaffected.</p>
           </Section>
 
-          <Section title="10. Limitation of liability">
-            <p>
-              To the fullest extent permitted by law, Xvault Studio shall not be liable
-              for any indirect, incidental, special, consequential, or punitive damages,
-              including loss of data, loss of profits, or loss of business, arising from
-              your use of or inability to use the Service, even if we have been advised
-              of the possibility of such damages.
-            </p>
-            <p>
-              Our total liability to you for any claim arising out of or relating to
-              these Terms or the Service shall not exceed the amount you paid us in the
-              12 months preceding the claim, or USD $50, whichever is greater.
-            </p>
+          <Section title="12. Limitation of liability">
+            <p>To the fullest extent permitted by law, Xvault Studio is not liable for indirect, incidental, special, consequential, or punitive loss arising from use of the Service. Our total liability for claims relating to the Service will not exceed the amount you paid in the 12 months before the event giving rise to the claim, or USD $50, whichever is greater. This does not exclude liability that applicable law does not allow us to exclude.</p>
           </Section>
 
-          <Section title="11. Termination">
-            <p>
-              You may stop using the Service and request account deletion at any time by
-              emailing{" "}
-              <a href={`mailto:${CONTACT_EMAIL}`} className="text-violet-600 underline underline-offset-2">
-                {CONTACT_EMAIL}
-              </a>
-              . We may suspend or terminate your account if you breach these Terms or if
-              we discontinue the Service, with reasonable notice where possible.
-            </p>
+          <Section title="13. Ending use of Xvault">
+            <p>You may stop using Xvault and request account deletion at any time. We may suspend or terminate an account for a material breach, security risk, unlawful activity, or if the Service is discontinued. We will provide reasonable notice where practical and legally permitted.</p>
           </Section>
 
-          <Section title="12. Changes to these terms">
-            <p>
-              We may update these Terms from time to time. We will notify you of material
-              changes by email or via an in-app notice at least 14 days before they take
-              effect. Continued use of the Service after that date constitutes acceptance
-              of the revised Terms.
-            </p>
+          <Section title="14. Changes to these Terms">
+            <p>We may update these Terms as Xvault evolves. We will give at least 14 days&apos; notice by email or in the app before a material change takes effect, unless an urgent legal or security change requires less notice.</p>
           </Section>
 
-          <Section title="13. Governing law">
-            <p>
-              These Terms are governed by and construed in accordance with the laws of
-              England and Wales, without regard to conflict of law principles. Any disputes
-              shall be subject to the exclusive jurisdiction of the courts of England and
-              Wales.
-            </p>
+          <Section title="15. Governing law">
+            <p>These Terms are governed by the laws of England and Wales, without regard to conflict-of-law principles. Courts in England and Wales will have jurisdiction, except where the mandatory law of your home country gives you the right to bring a claim elsewhere.</p>
           </Section>
 
-          <Section title="14. Contact">
-            <p>
-              Questions about these Terms:{" "}
-              <a href={`mailto:${CONTACT_EMAIL}`} className="text-violet-600 underline underline-offset-2">
-                {CONTACT_EMAIL}
-              </a>
-            </p>
+          <Section title="16. Contact">
+            <p>Questions about these Terms can be sent to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
           </Section>
-
         </div>
 
-        <div className="mt-16 pt-8 border-t border-black/[0.06] flex items-center gap-6 text-xs text-[#1a1a1a]/35">
-          <Link href="/privacy" className="hover:text-[#1a1a1a]/60 transition-colors">
-            Privacy Policy
-          </Link>
-          <Link href="/" className="hover:text-[#1a1a1a]/60 transition-colors">
-            Back to home
-          </Link>
+        <div className="mt-16 flex items-center gap-6 border-t border-violet-950/[0.07] pt-8 text-xs text-violet-950/45">
+          <Link href="/privacy" className="transition-colors hover:text-violet-700">Privacy Policy</Link>
+          <Link href="/" className="transition-colors hover:text-violet-700">Back to home</Link>
         </div>
       </main>
     </div>
   );
 }
 
+function Promise({ title, text }: { title: string; text: string }) {
+  return <div><p className="text-sm font-semibold text-violet-900">{title}</p><p className="mt-1.5 text-xs leading-5 text-violet-950/50">{text}</p></div>;
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-base font-semibold text-[#1a1a1a] mb-3 tracking-tight">
-        {title}
-      </h2>
-      <div className="space-y-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_a]:text-violet-600 [&_a]:underline [&_a]:underline-offset-2">
-        {children}
-      </div>
+      <h2 className="mb-3 text-lg font-semibold tracking-tight text-[#211B32]">{title}</h2>
+      <div className="space-y-3 [&_a]:text-violet-700 [&_a]:underline [&_a]:underline-offset-2 [&_strong]:font-semibold [&_strong]:text-violet-950/80 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">{children}</div>
     </section>
   );
 }

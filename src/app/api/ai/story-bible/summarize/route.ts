@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
   // Forced regenerations cost 1 credit — check quota before calling AI
   if (force) {
-    const { block } = await checkRateLimit(user.id, createServiceClient(), 1);
+    const { block } = await checkRateLimit(user.id, createServiceClient(), 1, projectId);
     if (block) return block;
   }
 
@@ -103,7 +103,7 @@ Rules: specific and factual, past tense, no editorializing, no spoilers framing.
   if (!summary) return Response.json({ error: "Empty summary" }, { status: 500 });
 
   if (force) {
-    await commitRateLimit(user.id, createServiceClient(), 1);
+    await commitRateLimit(user.id, createServiceClient(), 1, projectId);
   }
 
   const { error: saveError } = await supabase

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { X, Upload, Loader2 } from "lucide-react";
 import DefaultCover from "./default-cover";
 import Image from "next/image";
+import { createPortal } from "react-dom";
+import { usePostHog } from "posthog-js/react";
 
 const GENRES = [
   { value: "",                label: "No genre" },
@@ -53,6 +55,7 @@ interface Props {
 
 export default function EditProjectModal({ project, open, onClose }: Props) {
   const router    = useRouter();
+  const ph        = usePostHog();
   const fileRef   = useRef<HTMLInputElement>(null);
   const isNew     = !project;
 
@@ -70,6 +73,9 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
   // Reset form when modal opens
   useEffect(() => {
     if (!open) return;
+    // The same modal instance handles both create and edit, so opening it is
+    // the intentional boundary where its draft state is replaced.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTitle(project?.title ?? "");
     setGenre(project?.genre ?? "");
     setSynopsis(project?.synopsis ?? "");
@@ -140,11 +146,16 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
         setUploading(true);
         const fd = new FormData();
         fd.append("file", coverFile);
-        await fetch(`/api/projects/${projectId}/cover`, { method: "POST", body: fd });
+        const coverRes = await fetch(`/api/projects/${projectId}/cover`, { method: "POST", body: fd });
+        if (!coverRes.ok) {
+          const coverJson = await coverRes.json().catch(() => ({})) as { error?: string };
+          throw new Error(coverJson.error ?? "The manuscript was created, but its cover could not be uploaded.");
+        }
         setUploading(false);
       }
 
       if (isNew && projectId) {
+        ph?.capture("project_created", { source: "manuscript_modal", genre: genre || "none" });
         router.push(`/studio/${projectId}`);
       } else {
         onClose();
@@ -156,13 +167,13 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
       setSaving(false);
       setUploading(false);
     }
-  }, [title, genre, synopsis, status, coverFile, project, isNew, onClose, router]);
+  }, [title, genre, synopsis, status, coverFile, project, isNew, onClose, router, ph]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
   const displayCover = coverPreview ?? coverUrl;
 
-  return (
+  return createPortal((
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -171,13 +182,21 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
       <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-[3px]" />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-[#13131f] rounded-2xl shadow-2xl ring-1 ring-black/[0.08] dark:ring-white/[0.07] overflow-hidden">
+      <div
+        className="relative max-w-none bg-white dark:bg-[#13131f] rounded-2xl shadow-2xl ring-1 ring-black/[0.08] dark:ring-white/[0.07] overflow-hidden"
+        style={{ width: "min(760px, calc(100vw - 32px))" }}
+      >
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.06] dark:border-white/[0.06]">
-          <h2 className="text-sm font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight">
-            {isNew ? "New project" : "Edit project"}
+        <div className="flex items-center justify-between px-5 sm:px-8 py-5 border-b border-black/[0.06] dark:border-white/[0.06]">
+          <div>
+          <h2 className="text-base font-semibold text-[#0F0F0F] dark:text-[#EDEBF0] tracking-tight">
+            {isNew ? "Create manuscript" : "Edit manuscript"}
           </h2>
+          <p className="mt-1 text-xs text-[#A1A1AA] dark:text-white/35">
+            {isNew ? "Set up the book before opening its first chapter." : "Update how this manuscript appears in your library."}
+          </p>
+          </div>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-[#A1A1AA] dark:text-white/30 hover:text-[#0F0F0F] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
@@ -187,17 +206,18 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+          <div className="px-5 sm:px-8 py-6 max-h-[72vh] overflow-y-auto">
+            <div className="grid gap-7 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-9">
 
             {/* Cover image */}
-            <div>
+            <div className="sm:border-r sm:border-black/[0.06] sm:dark:border-white/[0.06] sm:pr-8">
               <p className="text-[10px] font-semibold text-[#A1A1AA] dark:text-white/30 uppercase tracking-widest mb-2">
                 Cover
               </p>
-              <div className="flex items-end gap-4">
+              <div className="flex items-start gap-4 sm:flex-col">
                 {/* Preview */}
                 <div
-                  className="w-[80px] h-[112px] rounded-xl overflow-hidden ring-1 ring-black/[0.08] dark:ring-white/[0.08] shrink-0 cursor-pointer"
+                  className="w-[104px] h-[146px] rounded-xl overflow-hidden ring-1 ring-black/[0.08] dark:ring-white/[0.08] shrink-0 cursor-pointer shadow-sm"
                   onClick={() => fileRef.current?.click()}
                   title="Click to upload cover"
                 >
@@ -205,8 +225,8 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
                     <Image
                       src={displayCover}
                       alt="Cover"
-                      width={80}
-                      height={112}
+                      width={104}
+                      height={146}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -215,7 +235,7 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
                 </div>
 
                 {/* Upload controls */}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 sm:w-full">
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
@@ -247,6 +267,8 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
                 />
               </div>
             </div>
+
+            <div className="space-y-5 min-w-0">
 
             {/* Title */}
             <div>
@@ -325,21 +347,23 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
                 {error}
               </p>
             )}
+            </div>
+            </div>
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-black/[0.06] dark:border-white/[0.06] flex gap-2.5">
+          <div className="px-5 sm:px-8 py-4 border-t border-black/[0.06] dark:border-white/[0.06] flex justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-[#E4E4E7] dark:border-white/[0.08] text-sm font-medium text-[#71717A] dark:text-white/40 hover:text-[#0F0F0F] dark:hover:text-white transition-colors"
+              className="px-5 py-2.5 rounded-xl border border-[#E4E4E7] dark:border-white/[0.08] text-sm font-medium text-[#71717A] dark:text-white/40 hover:text-[#0F0F0F] dark:hover:text-white transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || !title.trim()}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#0F0F0F] dark:bg-violet-600 text-white text-sm font-semibold hover:bg-[#2A2A2A] dark:hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="min-w-[150px] flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#0F0F0F] dark:bg-violet-600 text-white text-sm font-semibold hover:bg-[#2A2A2A] dark:hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {(saving || uploading) ? (
                 <>
@@ -347,12 +371,12 @@ export default function EditProjectModal({ project, open, onClose }: Props) {
                   {uploading ? "Uploading…" : "Saving…"}
                 </>
               ) : (
-                isNew ? "Create project" : "Save changes"
+                isNew ? "Create manuscript" : "Save changes"
               )}
             </button>
           </div>
         </form>
       </div>
     </div>
-  );
+  ), document.body);
 }

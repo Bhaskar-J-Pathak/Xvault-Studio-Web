@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Costs 2 credits — charged every time we actually generate (first-time or forced).
-  const { block } = await checkRateLimit(user.id, createServiceClient(), 2);
+  const { block } = await checkRateLimit(user.id, createServiceClient(), 2, projectId);
   if (block) return block;
 
   // Fetch chapters with summaries, ordered by position
@@ -100,7 +100,7 @@ Be specific — use character names and concrete events. Present tense. No edito
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), 2);
+  await commitRateLimit(user.id, createServiceClient(), 2, projectId);
 
   synopsis = synopsis.trim();
   if (!synopsis) return Response.json({ error: "Empty response" }, { status: 500 });

@@ -4,7 +4,8 @@ import { getUser, createServerSupabaseClient, createServiceClient } from "@/lib/
 /**
  * /start — smart post-auth redirect.
  *
- * New users (0 projects):  create an "Untitled" project → go straight to the editor.
+ * New users (0 projects):  go to the dashboard's choice screen so they can
+ *                          import real work or deliberately start blank.
  * Returning users (≥1):    go to the dashboard.
  */
 export default async function StartPage() {
@@ -22,7 +23,9 @@ export default async function StartPage() {
     redirect("/dashboard");
   }
 
-  // New user — ensure profile exists then create Untitled project
+  // New user — ensure the profile exists, then let them choose their path.
+  // Dropping someone into an empty "Untitled" editor hides Xvault's strongest
+  // value (working with an existing manuscript) and gives them no clear win.
   const service = createServiceClient();
   await service.from("profiles").upsert(
     {
@@ -37,13 +40,5 @@ export default async function StartPage() {
     { onConflict: "id", ignoreDuplicates: true }
   );
 
-  const { data: project } = await supabase
-    .from("projects")
-    .insert({ user_id: user.id, title: "Untitled" })
-    .select("id")
-    .single();
-
-  if (!project) redirect("/dashboard");
-
-  redirect(`/studio/${project.id}`);
+  redirect("/dashboard?welcome=1");
 }

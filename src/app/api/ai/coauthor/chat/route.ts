@@ -64,16 +64,6 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  let rateLimitResult: { block: Response | null; remaining: number };
-  try {
-    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), 1);
-  } catch (err) {
-    console.error("[coauthor/chat] Rate limit check failed:", err);
-    return Response.json({ error: "Service temporarily unavailable", reply: "Something went wrong on my end. Give it a moment and try again." }, { status: 503 });
-  }
-  const { block, remaining } = rateLimitResult;
-  if (block) return block;
-
   let body: {
     projectId: string;
     chapterId?: string;
@@ -107,6 +97,16 @@ export async function POST(request: NextRequest) {
       .maybeSingle(),
   ]);
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
+
+  let rateLimitResult: { block: Response | null; remaining: number };
+  try {
+    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), 1, projectId);
+  } catch (err) {
+    console.error("[coauthor/chat] Rate limit check failed:", err);
+    return Response.json({ error: "Service temporarily unavailable", reply: "Something went wrong on my end. Give it a moment and try again." }, { status: 503 });
+  }
+  const { block, remaining } = rateLimitResult;
+  if (block) return block;
 
   const coauthorName = coauthor?.name ?? "Alex";
   const coauthorPersonality = coauthor?.personality ?? null;
@@ -184,7 +184,7 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), 1);
+  await commitRateLimit(user.id, createServiceClient(), 1, projectId);
 
   reply = reply.trim();
   if (!reply) return Response.json({ error: "Empty response" }, { status: 500 });

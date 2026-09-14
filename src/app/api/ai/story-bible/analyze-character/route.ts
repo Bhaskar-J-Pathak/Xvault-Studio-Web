@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
   // Costs 2 credits per character analysis.
-  const { block } = await checkRateLimit(user.id, createServiceClient(), 2);
+  const { block } = await checkRateLimit(user.id, createServiceClient(), 2, projectId);
   if (block) return block;
 
   // Fetch the entity
@@ -137,7 +137,7 @@ Analyze only from evidence in the text. Be specific and concrete — avoid vague
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), 2);
+  await commitRateLimit(user.id, createServiceClient(), 2, projectId);
 
   let profile: {
     personality: string;

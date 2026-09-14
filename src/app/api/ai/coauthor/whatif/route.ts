@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     .single();
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
-  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 1);
+  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 1, projectId);
   if (block) return block;
 
   // Style fingerprint from the writer's prose immediately before the selection
@@ -97,7 +97,7 @@ Write 2–3 short branches exploring this scenario. Each branch shows what happe
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), 1);
+  await commitRateLimit(user.id, createServiceClient(), 1, projectId);
 
   // Parse "Option A:\n...\n\nOption B:\n..." format
   const branches: Array<{ label: string; text: string }> = [];

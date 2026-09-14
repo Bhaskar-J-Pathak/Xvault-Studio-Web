@@ -11,6 +11,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RateLimitResult } from "@/types/database";
+import { isContestEnabled } from "@/lib/contest";
 
 /**
  * Read-only quota check. No credits are deducted.
@@ -19,12 +20,15 @@ import type { RateLimitResult } from "@/types/database";
 export async function checkAiQuota(
   userId: string,
   client: SupabaseClient,
-  credits = 1
+  credits = 1,
+  projectId?: string
 ): Promise<RateLimitResult> {
-  const { data, error } = await client.rpc("check_ai_quota", {
+  const params = {
     p_user_id: userId,
     p_credits: credits,
-  });
+    ...(isContestEnabled() && projectId ? { p_project_id: projectId } : {}),
+  };
+  const { data, error } = await client.rpc("check_ai_quota", params);
 
   if (error) {
     throw new Error(`Quota check RPC failed: ${error.message}`);
@@ -41,12 +45,15 @@ export async function checkAiQuota(
 export async function commitAiRequest(
   userId: string,
   client: SupabaseClient,
-  credits = 1
+  credits = 1,
+  projectId?: string
 ): Promise<void> {
-  const { error } = await client.rpc("commit_ai_request", {
+  const params = {
     p_user_id: userId,
     p_credits: credits,
-  });
+    ...(isContestEnabled() && projectId ? { p_project_id: projectId } : {}),
+  };
+  const { error } = await client.rpc("commit_ai_request", params);
 
   if (error) {
     console.error("[rate-limit] commit_ai_request failed (credits not deducted):", error.message);
@@ -71,13 +78,15 @@ export async function commitAiRequest(
 export async function checkRateLimit(
   userId: string,
   client: SupabaseClient,
-  credits = 1
+  credits = 1,
+  projectId?: string
 ): Promise<{ block: Response | null; remaining: number }> {
-  const result = await checkAiQuota(userId, client, credits);
+  const result = await checkAiQuota(userId, client, credits, projectId);
 
   if (!result.allowed) {
-    const message =
-      result.reason === "trial_limit"
+    const message = result.reason === "contest_limit"
+      ? "You've used all the AI credits reserved for your contest manuscript. Your normal Xvault allowance is still available in your other projects."
+      : result.reason === "trial_limit"
         ? "You've used all 100 trial credits. Upgrade to keep writing."
         : "Monthly AI credit limit reached. Upgrade your plan for more.";
     return {
@@ -99,7 +108,8 @@ export async function checkRateLimit(
 export async function commitRateLimit(
   userId: string,
   client: SupabaseClient,
-  credits = 1
+  credits = 1,
+  projectId?: string
 ): Promise<void> {
-  await commitAiRequest(userId, client, credits);
+  await commitAiRequest(userId, client, credits, projectId);
 }

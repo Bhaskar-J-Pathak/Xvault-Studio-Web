@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getUser, getProfile, createServerSupabaseClient } from "@/lib/auth";
-import { creditsRemaining, creditsCap, isInTrial } from "@/lib/supabase";
+import { creditsRemaining, creditsCap, isInTrial, isInActiveContest } from "@/lib/supabase";
 import ZenEditor from "./_components/zen-editor";
 
 export default async function ChapterPage({
@@ -32,8 +32,9 @@ export default async function ChapterPage({
 
   if (!chapter) notFound();
 
-  const initialCredits = profile ? creditsRemaining(profile as Parameters<typeof creditsRemaining>[0]) : 0;
+  const initialCredits = profile ? creditsRemaining(profile as Parameters<typeof creditsRemaining>[0], projectId) : 0;
   const isTrial        = profile ? isInTrial(profile as Parameters<typeof isInTrial>[0]) : false;
+  const isContest      = profile ? isInActiveContest(profile as Parameters<typeof isInActiveContest>[0]) && profile.contest_project_id === projectId : false;
   const onboardingStep = profile?.onboarding_step ?? 9;
   const onboardingDone = profile?.onboarding_done ?? true;
 
@@ -51,8 +52,9 @@ export default async function ChapterPage({
       initialSummary={(chapter.summary as string | null) ?? null}
       initialCoauthor={coauthor ?? null}
       initialCredits={initialCredits}
-      initialCreditCap={profile ? creditsCap(profile as Parameters<typeof creditsCap>[0]) : 100}
+      initialCreditCap={profile ? creditsCap(profile as Parameters<typeof creditsCap>[0], projectId) : 100}
       isTrial={isTrial}
+      isContest={isContest}
       onboardingStep={onboardingStep}
       onboardingDone={onboardingDone}
     />

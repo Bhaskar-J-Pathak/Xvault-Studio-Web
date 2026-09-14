@@ -12,14 +12,14 @@ const FAQS = [
   },
   {
     q: "Is this the full product?",
-    a: "Xvault Studio is in public beta. The core writing experience — Alex, inline suggestions, World Board, Story Bible, and Global Replace — is ready to use today. Beta writers get full access to the current product and can directly shape what we build next.",
+    a: "Xvault Studio is in public beta. The core writing experience — Alex, cursor-aware prose generation, World Board, Story Bible, Story Pulse, and Global Replace — is ready to use today. Beta writers get full access to the current product and can directly shape what we build next.",
   },
   {
     q: "What exactly is Alex?",
-    a: "Alex is your story studio. Before it says a word, it reads your entire manuscript: every chapter, every character, every open thread. Ask it anything about your story, get inline suggestions in your voice, or just talk through a plot problem. Alex always has context.",
+    a: "Alex is your story studio. It receives your manuscript context before responding, so you can ask about characters, chapters, and open threads without pasting the book into another chat. It can also help you plan or draft from the cursor.",
   },
   {
-    q: "How do inline suggestions preserve my voice?",
+    q: "How does cursor-aware writing follow my voice?",
     a: "Place the cursor anywhere in the editor and click Write. Alex uses your existing chapters to match the story and your voice. Choose a length, preview the result, then insert, refine, or dismiss it.",
   },
   {

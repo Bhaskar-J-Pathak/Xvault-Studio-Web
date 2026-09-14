@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Mail, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { usePostHog } from "posthog-js/react";
 
 type Step = "email" | "otp";
 
@@ -19,6 +20,7 @@ export default function AuthPage() {
 
 function AuthForm() {
   const router   = useRouter();
+  const ph       = usePostHog();
   const params   = useSearchParams();
   const nextPath = params.get("next") ?? "/start";
   const refCode  = params.get("ref");
@@ -59,8 +61,7 @@ function AuthForm() {
   const refValid      = refNormalised.length === 8;
 
   // ── Step 1: send OTP ────────────────────────────────────────────────────
-  const handleSendOtp = useCallback(
-    async (e?: React.FormEvent) => {
+  const handleSendOtp = async (e?: React.FormEvent) => {
       e?.preventDefault();
       if (!email.trim()) return;
       setError("");
@@ -84,13 +85,10 @@ function AuthForm() {
       } finally {
         setLoading(false);
       }
-    },
-    [email, refNormalised]
-  );
+  };
 
   // ── Step 2: verify OTP ──────────────────────────────────────────────────
-  const handleVerify = useCallback(
-    async (e?: React.FormEvent) => {
+  const handleVerify = async (e?: React.FormEvent) => {
       e?.preventDefault();
       if (otp.length !== 6) return;
       setError("");
@@ -112,9 +110,7 @@ function AuthForm() {
       } finally {
         setLoading(false);
       }
-    },
-    [email, otp, router, nextPath]
-  );
+  };
 
   // Auto-submit when all 6 digits are entered
   const handleOtpChange = (val: string) => {
@@ -140,6 +136,26 @@ function AuthForm() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend code.");
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
+    if (refNormalised) localStorage.setItem("xv_ref", refNormalised);
+    try {
+      const destination = nextPath.startsWith("/") ? nextPath : "/start";
+      ph?.capture("auth_started", { method: "google", destination });
+      const { error: oauthError } = await createClient().auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
+        },
+      });
+      if (oauthError) throw oauthError;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Google sign-in could not start.");
       setLoading(false);
     }
   };
@@ -178,6 +194,22 @@ function AuthForm() {
                   {error}
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-black/[0.10] bg-white py-2.5 text-sm font-semibold text-[#1A1A1A] shadow-sm transition-colors hover:bg-black/[0.025] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <GoogleMark />
+                {loading ? "Opening Google…" : "Continue with Google"}
+              </button>
+
+              <div className="flex items-center gap-3">
+                <span className="h-px flex-1 bg-black/[0.08]" />
+                <span className="text-[11px] uppercase tracking-wider text-[#1A1A1A]/30">or use email</span>
+                <span className="h-px flex-1 bg-black/[0.08]" />
+              </div>
 
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div className="space-y-1.5">
@@ -347,5 +379,16 @@ function AuthForm() {
         </p>
       </div>
     </div>
+  );
+}
+
+function GoogleMark() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
+      <path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.715v2.259h2.909c1.702-1.567 2.684-3.875 2.684-6.615Z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.468-.806 5.956-2.18l-2.91-2.259c-.805.54-1.835.859-3.046.859-2.344 0-4.328-1.585-5.037-3.714H.955v2.333A8.998 8.998 0 0 0 9 18Z" />
+      <path fill="#FBBC05" d="M3.963 10.706A5.41 5.41 0 0 1 3.682 9c0-.592.102-1.167.281-1.706V4.961H.955A8.996 8.996 0 0 0 0 9c0 1.452.347 2.827.955 4.039l3.008-2.333Z" />
+      <path fill="#EA4335" d="M9 3.58c1.321 0 2.507.454 3.441 1.346l2.581-2.581C13.464.892 11.426 0 9 0A8.998 8.998 0 0 0 .955 4.961l3.008 2.333C4.672 5.165 6.656 3.58 9 3.58Z" />
+    </svg>
   );
 }
