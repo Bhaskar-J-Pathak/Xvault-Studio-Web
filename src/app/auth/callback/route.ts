@@ -87,8 +87,12 @@ export async function GET(request: NextRequest) {
       const destination = next.startsWith("/") ? next : "/dashboard";
       return NextResponse.redirect(`${origin}${destination}`);
     }
+
+    console.error("[callback] OAuth code exchange failed:", error.message);
   }
 
-  // Something went wrong — send to auth with an error hint
+  // Something went wrong — send to auth with an error the user can act on.
+  // The underlying error is intentionally logged only on the server: OAuth
+  // exchange errors may include provider-specific implementation details.
   return NextResponse.redirect(`${origin}/auth?error=callback_failed`);
 }

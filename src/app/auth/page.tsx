@@ -24,12 +24,17 @@ function AuthForm() {
   const params   = useSearchParams();
   const nextPath = params.get("next") ?? "/start";
   const refCode  = params.get("ref");
+  const callbackFailed = params.get("error") === "callback_failed";
 
   const [step,         setStep]         = useState<Step>("email");
   const [email,        setEmail]        = useState("");
   const [otp,          setOtp]          = useState("");
   const [loading,      setLoading]      = useState(false);
-  const [error,        setError]        = useState("");
+  const [error,        setError]        = useState(
+    callbackFailed
+      ? "We couldn't complete that sign-in. Please try Google again."
+      : ""
+  );
   const [resent,       setResent]       = useState(false);
   // Referral code input — pre-populated from URL param
   const [refInput,     setRefInput]     = useState(refCode?.toUpperCase() ?? "");
@@ -150,7 +155,11 @@ function AuthForm() {
       const { error: oauthError } = await createClient().auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
+          // Keep this URL identical to the production Supabase allow-list entry.
+          // Adding `?next=...` caused Supabase to reject the requested redirect
+          // in production and fall back to the Site URL (the landing page), so
+          // the authorization code was never exchanged for an app session.
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (oauthError) throw oauthError;

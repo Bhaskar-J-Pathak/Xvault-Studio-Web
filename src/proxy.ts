@@ -8,6 +8,16 @@ const PROTECTED_PAGES = ["/studio", "/dashboard", "/account"];
 const PROTECTED_API = ["/api/ai/", "/api/account/"];
 
 export async function proxy(request: NextRequest) {
+  // OAuth providers may return to the configured Supabase Site URL when the
+  // requested callback URL is not an exact allow-list match. Intercept the
+  // authorization code before the landing page renders and complete the
+  // server-side session exchange at the real callback route.
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const callbackUrl = request.nextUrl.clone();
+    callbackUrl.pathname = "/auth/callback";
+    return NextResponse.redirect(callbackUrl);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
