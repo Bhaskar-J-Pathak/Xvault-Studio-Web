@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json().catch(() => null) as { projectId?: string } | null;
+  const body = await request.json().catch(() => null) as { projectId?: string; chapterLimit?: number } | null;
   if (!body?.projectId) return Response.json({ error: "Missing projectId" }, { status: 400 });
 
   const { data: project } = await supabase.from("projects").select("id")
@@ -64,8 +64,12 @@ export async function POST(request: NextRequest) {
     .select("id, title, position, content").eq("project_id", body.projectId).order("position");
   if (chapterError) return Response.json({ error: "Could not load chapters." }, { status: 500 });
 
+  const requestedLimit = typeof body.chapterLimit === "number"
+    ? Math.max(1, Math.min(3, Math.floor(body.chapterLimit)))
+    : undefined;
   const usable = (chapters ?? []).map((chapter) => ({ ...chapter, text: lexicalToText(chapter.content) }))
-    .filter((chapter) => chapter.text.split(/\s+/).length >= 100);
+    .filter((chapter) => chapter.text.split(/\s+/).length >= 100)
+    .slice(0, requestedLimit);
   if (!usable.length) return Response.json({ error: "Story Pulse needs a saved chapter with at least 100 words." }, { status: 400 });
 
   const service = createServiceClient();

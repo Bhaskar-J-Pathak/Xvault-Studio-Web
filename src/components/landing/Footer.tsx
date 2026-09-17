@@ -8,7 +8,7 @@ const NAV = [
   { label: "How it works", href: "#how-it-works" },
   { label: "Pricing",      href: "/pricing" },
   { label: "FAQ",          href: "#faq" },
-  { label: "Sign up",      href: "/auth?mode=signup" },
+  { label: "Sign up",      href: "/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1" },
   { label: "Privacy",      href: "/privacy" },
   { label: "Terms",        href: "/terms" },
 ];

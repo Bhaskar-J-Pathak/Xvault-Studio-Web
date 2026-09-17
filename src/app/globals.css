@@ -842,6 +842,52 @@ html[data-editor-theme="dark"] .story-pulse .pulse-character:hover { background-
 html[data-editor-theme="dark"] .story-pulse .pulse-character-active { background-color: rgba(139,92,246,0.22) !important; color: #DDD6FE !important; }
 html[data-editor-theme="dark"] .story-pulse .pulse-primary { background-color: #E0DDD5 !important; color: #1C1C1C !important; }
 
+/* First Story Scan follows the same persisted studio theme. */
+.story-scan {
+  background-color: #FAFAF8;
+  color: #1A1A1A;
+}
+
+html[data-editor-theme="sepia"] .story-scan {
+  background-color: #F8F4E8 !important;
+  color: #6B3E1A;
+}
+html[data-editor-theme="sepia"] .story-scan .scan-card {
+  background-color: #FFFBEF !important;
+  border-color: rgba(107,62,26,0.12) !important;
+}
+html[data-editor-theme="sepia"] .story-scan .scan-title { color: #6B3E1A !important; }
+html[data-editor-theme="sepia"] .story-scan .scan-body,
+html[data-editor-theme="sepia"] .story-scan .scan-muted { color: rgba(107,62,26,0.64) !important; }
+html[data-editor-theme="sepia"] .story-scan .scan-inset,
+html[data-editor-theme="sepia"] .story-scan .scan-chip { background-color: rgba(107,62,26,0.055) !important; }
+html[data-editor-theme="sepia"] .story-scan .scan-secondary {
+  background-color: #FFFBEF !important;
+  border-color: rgba(107,62,26,0.14) !important;
+  color: #6B3E1A !important;
+}
+html[data-editor-theme="sepia"] .story-scan .scan-primary { background-color: #6B3E1A !important; color: #F8F4E8 !important; }
+
+html[data-editor-theme="dark"] .story-scan {
+  background-color: #111111 !important;
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .story-scan .scan-card {
+  background-color: #1C1C1C !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+html[data-editor-theme="dark"] .story-scan .scan-title { color: #E0DDD5 !important; }
+html[data-editor-theme="dark"] .story-scan .scan-body,
+html[data-editor-theme="dark"] .story-scan .scan-muted { color: rgba(224,221,213,0.64) !important; }
+html[data-editor-theme="dark"] .story-scan .scan-inset,
+html[data-editor-theme="dark"] .story-scan .scan-chip { background-color: rgba(255,255,255,0.06) !important; color: rgba(224,221,213,0.72) !important; }
+html[data-editor-theme="dark"] .story-scan .scan-secondary {
+  background-color: #202020 !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  color: #E0DDD5 !important;
+}
+html[data-editor-theme="dark"] .story-scan .scan-primary { background-color: #E0DDD5 !important; color: #1C1C1C !important; }
+
 html[data-editor-theme="sepia"] .xv-retention-card,
 html[data-editor-theme="sepia"] .xv-retention-trigger { background: #FFFBEF !important; border-color: rgba(107,62,26,.13) !important; color: #6B3E1A !important; }
 html[data-editor-theme="sepia"] .xv-retention-title { color: #6B3E1A !important; }

@@ -12,9 +12,9 @@ const STEPS = [
     textColor:   "text-violet-600",
     bgColor:     "bg-violet-50",
     borderColor: "border-violet-200/70",
-    label:       "Sign Up",
-    title:       "Free in 10 seconds",
-    body:        "No credit card. No download. Open your browser, sign up, pick your genre and your project is ready before you've finished your coffee.",
+    label:       "Bring your draft",
+    title:       "Upload your first chapters",
+    body:        "Import a .docx or .txt manuscript. Xvault detects the chapters and keeps the original file untouched. No credit card or download required.",
     detail:      "Free · 14-day trial · 100 AI credits",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
@@ -27,10 +27,10 @@ const STEPS = [
     textColor:   "text-rose-600",
     bgColor:     "bg-rose-50",
     borderColor: "border-rose-200/70",
-    label:       "Start your story",
-    title:       "Name it and start writing",
-    body:        "Give your project a title and you're in the studio. Alex reads everything you write from the first sentence. A short feature card walks you through Write, co-author, World Board, and Story Bible as you go.",
-    detail:      "No setup · Just open and go",
+    label:       "Scan",
+    title:       "See the story already on the page",
+    body:        "Run a First Story Scan to reveal characters, relationships, locations, plot threads, and the emotional movement carried across your chapters.",
+    detail:      "Grounded in your prose · You decide what matters",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
         <path d="M4 6h14M4 11h10M4 16h7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -44,7 +44,7 @@ const STEPS = [
     bgColor:     "bg-amber-50",
     borderColor: "border-amber-200/70",
     label:       "Write",
-    title:       "Canvas on the left. Alex on the right.",
+    title:       "Write with the whole story in view",
     body:        "The studio is a clean writing canvas with no distractions. Alex lives in a panel alongside it, loaded with your manuscript context. Place the cursor and click Write to preview, refine, and insert a prose draft. No switching tabs or copy-pasting context.",
     detail:      "Write at the cursor · Alex always in context",
     icon: (
@@ -58,9 +58,9 @@ const STEPS = [
     textColor:   "text-emerald-600",
     bgColor:     "bg-emerald-50",
     borderColor: "border-emerald-200/70",
-    label:       "Finish",
-    title:       "Finish the draft",
-    body:        "Stay in the flow. Click Write when you're stuck, or select a passage to continue, rewrite, or explore another direction. Ask Alex anything. Your manuscript stays saved and organised for the next session.",
+    label:       "Keep coherence",
+    title:       "Let the story model grow with you",
+    body:        "As you write, the World Board and Story Pulse keep tracking factual and emotional continuity. Revisit the scan whenever you need to see the manuscript as a whole.",
     detail:      "Cloud-saved · Always accessible",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
@@ -140,7 +140,7 @@ export default function HowItWorks() {
               className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-[#1A0A3C]"
               style={{ fontSize: "clamp(2.4rem,4.8vw,4.2rem)" }}
             >
-              From blank page
+              From manuscript
             </motion.h2>
           </div>
           <div className="overflow-hidden">
@@ -151,7 +151,7 @@ export default function HowItWorks() {
               className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-violet-900/35"
               style={{ fontSize: "clamp(2.4rem,4.8vw,4.2rem)" }}
             >
-              to finished draft.
+              to visible story.
             </motion.h2>
           </div>
 
@@ -161,7 +161,7 @@ export default function HowItWorks() {
             transition={{ delay: 0.3, duration: 0.75, ease }}
             className="mt-5 text-[0.9375rem] leading-[1.82] text-violet-900/50"
           >
-            No download. No configuration. Sign up, open the studio, and write.
+            Import a few chapters, scan them, and see useful story context before you write another word.
           </motion.p>
         </div>
 
@@ -180,10 +180,10 @@ export default function HowItWorks() {
           className="mt-4 flex justify-start"
         >
           <Link
-            href="/auth?mode=signup"
+            href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
             className="btn-shimmer inline-flex items-center gap-2.5 rounded-full bg-violet-700 px-7 py-3.5 text-[0.875rem] font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
           >
-            Start for free
+            Scan my manuscript free
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>

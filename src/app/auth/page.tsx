@@ -151,6 +151,7 @@ function AuthForm() {
     if (refNormalised) localStorage.setItem("xv_ref", refNormalised);
     try {
       const destination = nextPath.startsWith("/") ? nextPath : "/start";
+      document.cookie = `xv_auth_next=${encodeURIComponent(destination)}; path=/; max-age=600; samesite=lax`;
       ph?.capture("auth_started", { method: "google", destination });
       const { error: oauthError } = await createClient().auth.signInWithOAuth({
         provider: "google",

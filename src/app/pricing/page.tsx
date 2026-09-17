@@ -104,7 +104,7 @@ export default async function PricingPage() {
         </div>
       )}
 
-      <Pricing />
+      <Pricing signedIn={Boolean(user)} />
     </div>
   );
 }

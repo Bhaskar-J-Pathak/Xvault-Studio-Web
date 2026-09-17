@@ -348,7 +348,7 @@ function PlanCard({
 
 // ── Main export ─────────────────────────────────────────────────────────────
 
-export default function Pricing() {
+export default function Pricing({ signedIn = false }: { signedIn?: boolean }) {
   const searchParams = useSearchParams();
   const posthog = usePostHog();
   const billing: BillingPlan = "monthly";
@@ -427,15 +427,18 @@ export default function Pricing() {
             Keep the story tools that understand your manuscript.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-violet-700/65 sm:text-lg">
-            Start free, subscribe monthly, or join the first 30 writers who keep Xvault for one payment.
+            {signedIn
+              ? "Choose monthly access, or join the first 30 writers who keep Xvault for one payment."
+              : "Scan your manuscript free, subscribe monthly, or join the first 30 writers who keep Xvault for one payment."}
           </p>
-          <Link
-            href="/auth?mode=signup&next=/start"
+          {!signedIn && <Link
+            href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
             onClick={() => posthog?.capture("pricing_free_trial_clicked")}
             className="inline-flex mt-7 items-center justify-center rounded-2xl bg-violet-600 px-6 py-3.5 font-medium text-white transition hover:bg-violet-700"
           >
-            Start free — no card required
-          </Link>
+            Scan my manuscript free
+          </Link>}
+          {signedIn && <p className="mt-6 text-sm font-medium text-violet-700">Your purchase will be applied to the account you are signed into.</p>}
           <p className="mt-3 text-sm text-violet-700/60">
             Your manuscript stays yours. Export it whenever you want.
           </p>
@@ -464,7 +467,7 @@ export default function Pricing() {
         )}
         <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-violet-200/70 bg-white/65 px-6 py-5 text-center">
           <p className="text-sm font-medium text-violet-950/80">Founder access is deliberately personal.</p>
-          <p className="mt-1.5 text-sm leading-6 text-violet-900/55">You get a one-to-one onboarding call, and if Xvault blocks your writing, you can message the founder directly. Not sure yet? Use the free trial first. Your manuscript can be exported at any time.</p>
+          <p className="mt-1.5 text-sm leading-6 text-violet-900/55">You get a one-to-one onboarding call, and if Xvault blocks your writing, you can message the founder directly. Your manuscript can be exported at any time.</p>
         </div>
       </div>
     </section>

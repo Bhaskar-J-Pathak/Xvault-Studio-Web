@@ -46,7 +46,7 @@ export default function CTA() {
               className="h-1.5 w-1.5 rounded-full bg-violet-500"
             />
             <span className="text-[0.67rem] font-semibold tracking-wide text-violet-600">
-              Start free today
+              See your story clearly
             </span>
           </span>
         </motion.div>
@@ -65,9 +65,9 @@ export default function CTA() {
               fontWeight: 300,
             }}
           >
-            Stop explaining your story.
+            Your manuscript is already telling you things.
             <br />
-            <span className="text-violet-400/70">Alex already knows it.</span>
+            <span className="text-violet-400/70">Xvault helps you see them.</span>
           </motion.h2>
         </div>
 
@@ -78,8 +78,8 @@ export default function CTA() {
           transition={{ delay: 0.38, duration: 0.65, ease }}
           className="mx-auto mt-7 max-w-[44ch] text-[0.9375rem] leading-[1.8] text-violet-900/50"
         >
-          Sign up in 10 seconds. 100 AI credits and 14 days of full access,
-          no card needed. Upgrade when your manuscript demands it.
+          Import your first chapters and reveal their characters, relationships,
+          plot threads, and emotional movement. No card needed.
         </motion.p>
 
         {/* CTA button */}
@@ -91,10 +91,10 @@ export default function CTA() {
         >
           <MagneticButton strength={0.3}>
             <Link
-              href="/auth?mode=signup"
+              href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
               className="inline-flex items-center gap-2.5 rounded-full bg-violet-600 px-8 py-3.5 text-[0.9rem] font-semibold text-white shadow-[0_0_28px_rgba(124,58,237,0.30)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-[0_0_36px_rgba(124,58,237,0.40)]"
             >
-              Start writing, it&apos;s free
+              Scan my manuscript free
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                 <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>

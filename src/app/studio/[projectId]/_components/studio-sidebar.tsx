@@ -19,6 +19,7 @@ import {
   Download,
   Upload,
   Loader2,
+  ScanSearch,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { textToLexical } from "@/lib/text-to-lexical";
@@ -94,7 +95,7 @@ export default function StudioSidebar({
     } finally {
       setAddingChapter(false);
     }
-  }, [addingChapter, chapters, projectId, router]);
+  }, [addingChapter, chapters, ph, projectId, router]);
 
   // ── Rename chapter ──────────────────────────────────────────────
   const startRename = (chapter: Chapter) => {
@@ -140,7 +141,7 @@ export default function StudioSidebar({
         router.refresh();
       }
     },
-    [chapters, activeId, projectId, router]
+    [chapters, activeId, ph, projectId, router]
   );
 
   return (
@@ -186,6 +187,19 @@ export default function StudioSidebar({
         <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#1A1A1A]/35">
           Story tools
         </p>
+        <Link
+          href={`/studio/${projectId}/scan`}
+          onClick={onMobileClose}
+          title="A quick view of your characters, relationships, and emotional arcs"
+          className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
+            pathname === `/studio/${projectId}/scan`
+              ? "sb-active bg-[#1A1A1A] text-white"
+              : "text-[#1A1A1A]/65 hover:bg-black/[0.05] hover:text-[#1A1A1A]"
+          }`}
+        >
+          <ScanSearch size={13} />
+          Story Scan
+        </Link>
         <Link
           data-tour="worldboard"
           href={`/studio/${projectId}/worldboard`}

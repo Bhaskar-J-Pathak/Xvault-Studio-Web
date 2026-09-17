@@ -15,10 +15,11 @@ import { sendWelcomeEmail } from "@/lib/email";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
 
   if (code) {
     const cookieStore = await cookies();
+    const cookieNext = cookieStore.get("xv_auth_next")?.value;
+    const requestedNext = searchParams.get("next") ?? (cookieNext ? decodeURIComponent(cookieNext) : "/dashboard");
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -84,8 +85,10 @@ export async function GET(request: NextRequest) {
       }
       // ─────────────────────────────────────────────────────────────────────
 
-      const destination = next.startsWith("/") ? next : "/dashboard";
-      return NextResponse.redirect(`${origin}${destination}`);
+      const destination = requestedNext.startsWith("/") ? requestedNext : "/dashboard";
+      const response = NextResponse.redirect(`${origin}${destination}`);
+      response.cookies.delete("xv_auth_next");
+      return response;
     }
 
     console.error("[callback] OAuth code exchange failed:", error.message);

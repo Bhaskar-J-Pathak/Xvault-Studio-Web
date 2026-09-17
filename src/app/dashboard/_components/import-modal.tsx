@@ -97,7 +97,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
     setDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) processFile(file);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Confirm import ─────────────────────────────────────────────────────────
 
@@ -120,8 +120,8 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
         return;
       }
 
-      ph?.capture("manuscript_imported", { chapter_count: chapters.length, genre: genre || "none" });
-      router.push(`/studio/${data.projectId}`);
+      ph?.capture("manuscript_imported", { chapter_count: chapters.length, genre: genre || "none", destination: "story_scan" });
+      router.push(`/studio/${data.projectId}/scan`);
       onClose();
     } catch {
       setError("Network error. Please try again.");
@@ -138,11 +138,11 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-black/[0.06] dark:border-white/[0.06]">
           <div>
-            <h2 className="text-sm font-semibold text-[#0F0F0F] dark:text-[#EDEBF0]">Import manuscript</h2>
+            <h2 className="text-sm font-semibold text-[#0F0F0F] dark:text-[#EDEBF0]">Import for Story Scan</h2>
             <p className="text-[11px] text-[#71717A] dark:text-white/40 mt-0.5">
               {step === "upload"    && "Upload a .txt or .docx file"}
               {step === "preview"   && `${chapters.length} chapter${chapters.length !== 1 ? "s" : ""} detected`}
-              {step === "importing" && "Creating your project…"}
+              {step === "importing" && "Preparing your Story Scan…"}
             </p>
           </div>
           <button
@@ -294,7 +294,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <Loader2 size={28} className="text-violet-500 animate-spin" />
               <p className="text-sm font-medium text-[#71717A] dark:text-white/40">
-                Creating {chapters.length} chapter{chapters.length !== 1 ? "s" : ""}…
+                Preparing {chapters.length} chapter{chapters.length !== 1 ? "s" : ""} for your scan…
               </p>
             </div>
           )}
@@ -325,7 +325,7 @@ export default function ImportModal({ onClose }: { onClose: () => void }) {
                 disabled={!title.trim()}
                 className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#0F0F0F] dark:bg-violet-600 text-white text-[13px] font-semibold hover:bg-[#2A2A2A] dark:hover:bg-violet-500 disabled:opacity-40 transition-colors"
               >
-                Create project
+                Create and scan
                 <ChevronRight size={14} />
               </button>
             )}

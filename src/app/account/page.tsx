@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Crown } from "lucide-react";
 import { getUser, getProfile } from "@/lib/auth";
-import { isInTrial, trialDaysLeft, PLAN_LABELS, PLAN_LIMITS } from "@/lib/supabase";
+import { isInTrial, trialDaysLeft, PLAN_LABELS, PLAN_LIMITS, TRIAL_CREDITS } from "@/lib/supabase";
 import AccountSignOut from "./_components/account-sign-out";
 import ReferralCard from "@/app/dashboard/_components/referral-card";
 
@@ -16,8 +16,8 @@ export default async function AccountPage() {
   const inTrial   = isInTrial(profile);
   const daysLeft  = trialDaysLeft(profile);
   const planLabel = inTrial ? `Trial (${daysLeft}d left)` : PLAN_LABELS[profile.plan];
-  const aiLimit   = PLAN_LIMITS[profile.plan];
-  const aiUsed    = profile.ai_requests_this_month;
+  const aiLimit   = inTrial ? TRIAL_CREDITS : PLAN_LIMITS[profile.plan];
+  const aiUsed    = inTrial ? profile.ai_requests_total : profile.ai_requests_this_month;
   const isFounder = profile.is_lifetime === true || profile.plan === "founder_circle";
   const resetDate = new Date(profile.requests_reset_at).toLocaleDateString("en-US", {
     month: "short", day: "numeric",
@@ -69,22 +69,20 @@ export default async function AccountPage() {
         <div className="px-6 py-5">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#1A1A1A]/35 dark:text-white/35">AI Usage</p>
           <Row
-            label="Requests this month"
-            value={inTrial ? `${aiUsed} (unlimited during trial)` : `${aiUsed} / ${aiLimit}`}
+            label={inTrial ? "Trial credits used" : "Requests this month"}
+            value={`${aiUsed} / ${aiLimit}`}
           />
-          {!inTrial && (
-            <div className="mt-3 mb-2">
-              <div className="h-1.5 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.08]">
-                <div
-                  className="h-full bg-violet-500 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, Math.round((aiUsed / aiLimit) * 100))}%` }}
-                />
-              </div>
-              <p className="mt-1.5 text-[11px] text-[#1A1A1A]/35 dark:text-white/35">
-                Resets {resetDate} · {Math.max(0, aiLimit - aiUsed)} remaining
-              </p>
+          <div className="mt-3 mb-2">
+            <div className="h-1.5 overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.08]">
+              <div
+                className="h-full bg-violet-500 rounded-full transition-all"
+                style={{ width: `${Math.min(100, Math.round((aiUsed / aiLimit) * 100))}%` }}
+              />
             </div>
-          )}
+            <p className="mt-1.5 text-[11px] text-[#1A1A1A]/35 dark:text-white/35">
+              {inTrial ? `${Math.max(0, aiLimit - aiUsed)} trial credits remaining` : `Resets ${resetDate} · ${Math.max(0, aiLimit - aiUsed)} remaining`}
+            </p>
+          </div>
           <Row label="Total AI requests" value={profile.ai_requests_total.toLocaleString()} />
         </div>
 

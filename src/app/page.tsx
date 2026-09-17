@@ -12,14 +12,14 @@ import CTA                from "@/components/landing/CTA";
 import Footer             from "@/components/landing/Footer";
 
 export const metadata: Metadata = {
-  title: "Xvault Studio | AI Writing Studio for Novelists",
+  title: "Xvault Studio | See What Your Story Is Becoming",
   description:
-    "Write your novel with AI that remembers the plot and tracks each character's emotional arc. Story Pulse catches unearned turns before readers feel them. Free 14-day trial.",
+    "Upload your manuscript and reveal its characters, relationships, plot threads, and emotional arcs. Scan your first chapters free with Xvault Studio.",
   alternates: { canonical: "https://xvault.dev" },
   openGraph: {
-    title: "Xvault Studio | AI Writing Studio for Novelists",
+    title: "Xvault Studio | See What Your Story Is Becoming",
     description:
-      "Write your novel with AI that remembers the plot and tracks each character's emotional arc. Story Pulse catches unearned turns before readers feel them. Free 14-day trial.",
+      "Upload your manuscript and reveal its characters, relationships, plot threads, and emotional arcs. Scan your first chapters free.",
     url: "https://xvault.dev",
     type: "website",
   },
@@ -33,7 +33,7 @@ const softwareSchema = {
   operatingSystem: "Web (Chrome, Firefox, Safari, Edge)",
   url: "https://xvault.dev",
   description:
-    "AI writing studio for novelists. Reads your entire manuscript before suggesting anything, so every suggestion fits your characters, world, and voice.",
+    "A writing studio that scans a manuscript to reveal characters, relationships, plot threads, and emotional arcs, then keeps that story context available while the author writes.",
   offers: {
     "@type": "Offer",
     price: "0",
@@ -62,33 +62,33 @@ const orgSchema = {
 const howToSchema = {
   "@context": "https://schema.org",
   "@type": "HowTo",
-  name: "How to write your novel with Xvault Studio",
-  description: "Start writing your novel with an AI studio that reads your entire manuscript. No download or configuration required.",
+  name: "How to scan and continue your novel with Xvault Studio",
+  description: "Import a manuscript, reveal the story already on the page, and keep its context in view while writing.",
   totalTime: "PT10M",
   step: [
     {
       "@type": "HowToStep",
       position: 1,
-      name: "Sign Up",
-      text: "Create a free account in under 10 seconds. No credit card required. You get 100 AI credits and 14 days of full access.",
+      name: "Import your manuscript",
+      text: "Create a free account and upload a .docx or .txt manuscript. Xvault detects its chapters without changing the original file.",
     },
     {
       "@type": "HowToStep",
       position: 2,
-      name: "Start your story",
-      text: "Give your project a title and open the studio. Alex reads everything you write from the first sentence. A short tutorial walks you through Alex, cursor-aware writing, World Board, Story Bible, and Story Pulse as you go.",
+      name: "Run a First Story Scan",
+      text: "Scan up to three chapters to reveal characters, relationships, locations, plot threads, and emotional movement grounded in the manuscript.",
     },
     {
       "@type": "HowToStep",
       position: 3,
-      name: "Write",
-      text: "Write on the canvas while Alex lives in a panel alongside it, loaded with your manuscript context. Place the cursor and click Write to preview, refine, and insert a prose draft without leaving the studio.",
+      name: "Explore the story model",
+      text: "Open the World Board and Story Pulse to inspect factual and emotional continuity, then decide which observations matter to the story.",
     },
     {
       "@type": "HowToStep",
       position: 4,
-      name: "Finish your draft",
-      text: "Your manuscript is auto-saved to the cloud every 2 seconds and accessible on any device. When done, export as a Word document from the sidebar.",
+      name: "Continue writing with context",
+      text: "Write on the canvas while Alex and the prose tools use the manuscript context already captured by Xvault. Export the manuscript whenever you want.",
     },
   ],
 };

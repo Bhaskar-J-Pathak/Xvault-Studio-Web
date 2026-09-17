@@ -109,10 +109,10 @@ export default function Navbar() {
             </motion.div>
             <motion.div variants={desktopItem}>
               <Link
-                href="/auth?mode=signup"
+                href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
                 className="btn-shimmer inline-flex items-center rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
               >
-                Start writing
+                Scan my story
               </Link>
             </motion.div>
           </motion.div>
@@ -180,11 +180,11 @@ export default function Navbar() {
                     Sign in
                   </Link>
                   <Link
-                    href="/auth?mode=signup"
+                    href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
                     onClick={() => setMenuOpen(false)}
                     className="btn-shimmer inline-flex w-fit items-center rounded-full bg-stone-900 px-6 py-3 text-base font-semibold text-white"
                   >
-                    Start writing, it&apos;s free
+                    Scan my story free
                   </Link>
                 </div>
               </motion.div>

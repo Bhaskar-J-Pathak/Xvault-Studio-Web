@@ -8,16 +8,18 @@ import { usePostHog } from "posthog-js/react";
 
 interface Props {
   isBeta?: boolean;
+  autoOpenImport?: boolean;
+  modalOnly?: boolean;
 }
 
-export default function DashboardClient({ isBeta = false }: Props) {
+export default function DashboardClient({ isBeta = false, autoOpenImport = false, modalOnly = false }: Props) {
   const ph = usePostHog();
-  const [importOpen, setImportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(autoOpenImport && !isBeta);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   return (
     <>
-      <div className="grid w-full max-w-[520px] grid-cols-1 sm:grid-cols-2 gap-3">
+      {!modalOnly && <div className="grid w-full max-w-[520px] grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           onClick={isBeta ? undefined : () => {
             ph?.capture("first_session_path_selected", { path: "import_manuscript" });
@@ -56,7 +58,7 @@ export default function DashboardClient({ isBeta = false }: Props) {
           </span>
           <ArrowRight size={14} className="text-[#A1A1AA] transition-transform group-hover:translate-x-0.5" />
         </button>
-      </div>
+      </div>}
 
       {importOpen && <ImportModal onClose={() => setImportOpen(false)} />}
       <EditProjectModal

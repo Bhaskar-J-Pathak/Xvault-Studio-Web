@@ -47,12 +47,12 @@ type ProjectWithStats = DbProject & {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ preview?: string }>;
+  searchParams: Promise<{ preview?: string; scan?: string }>;
 }) {
   const user = await getUser();
   if (!user) redirect("/auth");
 
-  const [profile, supabase, { preview }] = await Promise.all([
+  const [profile, supabase, { preview, scan }] = await Promise.all([
     getProfile(user.id),
     createServerSupabaseClient(),
     searchParams,
@@ -111,6 +111,7 @@ export default async function DashboardPage({
   return (
     <>
       <ReferralLinker />
+      {projects.length > 0 && scan === "1" && <DashboardClient autoOpenImport modalOnly />}
       <div className="px-6 sm:px-10 py-10 sm:py-14 max-w-[1080px] mx-auto">
 
         {/* ── Greeting ── */}
@@ -149,7 +150,7 @@ export default async function DashboardPage({
 
         {/* ── Books grid ── */}
         {projects.length === 0 ? (
-          <EmptyState />
+          <EmptyState autoOpenImport={scan === "1"} />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
             <NewProjectCard />
@@ -166,7 +167,7 @@ export default async function DashboardPage({
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function EmptyState() {
+function EmptyState({ autoOpenImport = false }: { autoOpenImport?: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 sm:py-28 text-center">
       <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/[0.06] ring-1 ring-black/[0.06] dark:ring-white/[0.10] shadow-sm flex items-center justify-center mb-5">
@@ -179,7 +180,7 @@ function EmptyState() {
         Import a manuscript to see its characters, relationships, and story context,
         or open a clean page for something new.
       </p>
-      <DashboardClient />
+      <DashboardClient autoOpenImport={autoOpenImport} />
       <p className="mt-5 text-[11px] text-[#A1A1AA] dark:text-white/30">
         Import supports .docx and .txt files. Your original file is not changed.
       </p>

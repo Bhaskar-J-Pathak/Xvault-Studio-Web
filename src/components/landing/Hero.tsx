@@ -8,9 +8,9 @@ import { MagneticButton } from "./MagneticButton";
 import { gsap, useGSAP } from "@/lib/gsap";
 
 const features = [
-  "Story Pulse",
-  "Automatic Worldbuilder",
-  "Manuscript Memory",
+  "Characters & Relationships",
+  "Emotional Continuity",
+  "Plot Threads",
   "Voice-Aware Writing",
 ];
 
@@ -143,14 +143,14 @@ export default function Hero() {
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-600" />
               </span>
               <span className="text-[0.72rem] font-semibold tracking-wide text-violet-700">
-                Built for novelists who take their craft seriously
+                See what your manuscript is already doing
               </span>
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="font-display text-display text-[#1A0A3C]">
-            <span className="hero-line-1 block">It remembers the book</span>
+            <span className="hero-line-1 block">Upload three chapters.</span>
             <em
               className="hero-line-2 not-italic block"
               style={{
@@ -160,28 +160,28 @@ export default function Hero() {
                 backgroundClip: "text",
               }}
             >
-              so you don&apos;t have to.
+              See what your story is becoming.
             </em>
           </h1>
 
           {/* Subtext */}
           <p className="hero-sub max-w-[44ch] text-[1.0625rem] leading-[1.85] text-violet-900/50">
-            The writing studio that remembers the plot and follows the emotional
-            heartbeat of every character across your manuscript.
+            Xvault maps the characters and relationships already on the page,
+            follows emotional arcs, and shows where your story may be losing coherence.
           </p>
 
           {/* CTA */}
           <div className="hero-cta flex flex-col items-center gap-3 mt-1">
             <MagneticButton strength={0.3}>
               <Link
-                href="/auth?mode=signup"
+                href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
                 className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-2xl bg-violet-700 px-8 py-4 text-[0.9375rem] font-medium text-white shadow-[0_8px_24px_rgba(109,40,217,0.4),0_2px_8px_rgba(109,40,217,0.2)] transition-all duration-300 hover:bg-violet-600 hover:shadow-[0_12px_32px_rgba(109,40,217,0.55)] hover:-translate-y-0.5 active:translate-y-0"
               >
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full"
                 />
-                Start writing for free
+                Scan my manuscript free
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                   <path
                     d="M2 7h10M7 2l5 5-5 5"
@@ -194,7 +194,7 @@ export default function Hero() {
               </Link>
             </MagneticButton>
             <p className="text-[0.74rem] text-violet-500/60">
-              14-day free trial · 100 AI credits · no credit card
+              Scan your manuscript free · 100 AI credits · no credit card
             </p>
           </div>
 
