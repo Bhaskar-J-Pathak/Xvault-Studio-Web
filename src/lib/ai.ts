@@ -24,6 +24,16 @@ function vertexEndpoint(location: string): string {
 const EMBEDDING_VERTEX = vertexEndpoint(EMBEDDING_LOCATION);
 const GENERATION_VERTEX = vertexEndpoint(GENERATION_LOCATION);
 
+const FICTION_CONTEXT_SYSTEM = `The supplied material belongs to a fictional manuscript.
+Treat fictional violence, horror, death, profanity, and bleak or disturbing themes as story content to analyze or transform, not as evidence of real-world intent.
+Preserve the manuscript's established genre, tone, intensity, consequences, and authorial voice when the task asks you to continue or revise it. Do not make a gentle scene darker, make a dark scene gratuitous, or sanitize an established dark-fantasy tone merely because it is uncomfortable.
+Do not add moral lectures, unsolicited content warnings, or meta-commentary. Follow the task's requested output format exactly.
+Do not produce sexual content involving minors or actionable instructions intended to facilitate real-world harm.`;
+
+function withFictionContext(systemPrompt?: string) {
+  return [FICTION_CONTEXT_SYSTEM, systemPrompt].filter(Boolean).join("\n\n");
+}
+
 // Server-only model switches. Defaults preserve current production behaviour,
 // while deployment settings can migrate models without another code release.
 export const WORLDBOARD_MODEL = process.env.WORLDBOARD_MODEL?.trim() || "gemini-2.5-pro";
@@ -101,9 +111,7 @@ export async function geminiStream(
     generationConfig: { maxOutputTokens: maxTokens, temperature: 0.85 },
   };
 
-  if (systemPrompt) {
-    body.system_instruction = { parts: [{ text: systemPrompt }] };
-  }
+  body.system_instruction = { parts: [{ text: withFictionContext(systemPrompt) }] };
 
   const res = await fetch(
     `${GENERATION_VERTEX}/gemini-2.5-flash:streamGenerateContent?alt=sse`,
@@ -167,9 +175,7 @@ export async function geminiGenerate(
     generationConfig,
   };
 
-  if (systemPrompt) {
-    body.system_instruction = { parts: [{ text: systemPrompt }] };
-  }
+  body.system_instruction = { parts: [{ text: withFictionContext(systemPrompt) }] };
 
   const res = await fetch(`${GENERATION_VERTEX}/${model}:generateContent`, {
     method: "POST",
@@ -190,9 +196,14 @@ export async function geminiGenerate(
   if ((thinkingBudget !== undefined || thinkingLevel !== undefined) && candidate?.finishReason === "MAX_TOKENS") {
     throw new Error("Generation reached its output limit before finishing");
   }
-  return (candidate?.content?.parts ?? [])
+  const text = (candidate?.content?.parts ?? [])
     .filter((part: { thought?: boolean; text?: string }) => !part.thought && typeof part.text === "string")
     .map((part: { text: string }) => part.text).join("");
+  if (!text) {
+    const reason = candidate?.finishReason ?? data.promptFeedback?.blockReason ?? "empty";
+    throw new Error(`Gemini returned no text (${reason})`);
+  }
+  return text;
 }
 
 /**
@@ -241,10 +252,11 @@ export async function geminiChat(
     { role: "user", parts: [{ text: message }] },
   ];
 
-  const body: Record<string, unknown> = { contents, generationConfig };
-  if (systemPrompt) {
-    body.system_instruction = { parts: [{ text: systemPrompt }] };
-  }
+  const body: Record<string, unknown> = {
+    contents,
+    generationConfig,
+    system_instruction: { parts: [{ text: withFictionContext(systemPrompt) }] },
+  };
 
   const res = await fetch(`${GENERATION_VERTEX}/${model}:generateContent`, {
     method: "POST",
@@ -261,7 +273,16 @@ export async function geminiChat(
   }
 
   const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const candidate = data.candidates?.[0];
+  const text = (candidate?.content?.parts ?? [])
+    .filter((part: { thought?: boolean; text?: string }) => !part.thought && typeof part.text === "string")
+    .map((part: { text: string }) => part.text)
+    .join("");
+  if (!text) {
+    const reason = candidate?.finishReason ?? data.promptFeedback?.blockReason ?? "empty";
+    throw new Error(`Gemini returned no text (${reason})`);
+  }
+  return text;
 }
 
 // ---------------------------------------------------------------------------

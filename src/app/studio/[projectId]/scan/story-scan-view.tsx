@@ -25,6 +25,7 @@ interface Props {
   relationshipCount: number;
   threads: Thread[];
   observations: Observation[];
+  showUpgradePrompt: boolean;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -33,7 +34,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function StoryScanView(props: Props) {
-  const { projectId, projectTitle, chapters, entities, relationshipCount, threads, observations } = props;
+  const { projectId, projectTitle, chapters, entities, relationshipCount, threads, observations, showUpgradePrompt } = props;
   const router = useRouter();
   const ph = usePostHog();
   const [running, setRunning] = useState(false);
@@ -130,7 +131,7 @@ export default function StoryScanView(props: Props) {
                 <>
                   <div className="mb-5 flex flex-col gap-2 rounded-2xl border border-violet-100 bg-violet-50/60 px-4 py-3 text-xs text-violet-900/70 sm:flex-row sm:items-center sm:justify-between">
                     <span>Scanning {worldChapters.length} {worldChapters.length === 1 ? "chapter" : "chapters"} · {worldChapters.reduce((sum, row) => sum + row.word_count, 0).toLocaleString()} words</span>
-                    <span className="font-semibold text-violet-700">Uses approximately {estimatedCredits} trial credits</span>
+                    <span className="font-semibold text-violet-700">Uses approximately {estimatedCredits} AI credits</span>
                   </div>
                   <button onClick={runScan} disabled={running} className="scan-primary inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#1A1A1A] px-6 text-sm font-semibold text-white disabled:opacity-60 sm:w-auto">
                     {running ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
@@ -169,10 +170,17 @@ export default function StoryScanView(props: Props) {
 
             {threads.length > 0 && <section className="scan-card mt-6 rounded-2xl border border-black/[0.07] bg-white p-5 sm:p-6"><div className="mb-4 flex items-center gap-2"><BookHeart size={16} className="text-violet-600"/><h2 className="scan-title font-serif text-xl">Questions your story has opened</h2></div><div className="space-y-2">{threads.slice(0, 4).map((thread) => <div key={thread.id} className="scan-inset flex items-start gap-2 rounded-xl bg-black/[0.025] px-3.5 py-3 text-sm text-black/65"><Check size={14} className="mt-0.5 shrink-0 text-violet-500"/><span>{thread.description}</span></div>)}</div></section>}
 
-            <section className="mt-6 rounded-2xl bg-[#1A1A1A] px-6 py-6 text-white sm:flex sm:items-center sm:justify-between sm:gap-6">
-              <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">This is the beginning</p><h2 className="mt-2 font-serif text-2xl">Keep the model of your story growing.</h2><p className="mt-2 max-w-xl text-sm leading-6 text-white/60">Xvault updates these relationships, threads and emotional arcs as the manuscript changes.</p></div>
-              <Link href="/pricing" onClick={() => ph?.capture("story_scan_upgrade_clicked", { project_id: projectId })} className="mt-5 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-[#1A1A1A] sm:mt-0">See plans <ArrowRight size={14}/></Link>
-            </section>
+            {showUpgradePrompt ? (
+              <section className="mt-6 rounded-2xl bg-[#1A1A1A] px-6 py-6 text-white sm:flex sm:items-center sm:justify-between sm:gap-6">
+                <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">This is the beginning</p><h2 className="mt-2 font-serif text-2xl">Keep the model of your story growing.</h2><p className="mt-2 max-w-xl text-sm leading-6 text-white/60">Xvault updates these relationships, threads and emotional arcs as the manuscript changes.</p></div>
+                <Link href="/pricing" onClick={() => ph?.capture("story_scan_upgrade_clicked", { project_id: projectId })} className="mt-5 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-[#1A1A1A] sm:mt-0">See plans <ArrowRight size={14}/></Link>
+              </section>
+            ) : (
+              <section className="scan-card mt-6 rounded-2xl border border-black/[0.07] bg-white px-6 py-6 sm:flex sm:items-center sm:justify-between sm:gap-6">
+                <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-600">Story model active</p><h2 className="scan-title mt-2 font-serif text-2xl">Keep writing. Refresh when the story moves.</h2><p className="scan-muted mt-2 max-w-xl text-sm leading-6 text-black/50">Run another scan after adding or substantially revising chapters to update the relationships, threads and emotional arcs shown here.</p></div>
+                <Link href={`/studio/${projectId}/${chapters[0]?.id ?? ""}`} className="scan-primary mt-5 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1A1A1A] px-5 text-sm font-semibold text-white sm:mt-0">Continue writing <ArrowRight size={14}/></Link>
+              </section>
+            )}
           </>
         )}
         {hasResults && error && <p role="alert" className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}

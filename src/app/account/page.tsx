@@ -17,9 +17,10 @@ export default async function AccountPage() {
   const daysLeft  = trialDaysLeft(profile);
   const planLabel = inTrial ? `Trial (${daysLeft}d left)` : PLAN_LABELS[profile.plan];
   const aiLimit   = inTrial ? TRIAL_CREDITS : PLAN_LIMITS[profile.plan];
-  const aiUsed    = inTrial ? profile.ai_requests_total : profile.ai_requests_this_month;
+  const cycleHasReset = Boolean(profile.credits_reset_at && new Date(profile.credits_reset_at) <= new Date());
+  const aiUsed    = inTrial ? profile.ai_requests_total : cycleHasReset ? 0 : profile.ai_requests_this_month;
   const isFounder = profile.is_lifetime === true || profile.plan === "founder_circle";
-  const resetDate = new Date(profile.requests_reset_at).toLocaleDateString("en-US", {
+  const resetDate = new Date(profile.credits_reset_at ?? profile.requests_reset_at).toLocaleDateString("en-US", {
     month: "short", day: "numeric",
   });
 

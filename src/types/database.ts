@@ -12,6 +12,7 @@ export interface DbProfile {
   ai_requests_this_month: number;
   ai_requests_total: number;
   requests_reset_at: string;
+  credits_reset_at?: string | null;
   trial_ends_at: string | null;
   onboarding_step: number;
   onboarding_done: boolean;

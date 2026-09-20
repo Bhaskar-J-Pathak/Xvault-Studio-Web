@@ -12,6 +12,7 @@ export interface Profile {
   ai_requests_this_month: number;
   ai_requests_total: number;
   requests_reset_at: string;
+  credits_reset_at?: string | null;
   trial_ends_at: string | null;
   onboarding_step: number;
   onboarding_done: boolean;
@@ -84,6 +85,11 @@ export const CREDITS = {
 
 /** User is in trial if trial_ends_at exists and hasn't passed. */
 export function isInTrial(profile: Profile): boolean {
+  // A paid account must never fall back to trial accounting merely because a
+  // stale trial_ends_at value survived an older checkout flow.
+  if (profile.is_lifetime || profile.plan === "founder_circle" || profile.plan === "hobbyist") {
+    return false;
+  }
   if (!profile.trial_ends_at) return false;
   return new Date(profile.trial_ends_at) > new Date();
 }
@@ -126,7 +132,10 @@ export function creditsRemaining(profile: Profile, projectId?: string): number {
   }
 
   const limit = getCreditLimit(profile);
-  return Math.max(0, limit - (profile.ai_requests_this_month ?? 0));
+  const cycleHasReset = Boolean(
+    profile.credits_reset_at && new Date(profile.credits_reset_at) <= new Date()
+  );
+  return Math.max(0, limit - (cycleHasReset ? 0 : (profile.ai_requests_this_month ?? 0)));
 }
 
 /** Total credit cap for display. */

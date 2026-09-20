@@ -20,13 +20,21 @@ export default async function StoryScanPage({ params }: { params: Promise<{ proj
     { data: relationships },
     { data: threads },
     { data: observations },
+    { data: profile },
   ] = await Promise.all([
     supabase.from("chapters").select("id,title,position,word_count").eq("project_id", projectId).order("position"),
     supabase.from("entities").select("id,name,type").eq("project_id", projectId).order("name"),
     supabase.from("relationships").select("id").eq("project_id", projectId),
     supabase.from("plot_threads").select("id,description,status").eq("project_id", projectId).order("created_at"),
     supabase.from("story_pulse_observations").select("id,chapter_id,character_name,emotional_state,severity,continuity_note").eq("project_id", projectId).order("created_at"),
+    supabase.from("profiles").select("plan,is_lifetime,subscription_status").eq("id", user.id).maybeSingle(),
   ]);
+
+  // Fail closed: if the profile cannot be loaded, do not show a paid-plan ad
+  // to someone who may already be subscribed.
+  const showUpgradePrompt = profile
+    ? !(profile.is_lifetime || profile.plan === "founder_circle" || profile.plan === "hobbyist")
+    : false;
 
   return <StoryScanView
     projectId={projectId}
@@ -36,6 +44,6 @@ export default async function StoryScanPage({ params }: { params: Promise<{ proj
     relationshipCount={relationships?.length ?? 0}
     threads={threads ?? []}
     observations={observations ?? []}
+    showUpgradePrompt={showUpgradePrompt}
   />;
 }
-

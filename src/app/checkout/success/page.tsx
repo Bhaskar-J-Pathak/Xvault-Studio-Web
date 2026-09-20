@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePostHog } from "posthog-js/react";
 import { useSearchParams } from "next/navigation";
 
@@ -14,6 +14,9 @@ export default function CheckoutSuccessPage() {
   const paymentId = searchParams.get("payment_id") ?? undefined;
 
   const isSuccess = !status || status === "succeeded" || status === "success";
+  const [activation, setActivation] = useState<"checking" | "active" | "pending" | "failed">(
+    isSuccess && orderId ? "checking" : isSuccess ? "active" : "failed"
+  );
 
   useEffect(() => {
     if (isSuccess) {
@@ -21,6 +24,40 @@ export default function CheckoutSuccessPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isSuccess || !orderId) return;
+    let cancelled = false;
+    let attempts = 0;
+
+    async function checkActivation() {
+      attempts += 1;
+      try {
+        const response = await fetch("/api/checkout/status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, paymentId }),
+        });
+        const data = await response.json() as { status?: string };
+        if (cancelled) return;
+        if (data.status === "paid") {
+          setActivation("active");
+          return;
+        }
+        if (attempts < 8) {
+          window.setTimeout(checkActivation, 2000);
+        } else {
+          setActivation("pending");
+        }
+      } catch {
+        if (!cancelled) setActivation(attempts < 8 ? "checking" : "pending");
+        if (!cancelled && attempts < 8) window.setTimeout(checkActivation, 2000);
+      }
+    }
+
+    checkActivation();
+    return () => { cancelled = true; };
+  }, [isSuccess, orderId, paymentId]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8F5FF]">
@@ -38,12 +75,16 @@ export default function CheckoutSuccessPage() {
         </div>
 
         <h1 className="text-3xl font-light text-[#1A0A3C] mb-4">
-          {isSuccess ? "Payment successful!" : "Payment status"}
+          {activation === "active" ? "Your plan is active!" : isSuccess ? "Payment received" : "Payment status"}
         </h1>
 
         <p className="text-violet-700/70 mb-6">
-          {isSuccess
-            ? "Thank you! Your account is being updated. It may take a moment to reflect."
+          {activation === "active"
+            ? "Your credits have been refreshed and the upgrade is now active on your account."
+            : activation === "checking"
+            ? "Payment succeeded. We are activating your account now."
+            : isSuccess
+            ? "Payment succeeded, but activation is taking longer than expected. Your order is safe; contact support if it does not appear shortly."
             : "Something may have gone wrong. Please check your dashboard or contact support."}
         </p>
 
@@ -55,10 +96,10 @@ export default function CheckoutSuccessPage() {
         )}
 
         <Link
-          href="/dashboard"
+          href={activation === "active" ? "/dashboard" : "/account"}
           className="inline-flex items-center justify-center bg-violet-600 text-white px-6 py-3 rounded-full font-medium hover:bg-violet-700 transition"
         >
-          Go to Dashboard
+          {activation === "active" ? "Go to Dashboard" : "Check account"}
         </Link>
       </div>
     </div>
