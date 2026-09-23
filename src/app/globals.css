@@ -900,3 +900,40 @@ html[data-editor-theme="dark"] .xv-retention-title { color: #E0DDD5 !important; 
 html[data-editor-theme="dark"] .xv-retention-body,
 html[data-editor-theme="dark"] .xv-retention-muted { color: rgba(224,221,213,.58) !important; }
 html[data-editor-theme="dark"] .xv-retention-input { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.10) !important; color: #E0DDD5 !important; }
+
+
+/* World Board and its change history share the persisted editor theme. */
+html[data-editor-theme="sepia"] .world-board,
+html[data-editor-theme="sepia"] .world-board-bar,
+html[data-editor-theme="sepia"] .world-board-changes,
+html[data-editor-theme="sepia"] .world-board-empty {
+  background-color: #F8F4E8 !important;
+  color: #6B3E1A;
+}
+html[data-editor-theme="sepia"] .world-board-card {
+  background-color: #FFFBEF !important;
+  border-color: rgba(107,62,26,0.12) !important;
+}
+html[data-editor-theme="sepia"] .world-board-title { color: #6B3E1A !important; }
+html[data-editor-theme="sepia"] .world-board-body,
+html[data-editor-theme="sepia"] .world-board-muted { color: rgba(107,62,26,0.62) !important; }
+html[data-editor-theme="sepia"] .world-board-inset,
+html[data-editor-theme="sepia"] .world-board-chip { background-color: rgba(107,62,26,0.06) !important; }
+
+html[data-editor-theme="dark"] .world-board,
+html[data-editor-theme="dark"] .world-board-bar,
+html[data-editor-theme="dark"] .world-board-changes,
+html[data-editor-theme="dark"] .world-board-empty {
+  background-color: #111111 !important;
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .world-board-bar { border-color: rgba(255,255,255,0.07) !important; }
+html[data-editor-theme="dark"] .world-board-card {
+  background-color: #1C1C1C !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+html[data-editor-theme="dark"] .world-board-title { color: #E0DDD5 !important; }
+html[data-editor-theme="dark"] .world-board-body,
+html[data-editor-theme="dark"] .world-board-muted { color: rgba(224,221,213,0.62) !important; }
+html[data-editor-theme="dark"] .world-board-inset,
+html[data-editor-theme="dark"] .world-board-chip { background-color: rgba(255,255,255,0.06) !important; }

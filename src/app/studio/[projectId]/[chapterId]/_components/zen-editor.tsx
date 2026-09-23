@@ -722,14 +722,20 @@ export default function ZenEditor({
   const [extractionStatus, setExtractionStatus] = useState<"idle" | "extracting">("idle");
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [firstInsight, setFirstInsight] = useState<{ entities: number; relationships: number; threads: number } | null>(null);
+  const [latestBoardUpdate, setLatestBoardUpdate] = useState<{ entities: number; relationships: number; threads: number } | null>(null);
   useEffect(() => {
     const report = (event: Event) => setExtractionError(String((event as CustomEvent).detail));
     const celebrate = (event: Event) => {
-      if (sessionStorage.getItem(`xv_first_insight_${projectId}`)) return;
-      const detail = (event as CustomEvent<{ entitiesProcessed?: number; relationshipsAdded?: number; threadsTracked?: number }>).detail;
-      sessionStorage.setItem(`xv_first_insight_${projectId}`, "1");
-      setFirstInsight({ entities: detail.entitiesProcessed ?? 0, relationships: detail.relationshipsAdded ?? 0, threads: detail.threadsTracked ?? 0 });
-      ph?.capture("first_value_moment_reached", { feature: "worldboard", ...detail });
+      const detail = (event as CustomEvent<{ updateId?: string | null; entitiesProcessed?: number; relationshipsAdded?: number; threadsTracked?: number }>).detail;
+      if (!detail.updateId) return;
+      const summary = { entities: detail.entitiesProcessed ?? 0, relationships: detail.relationshipsAdded ?? 0, threads: detail.threadsTracked ?? 0 };
+      if (!sessionStorage.getItem(`xv_first_insight_${projectId}`)) {
+        sessionStorage.setItem(`xv_first_insight_${projectId}`, "1");
+        setFirstInsight(summary);
+        ph?.capture("first_value_moment_reached", { feature: "worldboard", ...detail });
+      } else {
+        setLatestBoardUpdate(summary);
+      }
     };
     window.addEventListener("worldboard-error", report);
     window.addEventListener("worldboard-updated", celebrate);
@@ -1488,7 +1494,18 @@ export default function ZenEditor({
           <p className="text-[11px] font-semibold uppercase tracking-widest text-violet-500">Your story is taking shape</p>
           <h3 className="mt-1 text-sm font-semibold">Xvault found {firstInsight.entities} story {firstInsight.entities === 1 ? "element" : "elements"}.</h3>
           <p className="mt-1 text-xs leading-5 opacity-60">It also mapped {firstInsight.relationships} relationships and {firstInsight.threads} plot threads from this chapter.</p>
-          <a href={`/studio/${projectId}/worldboard`} className="mt-3 inline-flex rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white">See what Xvault understood</a>
+          <a href={`/studio/${projectId}/worldboard?view=changes`} className="mt-3 inline-flex rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white">Review the changes</a>
+        </div>}
+
+        {latestBoardUpdate && <div className="fixed right-4 top-16 z-[174] w-[min(340px,calc(100vw-2rem))] rounded-2xl border p-4 shadow-2xl" style={{ backgroundColor: th.bg, borderColor: th.border, color: th.text }}>
+          <button onClick={() => setLatestBoardUpdate(null)} className="absolute right-3 top-3 opacity-45 hover:opacity-80"><X size={14}/></button>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-violet-500">World Board updated</p>
+          <p className="mt-1 pr-5 text-xs leading-5 opacity-65">
+            {latestBoardUpdate.entities} {latestBoardUpdate.entities === 1 ? "entity" : "entities"} changed
+            {latestBoardUpdate.relationships > 0 ? `, ${latestBoardUpdate.relationships} new ${latestBoardUpdate.relationships === 1 ? "relationship" : "relationships"}` : ""}
+            {latestBoardUpdate.threads > 0 ? `, and ${latestBoardUpdate.threads} plot ${latestBoardUpdate.threads === 1 ? "thread" : "threads"}` : ""}.
+          </p>
+          <a href={`/studio/${projectId}/worldboard?view=changes`} className="mt-3 inline-flex rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white">See exactly what changed</a>
         </div>}
 
         {/* Mobile ••• bottom sheet */}

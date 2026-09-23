@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import WorldBoardCanvas, { type WorldBoardCanvasHandle, type DBEntity, type DBRelationship } from "./world-board-canvas";
 import ExtractionDebugger from "./extraction-debugger";
 import EntityEditPanel from "./entity-edit-panel";
+import WorldBoardChanges, { type WorldBoardUpdate } from "./world-board-changes";
 
 // ── Exported types ─────────────────────────────────────────────────────────────
 
@@ -20,9 +21,10 @@ interface Props {
   initialRelationships: DBRelationship[];
   projectId:            string;
   chapters:             Chapter[];
+  initialUpdates:        WorldBoardUpdate[];
 }
 
-type Tab = "canvas" | "debug";
+type Tab = "canvas" | "changes" | "debug";
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -31,12 +33,13 @@ export default function WorldBoardView({
   initialRelationships,
   projectId,
   chapters,
+  initialUpdates,
 }: Props) {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const showDebug    = searchParams.get("debug") === "1";
 
-  const [tab,               setTab]               = useState<Tab>("canvas");
+  const [tab,               setTab]               = useState<Tab>(searchParams.get("view") === "changes" ? "changes" : "canvas");
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [resetting,         setResetting]         = useState(false);
   const [reExtracting,      setReExtracting]      = useState(false);
@@ -44,6 +47,7 @@ export default function WorldBoardView({
   const [reExtractProgress, setReExtractProgress] = useState<string | null>(null);
   const [actionError,       setActionError]       = useState<string | null>(null);
   const [resetScope,        setResetScope]        = useState<"project" | string>("project");
+  const [updates,           setUpdates]           = useState<WorldBoardUpdate[]>(initialUpdates);
 
   // Dedup state
   const [deduping,  setDeduping]  = useState(false);
@@ -57,6 +61,19 @@ export default function WorldBoardView({
   const [creatingNew,      setCreatingNew]      = useState(false);
 
   const canvasRef = useRef<WorldBoardCanvasHandle>(null);
+  const unseenUpdates = updates.filter((update) => !update.viewed_at).length;
+  const chapterTitles = new Map(chapters.map((chapter) => [chapter.id, chapter.title]));
+
+  const handleUpdatesViewed = useCallback(() => {
+    const viewedAt = new Date().toISOString();
+    setUpdates((current) => current.map((update) => update.viewed_at ? update : { ...update, viewed_at: viewedAt }));
+  }, []);
+
+  const handleChangeEntityOpen = useCallback((id: string) => {
+    setTab("canvas");
+    setCreatingNew(false);
+    setSelectedEntityId(id);
+  }, []);
 
   // ── Chapter-scoped filtering ─────────────────────────────────────────────────
 
@@ -263,7 +280,7 @@ export default function WorldBoardView({
   return (
       <div className="flex flex-col h-full">
       {/* Tab bar + controls */}
-      <div className="shrink-0 flex items-center gap-1 px-4 pt-1.5 pb-0 border-b border-black/[0.06] bg-white">
+      <div className="world-board-bar shrink-0 flex flex-wrap items-center gap-1 border-b border-black/[0.06] bg-white px-3 pt-1.5 pb-0 sm:px-4">
 
         <TabButton active={tab === "canvas"} onClick={() => setTab("canvas")}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-60">
@@ -271,6 +288,14 @@ export default function WorldBoardView({
             <line x1="12" y1="7" x2="5.5" y2="17" /><line x1="12" y1="7" x2="18.5" y2="17" />
           </svg>
           Canvas
+        </TabButton>
+
+        <TabButton active={tab === "changes"} onClick={() => setTab("changes")}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-60">
+            <path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 3v6h6" /><path d="M12 7v5l3 2" />
+          </svg>
+          Changes
+          {unseenUpdates > 0 && <span className="rounded-full bg-violet-600 px-1.5 py-0.5 text-[9px] leading-none text-white">{unseenUpdates}</span>}
         </TabButton>
 
         {showDebug && (
@@ -284,7 +309,7 @@ export default function WorldBoardView({
         )}
 
         {/* Right-side controls */}
-        <div className="ml-auto flex items-center gap-2 pb-1.5">
+        <div className="ml-auto flex items-center gap-1.5 pb-1.5 max-sm:order-2 max-sm:w-full max-sm:justify-end">
 
           {/* Add entity */}
           {tab === "canvas" && (
@@ -392,6 +417,14 @@ export default function WorldBoardView({
             initialRelationships={visibleRelationships}
             projectId={projectId}
             onEntityClick={handleEntityClick}
+          />
+        ) : tab === "changes" ? (
+          <WorldBoardChanges
+            projectId={projectId}
+            updates={updates}
+            chapterTitles={chapterTitles}
+            onViewed={handleUpdatesViewed}
+            onEntityOpen={handleChangeEntityOpen}
           />
         ) : showDebug ? (
           <ExtractionDebugger projectId={projectId} />

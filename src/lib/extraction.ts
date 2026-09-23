@@ -48,6 +48,37 @@ export interface ExtractionResult {
   inconsistencies:  ExtractedInconsistency[];
 }
 
+export interface WorldBoardAttributeChange {
+  key: string;
+  from: string | null;
+  to: string;
+}
+
+export interface WorldBoardChangeSet {
+  addedEntities: Array<{ id: string; name: string; type: string; attributes: Record<string, string> }>;
+  updatedEntities: Array<{ id: string; name: string; attributes: WorldBoardAttributeChange[] }>;
+  addedRelationships: Array<{
+    sourceId: string; targetId: string; source: string; target: string; label: string;
+  }>;
+  addedThreads: Array<{ description: string; status: string }>;
+  updatedThreads: Array<{ description: string; from: string; to: string }>;
+  inconsistencies: ExtractedInconsistency[];
+}
+
+export interface WorldBoardMergeResult {
+  inconsistencies: ExtractedInconsistency[];
+  changes: WorldBoardChangeSet;
+}
+
+export function hasWorldBoardChanges(changes: WorldBoardChangeSet): boolean {
+  return changes.addedEntities.length > 0 ||
+    changes.updatedEntities.length > 0 ||
+    changes.addedRelationships.length > 0 ||
+    changes.addedThreads.length > 0 ||
+    changes.updatedThreads.length > 0 ||
+    changes.inconsistencies.length > 0;
+}
+
 interface ExistingEntity {
   id:         string;
   name:       string;
@@ -422,12 +453,20 @@ export async function mergeExtractionIntoGraph(
   existingEntities: ExistingEntity[],
   client:          SupabaseClient,
   existingThreads: ExistingThread[] = []
-): Promise<ExtractedInconsistency[]> {
+): Promise<WorldBoardMergeResult> {
   const throwIfError = (error: { message: string } | null, operation: string) => {
     if (error) throw new Error(`${operation}: ${error.message}`);
   };
   // Use existId as the sole authority — model's is_update flag is unreliable
   const nameEntries = buildNameEntries(existingEntities);
+  const changes: WorldBoardChangeSet = {
+    addedEntities: [],
+    updatedEntities: [],
+    addedRelationships: [],
+    addedThreads: [],
+    updatedThreads: [],
+    inconsistencies: [],
+  };
 
   // ── Layout tracking: 2×3 zone grid matching world-board-canvas.tsx ──────────
   const ZONE_ORIGINS: Record<string, { x: number; y: number }> = {
@@ -453,6 +492,13 @@ export async function mergeExtractionIntoGraph(
 
     if (existId) {
       nameEntries.push({ name: e.name, id: existId });
+      const existingEntity = existingEntities.find((entity) => entity.id === existId);
+      const attributeChanges = Object.entries(e.attributes).flatMap(([key, value]) => {
+        const previous = existingEntity?.attributes?.[key];
+        return String(previous ?? "") === String(value)
+          ? []
+          : [{ key, from: previous == null ? null : String(previous), to: String(value) }];
+      });
       // Entity already exists — always merge new attributes, never duplicate
       if (Object.keys(e.attributes).length > 0) {
         const { error } = await client.rpc("merge_entity_attributes", {
@@ -466,17 +512,26 @@ export async function mergeExtractionIntoGraph(
         .update({ last_seen_word: chapterNumber, confidence: e.confidence })
         .eq("id", existId);
       throwIfError(error, "Could not update entity");
+      if (attributeChanges.length > 0) {
+        changes.updatedEntities.push({ id: existId, name: existingEntity?.name ?? e.name, attributes: attributeChanges });
+      }
     } else {
       // DB safety check: prevent concurrent-extraction duplicates
       const { data: dbDupe, error: dupeError } = await client
         .from("entities")
-        .select("id")
+        .select("id, name, attributes")
         .eq("project_id", projectId)
         .ilike("name", e.name)
         .maybeSingle();
       throwIfError(dupeError, "Could not check for duplicate entity");
 
       if (dbDupe) {
+        const attributeChanges = Object.entries(e.attributes).flatMap(([key, value]) => {
+          const previous = (dbDupe.attributes as Record<string, unknown> | null)?.[key];
+          return String(previous ?? "") === String(value)
+            ? []
+            : [{ key, from: previous == null ? null : String(previous), to: String(value) }];
+        });
         if (Object.keys(e.attributes).length > 0) {
           const { error } = await client.rpc("merge_entity_attributes", {
             p_entity_id: dbDupe.id,
@@ -485,6 +540,9 @@ export async function mergeExtractionIntoGraph(
           throwIfError(error, "Could not update duplicate entity attributes");
         }
         nameEntries.push({ name: e.name, id: dbDupe.id });
+        if (attributeChanges.length > 0) {
+          changes.updatedEntities.push({ id: dbDupe.id, name: dbDupe.name ?? e.name, attributes: attributeChanges });
+        }
         continue;
       }
 
@@ -514,6 +572,7 @@ export async function mergeExtractionIntoGraph(
       throwIfError(insertError, `Could not create entity "${e.name}"`);
 
       if (!inserted) throw new Error(`Could not create entity "${e.name}"`);
+      changes.addedEntities.push({ id: inserted.id, name: e.name, type: e.type, attributes: e.attributes });
       nameEntries.push({ name: e.name, id: inserted.id });
       const aliases = String(e.attributes?.aliases ?? "").split(",").map((value) => value.trim()).filter(Boolean);
       for (const alias of aliases) nameEntries.push({ name: alias, id: inserted.id });
@@ -548,6 +607,7 @@ export async function mergeExtractionIntoGraph(
         label,
       });
       throwIfError(error, `Could not create relationship "${label}"`);
+      changes.addedRelationships.push({ sourceId, targetId, source: rel.source, target: rel.target, label });
     }
   }
 
@@ -567,6 +627,7 @@ export async function mergeExtractionIntoGraph(
 
     if (matchIndex >= 0) {
       const matched = knownThreads[matchIndex];
+      const previousStatus = matched.status;
       const { error } = await client
         .from("plot_threads")
         .update({
@@ -579,6 +640,9 @@ export async function mergeExtractionIntoGraph(
       throwIfError(error, "Could not update plot thread");
       matched.status = thread.status;
       matched.last_seen_chapter_number = chapterNumber;
+      if (previousStatus !== thread.status) {
+        changes.updatedThreads.push({ description: matched.description, from: previousStatus, to: thread.status });
+      }
     } else {
       if (findMatchingThreadIndex(thread.description, insertedThreadDescriptions.map((description) => ({ description }))) >= 0) {
         continue;
@@ -594,6 +658,7 @@ export async function mergeExtractionIntoGraph(
       });
       throwIfError(error, "Could not create plot thread");
       insertedThreadDescriptions.push(thread.description);
+      changes.addedThreads.push({ description: thread.description, status: thread.status });
     }
   }
 
@@ -621,7 +686,8 @@ export async function mergeExtractionIntoGraph(
     throwIfError(error, "Could not create inconsistency flag");
 
     flagsCreated.push(inc);
+    changes.inconsistencies.push(inc);
   }
 
-  return flagsCreated;
+  return { inconsistencies: flagsCreated, changes };
 }

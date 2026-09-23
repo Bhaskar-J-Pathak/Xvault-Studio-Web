@@ -23,6 +23,8 @@ import {
   buildExtractionPrompt,
   parseExtractionResponse,
   mergeExtractionIntoGraph,
+  hasWorldBoardChanges,
+  type WorldBoardMergeResult,
 } from "@/lib/extraction";
 import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 
@@ -176,8 +178,9 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      let mergeResult: WorldBoardMergeResult;
       try {
-        const inconsistencies = await mergeExtractionIntoGraph(
+        mergeResult = await mergeExtractionIntoGraph(
           projectId,
           chapter.id,
           chapterNum,
@@ -186,16 +189,25 @@ export async function POST(request: NextRequest) {
           supabase,
           openThreads ?? []
         );
-        // Kept for future extraction diagnostics.
-        void inconsistencies;
+        if (hasWorldBoardChanges(mergeResult.changes)) {
+          const { error: historyError } = await supabase.from("worldboard_updates").insert({
+            project_id: projectId,
+            chapter_id: chapter.id,
+            chapter_number: chapterNum,
+            changes: mergeResult.changes,
+          });
+          if (historyError) {
+            console.warn("[reextract] Could not save update history:", historyError.message);
+          }
+        }
       } catch (err) {
         console.error(`[reextract] Database merge failed on chapter "${chapter.title}" offset ${wordOffset}:`, err);
         chapterFailure = `Could not save extracted data for chapter "${chapter.title}".`;
         break;
       }
 
-      totalEntities      += extracted.entities.length;
-      totalRelationships += extracted.relationships.length;
+      totalEntities      += mergeResult.changes.addedEntities.length + mergeResult.changes.updatedEntities.length;
+      totalRelationships += mergeResult.changes.addedRelationships.length;
       const completedWords = Math.min(words.length, wordOffset + CHUNK_SIZE);
       const { error: progressError } = await supabase.from("chapters")
         .update({ last_extracted_word: completedWords }).eq("id", chapter.id);

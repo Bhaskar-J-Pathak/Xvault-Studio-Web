@@ -15,6 +15,8 @@ import {
   buildExtractionPrompt,
   parseExtractionResponse,
   mergeExtractionIntoGraph,
+  hasWorldBoardChanges,
+  type WorldBoardMergeResult,
 } from "@/lib/extraction";
 import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
 import { CREDITS } from "@/lib/supabase";
@@ -108,9 +110,9 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Merge into graph ────────────────────────────────────────────────────────
-  let inconsistencies;
+  let mergeResult: WorldBoardMergeResult;
   try {
-    inconsistencies = await mergeExtractionIntoGraph(
+    mergeResult = await mergeExtractionIntoGraph(
       projectId,
       chapterId,
       chapterNumber,
@@ -122,6 +124,26 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[worldboard] Failed to save extraction:", err);
     return Response.json({ error: "Could not save extracted World Board data" }, { status: 500 });
+  }
+
+  // Record only meaningful changes. Re-reading an unchanged fact does not create noise.
+  let updateId: string | null = null;
+  if (hasWorldBoardChanges(mergeResult.changes)) {
+    const { data: update, error: updateError } = await supabase
+      .from("worldboard_updates")
+      .insert({
+        project_id: projectId,
+        chapter_id: chapterId,
+        chapter_number: chapterNumber,
+        changes: mergeResult.changes,
+      })
+      .select("id")
+      .single();
+    if (updateError) {
+      console.warn("[worldboard] Could not save update history:", updateError.message);
+    } else {
+      updateId = update.id;
+    }
   }
 
   // ── Update chapter extraction watermark ────────────────────────────────────
@@ -138,11 +160,13 @@ export async function POST(request: NextRequest) {
   await commitRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk, projectId);
   return Response.json({
     ok:                true,
-    entitiesProcessed: extracted.entities.length,
-    relationshipsAdded: extracted.relationships.length,
-    threadsTracked:    extracted.threads.length,
-    inconsistencies:   inconsistencies.length,
-    flagged:           inconsistencies,
+    updateId,
+    changes:            mergeResult.changes,
+    entitiesProcessed:  mergeResult.changes.addedEntities.length + mergeResult.changes.updatedEntities.length,
+    relationshipsAdded: mergeResult.changes.addedRelationships.length,
+    threadsTracked:     mergeResult.changes.addedThreads.length + mergeResult.changes.updatedThreads.length,
+    inconsistencies:    mergeResult.inconsistencies.length,
+    flagged:             mergeResult.inconsistencies,
     remaining,
   });
 }

@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getUser, getProfile, createServerSupabaseClient } from "@/lib/auth";
 import WorldBoardView from "./_components/world-board-view";
 import type { Chapter } from "./_components/world-board-view";
+import type { WorldBoardUpdate } from "./_components/world-board-changes";
 import TutorialOverlay from "../_components/tutorial-overlay";
 
 export default async function WorldBoardPage({
@@ -29,8 +30,8 @@ export default async function WorldBoardPage({
 
   if (!project) notFound();
 
-  // Fetch entities, relationships, and chapters in parallel
-  const [{ data: entities }, { data: relationships }, { data: chapters }] = await Promise.all([
+  // Fetch the graph and its recent change history in parallel.
+  const [{ data: entities }, { data: relationships }, { data: chapters }, { data: updates }] = await Promise.all([
     supabase
       .from("entities")
       .select("id, name, type, attributes, confidence, position, first_seen_chapter_id")
@@ -45,16 +46,23 @@ export default async function WorldBoardPage({
       .select("id, title, position, word_count")
       .eq("project_id", projectId)
       .order("position"),
+    supabase
+      .from("worldboard_updates")
+      .select("id, chapter_id, chapter_number, changes, viewed_at, created_at")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(50),
   ]);
 
   const safeEntities      = entities      ?? [];
   const safeRelationships = relationships ?? [];
   const safeChapters      = (chapters     ?? []) as Chapter[];
+  const safeUpdates       = (updates      ?? []) as WorldBoardUpdate[];
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="world-board flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-black/[0.06]">
+      <div className="world-board-bar shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/[0.06] sm:px-6">
         <div className="flex items-center gap-2.5">
           <svg
             width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -85,11 +93,12 @@ export default async function WorldBoardPage({
       {/* View (Canvas + Debug tabs) */}
       <div className="flex-1" style={{ minHeight: 0 }}>
         <WorldBoardView
-          key={JSON.stringify([safeEntities, safeRelationships])}
+          key={JSON.stringify([safeEntities, safeRelationships, safeUpdates])}
           initialEntities={safeEntities as Parameters<typeof WorldBoardView>[0]["initialEntities"]}
           initialRelationships={safeRelationships}
           projectId={projectId}
           chapters={safeChapters}
+          initialUpdates={safeUpdates}
         />
       </div>
 
