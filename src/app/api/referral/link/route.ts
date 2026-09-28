@@ -1,100 +1,39 @@
-/**
- * POST /api/referral/link
- *
- * Called client-side after signup when a ?ref=CODE was present in the URL
- * or the user manually entered a referral code on the auth page.
- *
- * Links the referral code to the current user's profile and immediately
- * awards bonus credits to both the referrer (+30) and the referee (+15).
- *
- * Body:    { code: string }
- * Returns: { ok: true, credited: boolean } | { error: string }
- *
- * Idempotent — calling twice for the same user is a no-op.
- */
-
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { code?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  const code = body.code?.trim().toUpperCase();
-  if (!code || code.length !== 8) {
-    return Response.json({ error: "Invalid referral code" }, { status: 400 });
+  const body = await request.json().catch(() => ({})) as { code?: string };
+  const code = (body.code ?? request.cookies.get("xv_affiliate")?.value)?.trim().toUpperCase();
+  if (!code || !/^[A-Z0-9]{8}$/.test(code)) {
+    return NextResponse.json({ error: "Invalid referral code" }, { status: 400 });
   }
 
   const service = createServiceClient();
+  const { data, error } = await service.rpc("claim_affiliate_referral", {
+    p_referred_id: user.id,
+    p_code: code,
+    p_source: body.code ? "signup_code" : "affiliate_cookie",
+  });
 
-  // Check current user's profile — bail if already referred
-  const { data: myProfile } = await service
-    .from("profiles")
-    .select("id, referred_by, referral_code")
-    .eq("id", user.id)
-    .single();
-
-  if (!myProfile) return Response.json({ error: "Profile not found" }, { status: 404 });
-  if (myProfile.referred_by) return Response.json({ ok: true, credited: false }); // already linked
-
-  // Prevent self-referral
-  if (myProfile.referral_code === code) {
-    return Response.json({ error: "Cannot refer yourself" }, { status: 400 });
+  if (error) {
+    console.error("affiliate:claim_failed", { userId: user.id, error: error.message });
+    return NextResponse.json({ error: "Could not link referral" }, { status: 500 });
+  }
+  if (!data?.ok) {
+    const messages: Record<string, string> = {
+      code_not_found: "Referral code not found",
+      self_referral: "You cannot refer yourself",
+      profile_not_found: "Profile not found",
+    };
+    const status = data?.reason === "code_not_found" ? 404 : 400;
+    return NextResponse.json({ error: messages[data?.reason] ?? "Invalid referral" }, { status });
   }
 
-  // Find the referrer
-  const { data: referrer } = await service
-    .from("profiles")
-    .select("id, referral_count")
-    .eq("referral_code", code)
-    .single();
-
-  if (!referrer) {
-    return Response.json({ error: "Referral code not found" }, { status: 404 });
-  }
-
-  // Referrer must have < 10 completed referrals
-  if (referrer.referral_count >= 10) {
-    return Response.json({ error: "Referral limit reached" }, { status: 409 });
-  }
-
-  // Link referred_by on the current user's profile
-  const { error: linkErr } = await service
-    .from("profiles")
-    .update({ referred_by: referrer.id })
-    .eq("id", user.id);
-
-  if (linkErr) return Response.json({ error: linkErr.message }, { status: 500 });
-
-  // Create the pending referral row
-  const { error: refErr } = await service
-    .from("referrals")
-    .insert({ referrer_id: referrer.id, referred_id: user.id, status: "pending" });
-
-  if (refErr && refErr.code !== "23505") {
-    // 23505 = unique violation (referred_id already exists) — treat as no-op
-    return Response.json({ error: refErr.message }, { status: 500 });
-  }
-
-  // Immediately award credits to both parties via the DB function.
-  // complete_referral() is idempotent — safe to call again from onboarding.
-  let credited = false;
-  try {
-    const { data: rpcResult } = await service.rpc("complete_referral", {
-      p_referred_id: user.id,
-    });
-    credited = rpcResult?.ok === true;
-  } catch {
-    // Non-fatal — credits can still be awarded later via onboarding completion
-  }
-
-  return Response.json({ ok: true, credited });
+  const response = NextResponse.json({ ok: true, linked: Boolean(data.linked) });
+  response.cookies.delete("xv_affiliate");
+  return response;
 }

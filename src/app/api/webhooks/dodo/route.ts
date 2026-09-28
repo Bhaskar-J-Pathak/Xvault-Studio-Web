@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { createClient } from "@supabase/supabase-js";
+import { getDodoEnvironment, getDodoWebhookSecret } from "@/lib/dodo";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 type PlanValue = "hobbyist" | "founder_circle";
 type OrderRecord = { id: string; user_id: string; product_id: string; plan_purchased: PlanValue; status: string };
+type CreditOrderRecord = { id: string; user_id: string; product_id: string; status: string };
 type DodoEventData = {
   subscription_id?: string | null;
   payment_id?: string | null;
@@ -82,6 +84,32 @@ async function findOrder(data: DodoEventData): Promise<OrderRecord | null> {
   return (orders?.[0] as OrderRecord | undefined) ?? null;
 }
 
+async function findCreditOrder(data: DodoEventData): Promise<CreditOrderRecord | null> {
+  const metadata = data.metadata ?? {};
+  const orderId = stringValue(metadata.creditOrderId) ?? stringValue(metadata.credit_order_id);
+  if (orderId) {
+    const { data: order, error } = await supabaseAdmin.from("credit_orders")
+      .select("id,user_id,product_id,status").eq("id", orderId).maybeSingle();
+    if (error) throw new Error("Could not load credit order: " + error.message);
+    if (order) return order as CreditOrderRecord;
+  }
+  const paymentId = stringValue(data.payment_id);
+  if (paymentId) {
+    const { data: order, error } = await supabaseAdmin.from("credit_orders")
+      .select("id,user_id,product_id,status").eq("dodo_payment_id", paymentId).maybeSingle();
+    if (error) throw new Error("Could not match payment to credit order: " + error.message);
+    if (order) return order as CreditOrderRecord;
+  }
+  const sessionId = stringValue(data.checkout_session_id);
+  if (sessionId) {
+    const { data: order, error } = await supabaseAdmin.from("credit_orders")
+      .select("id,user_id,product_id,status").eq("dodo_checkout_session_id", sessionId).maybeSingle();
+    if (error) throw new Error("Could not match checkout session to credit order: " + error.message);
+    return (order as CreditOrderRecord | null) ?? null;
+  }
+  return null;
+}
+
 async function recordEventStart(eventId: string, eventType: string): Promise<boolean> {
   const { data: existing, error: readError } = await supabaseAdmin.from("webhook_events")
     .select("status").eq("event_id", eventId).maybeSingle();
@@ -126,6 +154,18 @@ async function activateOrder(order: OrderRecord, data: DodoEventData, timestamp?
   if (error) throw new Error(`Could not activate paid order: ${error.message}`);
 }
 
+async function fulfillCreditOrder(order: CreditOrderRecord, data: DodoEventData, timestamp?: string) {
+  const productId = eventProductId(data);
+  if (productId && productId !== order.product_id) throw new Error("Webhook product does not match credit order");
+  const { error } = await supabaseAdmin.rpc("fulfill_credit_order", {
+    p_order_id: order.id,
+    p_user_id: order.user_id,
+    p_payment_id: data.payment_id ?? null,
+    p_paid_at: data.created_at ?? timestamp ?? new Date().toISOString(),
+  });
+  if (error) throw new Error("Could not fulfill credit order: " + error.message);
+}
+
 export async function POST(req: NextRequest) {
   const raw = await req.text();
   const headers = {
@@ -135,7 +175,7 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const verifier = new Webhook(process.env.DODO_PAYMENTS_WEBHOOK_SECRET!);
+    const verifier = new Webhook(getDodoWebhookSecret(getDodoEnvironment()));
     await verifier.verify(raw, headers);
   } catch (error) {
     console.error("webhook:invalid_signature", error);
@@ -157,15 +197,66 @@ export async function POST(req: NextRequest) {
     if (!shouldProcess) return NextResponse.json({ received: true, duplicate: true });
 
     const data = event.data ?? {};
-    const order = await findOrder(data);
+    const isCreditPack = data.metadata?.purchaseKind === "credit_pack" || data.metadata?.purchase_kind === "credit_pack";
+    const creditRefundOrder = event.type === "refund.succeeded" ? await findCreditOrder(data) : null;
+    const order = isCreditPack || creditRefundOrder ? null : await findOrder(data);
 
     switch (event.type) {
       case "payment.succeeded":
+        if (isCreditPack) {
+          const creditOrder = await findCreditOrder(data);
+          if (!creditOrder) throw new Error("Successful credit payment could not be matched to an Xvault credit order");
+          await fulfillCreditOrder(creditOrder, data, event.timestamp);
+          break;
+        }
         if (!order) throw new Error("Successful payment could not be matched to an Xvault order");
         await activateOrder(order, data, event.timestamp);
         break;
+      case "refund.succeeded":
+        if (creditRefundOrder && data.payment_id) {
+          const { error } = await supabaseAdmin.rpc("refund_credit_order", {
+            p_payment_id: data.payment_id,
+            p_refund_amount_cents: null,
+          });
+          if (error) throw new Error("Could not reverse refunded credit order: " + error.message);
+        } else if (data.payment_id) {
+          const { error } = await supabaseAdmin.rpc("set_affiliate_commission_risk", {
+            p_payment_id: data.payment_id,
+            p_action: "reverse",
+            p_reason: "refund.succeeded",
+          });
+          if (error) throw new Error("Could not reverse affiliate commission: " + error.message);
+        }
+        break;
+
+      case "dispute.opened":
+      case "dispute.won":
+      case "dispute.lost":
+        if (data.payment_id) {
+          const action = event.type === "dispute.opened" ? "hold" : event.type === "dispute.won" ? "release" : "reverse";
+          const { error } = await supabaseAdmin.rpc("set_affiliate_commission_risk", {
+            p_payment_id: data.payment_id,
+            p_action: action,
+            p_reason: event.type,
+          });
+          if (error) throw new Error("Could not update affiliate commission risk: " + error.message);
+        }
+        break;
+
 
       case "payment.failed":
+        if (isCreditPack) {
+          const creditOrder = await findCreditOrder(data);
+          if (creditOrder && creditOrder.status !== "paid") {
+            const { error } = await supabaseAdmin.from("credit_orders").update({
+              status: "failed",
+              dodo_payment_id: data.payment_id ?? null,
+              updated_at: new Date().toISOString(),
+            }).eq("id", creditOrder.id);
+            if (error) throw new Error("Could not mark failed credit order: " + error.message);
+          }
+          break;
+        }
         if (order && order.status !== "paid") {
           const { error } = await supabaseAdmin.from("orders").update({
             status: "failed",

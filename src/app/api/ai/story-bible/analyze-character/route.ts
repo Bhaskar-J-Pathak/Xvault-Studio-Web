@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalToText } from "@/lib/chunking";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
   // Costs 2 credits per character analysis.
-  const { block } = await checkRateLimit(user.id, createServiceClient(), 2, projectId);
+  const { block } = await checkRateLimit(user.id, createServiceClient(), 2, projectId, "character_analysis");
   if (block) return block;
 
   // Fetch the entity
@@ -133,11 +133,10 @@ Analyze only from evidence in the text. Be specific and concrete — avoid vague
       "gemini-2.5-flash"
     );
   } catch (err) {
+    await recordCreditFailure(user.id, "character_analysis", 2, "ai_generation", err);
     console.error("[analyze-character] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
-
-  await commitRateLimit(user.id, createServiceClient(), 2, projectId);
 
   let profile: {
     personality: string;
@@ -151,6 +150,7 @@ Analyze only from evidence in the text. Be specific and concrete — avoid vague
     // Try to extract JSON from response if wrapped in markdown
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) {
+      await recordCreditFailure(user.id, "character_analysis", 2, "validation", undefined, "invalid_response");
       console.error("[analyze-character] Parse failed. Raw:", raw.slice(0, 200));
       return Response.json({ error: "Parse failed" }, { status: 500 });
     }
@@ -167,10 +167,16 @@ Analyze only from evidence in the text. Be specific and concrete — avoid vague
     dialogue_style: profile.dialogue_style ?? "",
   };
 
-  await supabase
+  const { error: saveError } = await supabase
     .from("entities")
     .update({ attributes: updatedAttrs })
     .eq("id", entityId);
+  if (saveError) {
+    await recordCreditFailure(user.id, "character_analysis", 2, "persistence", saveError);
+    console.error("[analyze-character] Save failed:", saveError);
+    return Response.json({ error: "Character analysis was generated but could not be saved" }, { status: 500 });
+  }
 
+  await commitRateLimit(user.id, createServiceClient(), 2, projectId, "character_analysis");
   return Response.json({ ok: true, profile });
 }

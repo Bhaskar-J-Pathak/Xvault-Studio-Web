@@ -12,14 +12,14 @@ export default function AuthLinker() {
     const code = localStorage.getItem("xv_ref");
     if (!code) return;
 
-    localStorage.removeItem("xv_ref");
-
     const controller = new AbortController();
     fetch("/api/referral/link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),
       signal: controller.signal,
+    }).then((response) => {
+      if (response.ok) localStorage.removeItem("xv_ref");
     }).catch(() => {
       // Silently ignore — non-critical path
     });

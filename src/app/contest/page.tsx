@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 const details = [
-  { icon: Trophy, title: "A lifetime prize", text: "The winner receives a Founder's Circle lifetime subscription with 500 credits every month." },
+  { icon: Trophy, title: "A lifetime prize", text: "The winner receives a Founder's Circle lifetime subscription with 1,000 credits every month plus 500 welcome credits." },
   { icon: Sparkles, title: `${CONTEST_CREDITS} contest credits`, text: "Reserved for your contest manuscript, so they cannot be spent on another project." },
   { icon: Clock3, title: "September 15–30", text: "Every writer shares the same two-week challenge window and closing date." },
 ];

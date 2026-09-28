@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 export const maxDuration = 300;
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
   if (!usable.length) return Response.json({ error: "Story Pulse needs a saved chapter with at least 100 words." }, { status: 400 });
 
   const service = createServiceClient();
-  const { block, remaining } = await checkRateLimit(user.id, service, usable.length, body.projectId);
+  const { block, remaining } = await checkRateLimit(user.id, service, usable.length, body.projectId, "story_pulse");
   if (block) return block;
 
   const history: PulseObservation[] = [];
@@ -113,12 +113,16 @@ Rules:
     try {
       raw = await geminiGenerate(prompt, "You are a careful fiction continuity analyst. Output valid JSON only.", 4096, true, "gemini-2.5-flash");
     } catch (error) {
+      await recordCreditFailure(user.id, "story_pulse", 1, "ai_generation", error);
       console.error(`[story-pulse] AI failed for ${chapter.title}:`, error);
       return Response.json({ error: `Story Pulse could not analyze “${chapter.title}”. No credit was charged for that chapter.` }, { status: 502 });
     }
 
     const observations = parseObservations(raw);
-    if (!observations) return Response.json({ error: `Story Pulse returned an invalid analysis for “${chapter.title}”.` }, { status: 502 });
+    if (!observations) {
+      await recordCreditFailure(user.id, "story_pulse", 1, "validation", undefined, "invalid_response");
+      return Response.json({ error: `Story Pulse returned an invalid analysis for “${chapter.title}”.` }, { status: 502 });
+    }
 
     const rows = observations.map((row) => ({
       project_id: body.projectId,
@@ -137,15 +141,21 @@ Rules:
 
     const { error: deleteError } = await supabase.from("story_pulse_observations").delete()
       .eq("project_id", body.projectId).eq("chapter_id", chapter.id);
-    if (deleteError) return Response.json({ error: "Apply migration 0023_story_pulse.sql before running Story Pulse." }, { status: 500 });
+    if (deleteError) {
+      await recordCreditFailure(user.id, "story_pulse", 1, "persistence", deleteError);
+      return Response.json({ error: "Apply migration 0023_story_pulse.sql before running Story Pulse." }, { status: 500 });
+    }
     if (rows.length) {
       const { error: insertError } = await supabase.from("story_pulse_observations").insert(rows);
-      if (insertError) return Response.json({ error: "Could not save Story Pulse observations." }, { status: 500 });
+      if (insertError) {
+        await recordCreditFailure(user.id, "story_pulse", 1, "persistence", insertError);
+        return Response.json({ error: "Could not save Story Pulse observations." }, { status: 500 });
+      }
     }
 
     history.push(...observations);
     saved += rows.length;
-    await commitRateLimit(user.id, service, 1, body.projectId);
+    await commitRateLimit(user.id, service, 1, body.projectId, "story_pulse");
   }
 
   return Response.json({ ok: true, chaptersAnalyzed: usable.length, observations: saved, remaining });

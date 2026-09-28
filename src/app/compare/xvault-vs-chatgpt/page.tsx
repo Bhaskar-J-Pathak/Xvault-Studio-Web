@@ -20,7 +20,7 @@ function Partial() { return <Minus size={16} className="text-amber-400 mx-auto" 
 const rows: { feature: string; xvault: React.ReactNode; opponent: React.ReactNode; note?: string }[] = [
   { feature: "Free tier",                xvault: <Yes />,    opponent: <Yes />,     note: "Xvault: 14-day trial, 100 credits, no card. ChatGPT: free tier with limited model access." },
   { feature: "Monthly price",            xvault: "$11.99",   opponent: "$20",       note: "ChatGPT Plus is $20/mo. ChatGPT Team is $25–$30/mo per user." },
-  { feature: "Lifetime option",          xvault: <Yes />,    opponent: <No />,      note: "Xvault Founder's Circle: $49 one-time." },
+  { feature: "Lifetime option",          xvault: <Yes />,    opponent: <No />,      note: "Xvault Founder's Circle: $59 one-time." },
   { feature: "Reads full manuscript",    xvault: <Yes />,    opponent: <No />,      note: "ChatGPT requires you to paste context manually each session. Projects can store some files but do not load your manuscript into active context automatically." },
   { feature: "Auto story bible",         xvault: <Yes />,    opponent: <No />,      note: "ChatGPT has no story tracking. You maintain your own notes externally." },
   { feature: "Auto world board",         xvault: <Yes />,    opponent: <No /> },
@@ -74,7 +74,7 @@ const faqSchema = {
       name: "Is Xvault cheaper than ChatGPT Plus for novelists?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Xvault Studio costs $11.99 per month versus ChatGPT Plus at $20 per month. Xvault also includes a $49 lifetime option. For novelists specifically, Xvault provides manuscript loading, story bible, world board, and voice matching that ChatGPT does not offer at any price.",
+        text: "Xvault Studio costs $11.99 per month versus ChatGPT Plus at $20 per month. Xvault also includes a $59 lifetime option. For novelists specifically, Xvault provides manuscript loading, story bible, world board, and voice matching that ChatGPT does not offer at any price.",
       },
     },
   ],

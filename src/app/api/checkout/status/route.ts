@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import DodoPayments from "dodopayments";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
+import { createDodoClient, getDodoEnvironment } from "@/lib/dodo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,13 +21,13 @@ export async function POST(request: NextRequest) {
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
   if (order.status === "paid") return NextResponse.json({ status: "paid" });
 
-  const environment =
-    (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") ||
-    (process.env.NODE_ENV === "production" ? "live_mode" : "test_mode");
-  const dodo = new DodoPayments({
-    bearerToken: environment === "live_mode" ? process.env.DODO_API_KEY_LIVE! : process.env.DODO_API_KEY_TEST!,
-    environment,
-  });
+  let dodo: ReturnType<typeof createDodoClient>;
+  try {
+    dodo = createDodoClient(getDodoEnvironment());
+  } catch (configurationError) {
+    console.error("checkout:status_configuration_error", { orderId: order.id, configurationError });
+    return NextResponse.json({ error: "Payment status is temporarily unavailable" }, { status: 503 });
+  }
 
   try {
     let paymentId = body.paymentId ?? order.dodo_payment_id;

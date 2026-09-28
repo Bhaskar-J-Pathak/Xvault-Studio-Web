@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Start Xvault Studio free for 14 days with 100 AI credits and no credit card. Upgrade to Hobbyist for $11.99/month, or join the limited Founder's Circle for $49.",
+  description: "Start Xvault Studio free for 14 days with 100 AI credits and no credit card. Upgrade to Hobbyist for $11.99/month, or join the limited Founder's Circle for $59.",
   alternates: { canonical: "https://xvault.dev/pricing" },
 };
 
@@ -34,9 +34,9 @@ const pricingSchema = {
     {
       "@type": "Offer",
       name: "Founder's Circle",
-      price: "49",
+      price: "59",
       priceCurrency: "USD",
-      description: "One-time lifetime access. 500 AI credits per month. Limited to 30 seats.",
+      description: "One-time lifetime access. 1,000 AI credits per month plus 500 non-expiring welcome credits. Limited to 30 seats.",
     },
   ],
 };
@@ -50,7 +50,7 @@ const faqSchema = {
       name: "How much does Xvault Studio cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Xvault Studio costs $11.99 per month for the Hobbyist plan. There is also a one-time Founder's Circle lifetime access for $49. A free 14-day trial with 100 AI credits is available with no credit card required.",
+        text: "Xvault Studio costs $11.99 per month for the Hobbyist plan. There is also a one-time Founder's Circle lifetime access for $59. A free 14-day trial with 100 AI credits is available with no credit card required.",
       },
     },
     {
@@ -66,7 +66,7 @@ const faqSchema = {
       name: "What is the Founder's Circle?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "The Founder's Circle is a one-time $49 founding membership limited to 30 writers. It includes 500 AI credits per month, direct founder access, and a voice in shaping the product.",
+        text: "The Founder's Circle is currently a one-time $59 founding membership limited to 30 writers. It includes 1,000 AI credits per month, 500 non-expiring welcome credits, direct founder access, and a voice in shaping the product. The price increases to $69 after 10 Founder seats are claimed.",
       },
     },
     {
@@ -74,7 +74,7 @@ const faqSchema = {
       name: "What are AI credits?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "AI credits are used each time you interact with Alex, generate an inline suggestion, or run a continuity check. The Hobbyist plan includes 300 credits per month. The Founder's Circle includes 500 credits per month.",
+        text: "AI credits are used each time you interact with Alex, generate an inline suggestion, or run a continuity check. The Hobbyist plan includes 300 credits per month. The Founder's Circle includes 1,000 credits per month plus 500 non-expiring welcome credits.",
       },
     },
   ],

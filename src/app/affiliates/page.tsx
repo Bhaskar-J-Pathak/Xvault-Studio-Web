@@ -66,7 +66,7 @@ export default function AffiliatesPage() {
             Affiliate Program
           </p>
           <h1 className="font-display text-4xl sm:text-5xl font-semibold text-stone-900 leading-tight mb-5">
-            Write about Xvault.<br className="hidden sm:block" /> Earn every month.
+            Recommend Xvault.<br className="hidden sm:block" /> Earn when writers buy.
           </h1>
           <p className="text-stone-500 text-lg leading-relaxed max-w-xl">
             If you create content for writers (YouTube, Substack, a blog, a podcast) and you
@@ -80,9 +80,9 @@ export default function AffiliatesPage() {
             <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center mb-3">
               <Percent size={15} className="text-violet-600" />
             </div>
-            <p className="text-2xl font-semibold text-stone-900 mb-1">20%</p>
+            <p className="text-2xl font-semibold text-stone-900 mb-1">40%</p>
             <p className="text-sm text-stone-500 leading-relaxed">
-              Recurring commission on every paid plan your referrals subscribe to.
+              Commission when a referred writer purchases the Founder lifetime plan.
             </p>
           </div>
 
@@ -90,9 +90,9 @@ export default function AffiliatesPage() {
             <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center mb-3">
               <DollarSign size={15} className="text-violet-600" />
             </div>
-            <p className="text-2xl font-semibold text-stone-900 mb-1">Monthly</p>
+            <p className="text-2xl font-semibold text-stone-900 mb-1">$50 minimum</p>
             <p className="text-sm text-stone-500 leading-relaxed">
-              Paid out every month via PayPal or bank transfer. No minimum threshold.
+              Request a cash payout after cleared earnings reach $50.
             </p>
           </div>
 
@@ -100,9 +100,9 @@ export default function AffiliatesPage() {
             <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center mb-3">
               <Link2 size={15} className="text-violet-600" />
             </div>
-            <p className="text-2xl font-semibold text-stone-900 mb-1">No cap</p>
+            <p className="text-2xl font-semibold text-stone-900 mb-1">90 days</p>
             <p className="text-sm text-stone-500 leading-relaxed">
-              Refer as many writers as you like. No limit on earnings.
+              Your tracked link remembers a visitor for 90 days. No checkout code required.
             </p>
           </div>
         </div>
@@ -114,18 +114,18 @@ export default function AffiliatesPage() {
             {[
               {
                 step: "01",
-                title: "Apply below",
-                body: "Tell us who you are, where you create, and roughly how many writers you reach. We review every application personally.",
+                title: "Create an account",
+                body: "Every Xvault account gets a unique affiliate link in Account. Try the product before sharing it.",
               },
               {
                 step: "02",
-                title: "Get your link",
-                body: "If approved, you get a unique tracking link and a free Xvault account so you can try it properly before recommending it.",
+                title: "Share your tracked link",
+                body: "A writer only needs to click your link before signing up. Attribution happens automatically and does not rely on a checkout code.",
               },
               {
                 step: "03",
-                title: "Earn as long as they stay",
-                body: "Every writer who subscribes through your link earns you 20% of their subscription, every month they remain active.",
+                title: "Earn when they buy",
+                body: "When a referred writer buys the Founder lifetime plan, you earn 40% of that purchase. Earnings clear after 30 days.",
               },
             ].map(({ step, title, body }) => (
               <div key={step} className="flex gap-5">
@@ -168,10 +168,10 @@ export default function AffiliatesPage() {
         {/* Application form */}
         <div className="mb-4">
           <h2 className="font-display text-2xl font-semibold text-stone-900 mb-2">
-            Apply to join
+            Creator partnership
           </h2>
           <p className="text-stone-500 text-sm mb-8">
-            We review every application and reply within a few days.
+            The affiliate link is already available in every account. Creators can apply here for launch support and partnership opportunities.
           </p>
 
           {status === "success" ? (
@@ -306,11 +306,11 @@ export default function AffiliatesPage() {
           {[
             {
               q: "How is the commission tracked?",
-              a: "You get a unique link with your referral code embedded. When someone signs up through your link and converts to a paid plan, that conversion is attributed to you.",
+              a: "You get a unique link with your referral code embedded. When someone signs up through your link and buys the Founder lifetime plan, that conversion is attributed to you.",
             },
             {
               q: "When does commission stop?",
-              a: "You earn 20% of each billing cycle for as long as the subscriber stays active. If they cancel, the commission stops for that subscriber.",
+              a: "You earn 40% when the referred writer buys the Founder lifetime plan. Hobbyist subscriptions and credit top-ups do not earn commission.",
             },
             {
               q: "Do I need a minimum audience size?",
@@ -322,7 +322,7 @@ export default function AffiliatesPage() {
             },
             {
               q: "What if I don't like Xvault after trying it?",
-              a: "Then don't promote it. We'd rather you decline than recommend something you don't actually believe in. We'll give you a free account first so you can form a real opinion.",
+              a: "Then don't promote it. We'd rather you decline than recommend something you don't actually believe in. Use the cardless trial first so you can form a real opinion.",
             },
           ].map(({ q, a }) => (
             <div key={q}>

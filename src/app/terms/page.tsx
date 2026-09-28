@@ -80,7 +80,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="7. Founder&apos;s Circle lifetime access">
-            <p>Founder&apos;s Circle is a one-time purchase, not a recurring subscription. It currently includes access to Xvault Studio, 500 AI credits that reset each month and do not roll over, and the founder benefits described on the pricing page.</p>
+            <p>Founder&apos;s Circle is a one-time purchase, not a recurring subscription. It currently includes access to Xvault Studio, 1,000 AI credits that reset each month and do not roll over, a one-time 500-credit welcome balance that does not expire, and the founder benefits described on the pricing page.</p>
             <p>&quot;Lifetime&quot; means for as long as Xvault Studio continues to operate the Service, not the lifetime of an individual. It covers the core Xvault Studio product and does not automatically include separate future products, third-party charges, or optional add-ons. A Founder&apos;s Circle seat is personal and may not be resold or transferred.</p>
           </Section>
 

@@ -10,7 +10,7 @@
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Costs 2 credits — charged every time we actually generate (first-time or forced).
-  const { block } = await checkRateLimit(user.id, createServiceClient(), 2, projectId);
+  const { block } = await checkRateLimit(user.id, createServiceClient(), 2, projectId, "story_synopsis");
   if (block) return block;
 
   // Fetch chapters with summaries, ordered by position
@@ -96,14 +96,16 @@ Be specific — use character names and concrete events. Present tense. No edito
       "gemini-2.5-flash"
     );
   } catch (err) {
+    await recordCreditFailure(user.id, "story_synopsis", 2, "ai_generation", err);
     console.error("[generate-synopsis] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), 2, projectId);
-
   synopsis = synopsis.trim();
-  if (!synopsis) return Response.json({ error: "Empty response" }, { status: 500 });
+  if (!synopsis) {
+    await recordCreditFailure(user.id, "story_synopsis", 2, "validation", undefined, "empty_response");
+    return Response.json({ error: "Empty response" }, { status: 500 });
+  }
 
   // Upsert into story_bibles
   const { error: saveError } = await supabase.from("story_bibles").upsert(
@@ -111,9 +113,11 @@ Be specific — use character names and concrete events. Present tense. No edito
     { onConflict: "project_id" }
   );
   if (saveError) {
+    await recordCreditFailure(user.id, "story_synopsis", 2, "persistence", saveError);
     console.error("[generate-synopsis] Save failed:", saveError);
     return Response.json({ error: "Synopsis was generated but could not be saved" }, { status: 500 });
   }
 
+  await commitRateLimit(user.id, createServiceClient(), 2, projectId, "story_synopsis");
   return Response.json({ ok: true, synopsis });
 }

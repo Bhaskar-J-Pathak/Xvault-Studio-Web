@@ -20,7 +20,7 @@ function Partial() { return <Minus size={16} className="text-amber-400 mx-auto" 
 const rows: { feature: string; xvault: React.ReactNode; opponent: React.ReactNode; note?: string }[] = [
   { feature: "Free trial",               xvault: <Yes />,    opponent: <Yes />,     note: "Xvault: 14 days, 100 credits, no card required." },
   { feature: "Monthly price",            xvault: "$11.99",   opponent: "Varies",    note: "Inkfluence AI pricing depends on plan and usage tier." },
-  { feature: "Lifetime option",          xvault: <Yes />,    opponent: <No />,      note: "Xvault Founder's Circle: $49 one-time, 500 credits/month." },
+  { feature: "Lifetime option",          xvault: <Yes />,    opponent: <No />,      note: "Xvault Founder's Circle: $59 one-time, 1,000 credits/month + 500 welcome credits." },
   { feature: "Built for novel writing",  xvault: <Yes />,    opponent: <No />,      note: "Inkfluence AI is designed for content creators and marketing copy, not long-form fiction." },
   { feature: "Reads full manuscript",    xvault: <Yes />,    opponent: <No />,      note: "Inkfluence AI has no manuscript loading. It generates from prompts." },
   { feature: "Auto story bible",         xvault: <Yes />,    opponent: <No /> },
@@ -66,7 +66,7 @@ const faqSchema = {
       name: "Is Xvault cheaper than Inkfluence AI for writers?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Xvault Studio costs $11.99 per month or $119 per year, with a $49 lifetime option. It includes everything a novelist needs: manuscript loading, story bible, world board, and voice-matched prose generation. Inkfluence AI pricing varies by plan and is structured around content creation volume rather than fiction writing use cases.",
+        text: "Xvault Studio costs $11.99 per month or $119 per year, with a $59 lifetime option. It includes everything a novelist needs: manuscript loading, story bible, world board, and voice-matched prose generation. Inkfluence AI pricing varies by plan and is structured around content creation volume rather than fiction writing use cases.",
       },
     },
     {

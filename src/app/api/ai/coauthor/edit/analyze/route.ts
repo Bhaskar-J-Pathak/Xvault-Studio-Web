@@ -14,7 +14,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalGetParagraphs } from "@/lib/lexical-replace";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 export interface ParagraphEdit {
   index:     number;   // root.children index — used by apply route
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
   if (!chapter) return Response.json({ error: "Chapter not found" }, { status: 404 });
 
   const serviceClient = createServiceClient();
-  const { block, remaining } = await checkRateLimit(user.id, serviceClient, 3, projectId);
+  const { block, remaining } = await checkRateLimit(user.id, serviceClient, 3, projectId, "chapter_edit_analysis");
   if (block) return block;
 
   // Extract paragraphs with their indices
@@ -132,11 +132,10 @@ If nothing genuinely needs editing, return { "edits": [], "summary": "Prose is a
       "gemini-2.5-flash"
     );
   } catch (err) {
+    await recordCreditFailure(user.id, "chapter_edit_analysis", 3, "ai_generation", err);
     console.error("[edit/analyze] AI failed:", err);
     return Response.json({ error: "AI analysis failed" }, { status: 502 });
   }
-
-  await commitRateLimit(user.id, serviceClient, 3, projectId);
 
   // Strip markdown code fences (```json … ```) that Gemini sometimes adds
   const cleaned = raw
@@ -158,12 +157,14 @@ If nothing genuinely needs editing, return { "edits": [], "summary": "Prose is a
       }
     }
     if (!extracted) {
+      await recordCreditFailure(user.id, "chapter_edit_analysis", 3, "validation", undefined, "invalid_response");
       console.error("[edit/analyze] Parse failed, raw:", raw.slice(0, 500));
       return Response.json({ error: "AI returned invalid JSON" }, { status: 500 });
     }
     try {
       parsed = JSON.parse(extracted);
     } catch {
+      await recordCreditFailure(user.id, "chapter_edit_analysis", 3, "validation", undefined, "invalid_response");
       console.error("[edit/analyze] Parse failed after extraction, raw:", raw.slice(0, 500));
       return Response.json({ error: "AI returned invalid JSON" }, { status: 500 });
     }
@@ -188,5 +189,6 @@ If nothing genuinely needs editing, return { "edits": [], "summary": "Prose is a
     summary:      parsed.summary ?? `${verifiedEdits.length} suggestion${verifiedEdits.length !== 1 ? "s" : ""} found`,
   };
 
+  await commitRateLimit(user.id, serviceClient, 3, projectId, "chapter_edit_analysis");
   return Response.json({ ok: true, plan, remaining });
 }

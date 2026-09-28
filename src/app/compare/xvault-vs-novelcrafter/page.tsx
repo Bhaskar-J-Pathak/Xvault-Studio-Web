@@ -115,7 +115,7 @@ const faqSchema = {
       name: "Does Xvault Studio have a lifetime plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Xvault offers a Founder's Circle lifetime access for a one-time payment of $49, which includes 500 AI credits per month. NovelCrafter does not offer a lifetime option.",
+        text: "Yes. Xvault offers a Founder's Circle lifetime access for a one-time payment of $59, which includes 1,000 AI credits per month plus 500 welcome credits. NovelCrafter does not offer a lifetime option.",
       },
     },
   ],

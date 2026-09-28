@@ -5,8 +5,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
-import { sendReferredWelcomeEmail, sendReferralCompleteEmail } from "@/lib/email";
+import { createServerSupabaseClient } from "@/lib/auth";
 
 export async function PATCH(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -35,45 +34,6 @@ export async function PATCH(request: NextRequest) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // When the user completes the tutorial, complete any pending referral.
-  // Welcome email is sent earlier (at seed-sample), so here we only handle
-  // referral credit notifications.
-  if (body.done === true) {
-    try {
-      const service = createServiceClient();
-      const { data: rpcResult } = await service.rpc("complete_referral", {
-        p_referred_id: user.id,
-      });
-
-      if (rpcResult?.ok === true) {
-        // Referral completed — notify referred user of their bonus credits.
-        const referredName = (user.email ?? "").split("@")[0];
-        sendReferredWelcomeEmail(user.email!, referredName).catch((e) =>
-          console.error("[email] referred welcome failed:", e),
-        );
-
-        // Fetch referrer profile and send their +30 credits notification.
-        const { data: referrer } = await service
-          .from("profiles")
-          .select("email, referral_count, bonus_credits")
-          .eq("id", rpcResult.referrer_id)
-          .single();
-
-        if (referrer) {
-          const referrerName = (referrer.email ?? "").split("@")[0];
-          sendReferralCompleteEmail(
-            referrer.email,
-            referrer.referral_count,
-            referrer.bonus_credits,
-            referrerName,
-          ).catch((e) => console.error("[email] referral complete failed:", e));
-        }
-      }
-    } catch (e) {
-      // Non-fatal — log but don't fail the request.
-      console.error("[onboarding] complete_referral failed:", e);
-    }
-  }
 
   return Response.json({ ok: true });
 }

@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalToText } from "@/lib/chunking";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
   // Forced regenerations cost 1 credit — check quota before calling AI
   if (force) {
-    const { block } = await checkRateLimit(user.id, createServiceClient(), 1, projectId);
+    const { block } = await checkRateLimit(user.id, createServiceClient(), 1, projectId, "story_bible_summary");
     if (block) return block;
   }
 
@@ -95,15 +95,15 @@ Rules: specific and factual, past tense, no editorializing, no spoilers framing.
       "gemini-2.5-flash"
     );
   } catch (err) {
+    if (force) await recordCreditFailure(user.id, "story_bible_summary", 1, "ai_generation", err);
     console.error("[story-bible/summarize] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
   summary = summary.trim();
-  if (!summary) return Response.json({ error: "Empty summary" }, { status: 500 });
-
-  if (force) {
-    await commitRateLimit(user.id, createServiceClient(), 1, projectId);
+  if (!summary) {
+    if (force) await recordCreditFailure(user.id, "story_bible_summary", 1, "validation", undefined, "empty_response");
+    return Response.json({ error: "Empty summary" }, { status: 500 });
   }
 
   const { error: saveError } = await supabase
@@ -111,8 +111,13 @@ Rules: specific and factual, past tense, no editorializing, no spoilers framing.
     .update({ summary })
     .eq("id", chapterId);
   if (saveError) {
+    if (force) await recordCreditFailure(user.id, "story_bible_summary", 1, "persistence", saveError);
     console.error("[story-bible/summarize] Save failed:", saveError);
     return Response.json({ error: "Summary was generated but could not be saved" }, { status: 500 });
+  }
+
+  if (force) {
+    await commitRateLimit(user.id, createServiceClient(), 1, projectId, "story_bible_summary");
   }
 
   return Response.json({ ok: true, summary });

@@ -21,7 +21,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { assembleCoauthorContext } from "@/lib/coauthor-context";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 /**
  * Suggestions are inserted directly into a manuscript, not rendered as Markdown.
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
   // Length is an explicit user choice. Every prose generation costs one credit.
-  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 1, projectId);
+  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 1, projectId, "prose_suggestion");
   if (block) return block;
 
   const contextText = beforeCursor || recentText;
@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
       "prose"
     ));
   } catch (err) {
+    await recordCreditFailure(user.id, "prose_suggestion", 1, "context_assembly", err);
     console.error("[coauthor/suggest] Context assembly failed:", err);
     return Response.json({ error: "Failed to load story context. Try again." }, { status: 500 });
   }
@@ -340,6 +341,7 @@ OUTPUT RULE: Output ONLY the story prose — zero preamble, zero labels, zero me
       thinkingLevel
     );
   } catch (err) {
+    await recordCreditFailure(user.id, "prose_suggestion", 1, "ai_generation", err);
     console.error("[coauthor/suggest] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
@@ -382,10 +384,14 @@ ${suggestion}
 
   suggestion = normalizeProse(suggestion);
   if (hasScriptStyleDialogue(suggestion)) {
+    await recordCreditFailure(user.id, "prose_suggestion", 1, "validation", undefined, "invalid_format");
     return Response.json({ error: "The draft could not be formatted as novel prose. Please try again. No credits were deducted." }, { status: 502 });
   }
-  if (!suggestion) return Response.json({ error: "Empty suggestion" }, { status: 500 });
+  if (!suggestion) {
+    await recordCreditFailure(user.id, "prose_suggestion", 1, "validation", undefined, "empty_response");
+    return Response.json({ error: "Empty suggestion" }, { status: 500 });
+  }
 
-  await commitRateLimit(user.id, createServiceClient(), 1, projectId);
+  await commitRateLimit(user.id, createServiceClient(), 1, projectId, "prose_suggestion");
   return Response.json({ ok: true, suggestion, remaining, length: proseLength });
 }

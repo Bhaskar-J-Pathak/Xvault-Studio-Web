@@ -15,7 +15,7 @@ import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalToText } from "@/lib/chunking";
 import { phraseExistsInLexical } from "@/lib/lexical-replace";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 export interface ChangeItem {
   chapterId: string;
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     .single();
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
-  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 3, projectId);
+  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 3, projectId, "global_change");
   if (block) return block;
 
   // Fetch all chapters with content
@@ -147,11 +147,10 @@ If nothing needs changing, return empty arrays and explain in summary.`;
       "gemini-2.5-flash"
     );
   } catch (err) {
+    await recordCreditFailure(user.id, "global_change", 3, "ai_generation", err);
     console.error("[global-change] AI failed:", err);
     return Response.json({ error: "AI analysis failed" }, { status: 502 });
   }
-
-  await commitRateLimit(user.id, createServiceClient(), 3, projectId);
 
   let plan: {
     subject: string;
@@ -171,12 +170,14 @@ If nothing needs changing, return empty arrays and explain in summary.`;
   } catch {
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) {
+      await recordCreditFailure(user.id, "global_change", 3, "validation", undefined, "invalid_response");
       console.error("[global-change] Parse failed:", raw.slice(0, 300));
       return Response.json({ error: "AI returned invalid JSON" }, { status: 500 });
     }
     try {
       plan = JSON.parse(match[0]);
     } catch {
+      await recordCreditFailure(user.id, "global_change", 3, "validation", undefined, "invalid_response");
       console.error("[global-change] Fallback parse failed:", raw.slice(0, 300));
       return Response.json({ error: "AI returned invalid JSON" }, { status: 500 });
     }
@@ -230,5 +231,6 @@ If nothing needs changing, return empty arrays and explain in summary.`;
     summary: plan.summary ?? `${confirmed.length} changes found`,
   };
 
+  await commitRateLimit(user.id, createServiceClient(), 3, projectId, "global_change");
   return Response.json({ ok: true, plan: result, remaining });
 }

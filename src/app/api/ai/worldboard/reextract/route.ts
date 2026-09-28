@@ -26,7 +26,7 @@ import {
   hasWorldBoardChanges,
   type WorldBoardMergeResult,
 } from "@/lib/extraction";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 const CHUNK_SIZE = 5000; // words per extraction pass
 
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
   let rateLimitResult: { block: Response | null; remaining: number };
   try {
-    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), totalCredits, projectId);
+    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), totalCredits, projectId, "worldboard_reextract");
   } catch (err) {
     console.error("[reextract] Rate limit check failed:", err);
     return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });
@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
           .eq("project_id", projectId).neq("status", "resolved"),
       ]);
       if (entityError || threadError) {
+        await recordCreditFailure(user.id, "worldboard_reextract", CREDITS_PER_CHUNK, "persistence", entityError || threadError);
         return Response.json({ error: "Could not load World Board data. Check the database migrations before retrying." }, { status: 500 });
       }
 
@@ -166,6 +167,7 @@ export async function POST(request: NextRequest) {
           WORLDBOARD_MODEL
         );
       } catch (err) {
+        await recordCreditFailure(user.id, "worldboard_reextract", CREDITS_PER_CHUNK, "ai_generation", err);
         console.error(`[reextract] AI failed on chapter "${chapter.title}" offset ${wordOffset}:`, err);
         chapterFailure = `AI extraction failed for chapter "${chapter.title}".`;
         break;
@@ -173,6 +175,7 @@ export async function POST(request: NextRequest) {
 
       const extracted = parseExtractionResponse(rawResponse);
       if (!extracted) {
+        await recordCreditFailure(user.id, "worldboard_reextract", CREDITS_PER_CHUNK, "validation", undefined, "invalid_response");
         console.error(`[reextract] Parse failed on chapter "${chapter.title}" offset ${wordOffset}`);
         chapterFailure = `The AI returned an invalid extraction for chapter "${chapter.title}". Please try again.`;
         break;
@@ -201,6 +204,7 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (err) {
+        await recordCreditFailure(user.id, "worldboard_reextract", CREDITS_PER_CHUNK, "persistence", err);
         console.error(`[reextract] Database merge failed on chapter "${chapter.title}" offset ${wordOffset}:`, err);
         chapterFailure = `Could not save extracted data for chapter "${chapter.title}".`;
         break;
@@ -211,8 +215,11 @@ export async function POST(request: NextRequest) {
       const completedWords = Math.min(words.length, wordOffset + CHUNK_SIZE);
       const { error: progressError } = await supabase.from("chapters")
         .update({ last_extracted_word: completedWords }).eq("id", chapter.id);
-      if (progressError) return Response.json({ error: "Extracted data was saved, but extraction progress could not be saved." }, { status: 500 });
-      await commitRateLimit(user.id, createServiceClient(), CREDITS_PER_CHUNK, projectId);
+      if (progressError) {
+        await recordCreditFailure(user.id, "worldboard_reextract", CREDITS_PER_CHUNK, "persistence", progressError);
+        return Response.json({ error: "Extracted data was saved, but extraction progress could not be saved." }, { status: 500 });
+      }
+      await commitRateLimit(user.id, createServiceClient(), CREDITS_PER_CHUNK, projectId, "worldboard_reextract");
       wordOffset = completedWords;
 
     }

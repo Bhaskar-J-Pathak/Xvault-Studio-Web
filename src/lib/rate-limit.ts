@@ -9,9 +9,27 @@
  * If the AI call fails, commitRateLimit is never called and no credits are lost.
  */
 
+import { captureServerEvent, classifyAnalyticsError } from "@/lib/posthog-server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RateLimitResult } from "@/types/database";
+
 import { isContestEnabled } from "@/lib/contest";
+export async function recordCreditFailure(
+  userId: string,
+  feature: string,
+  credits: number,
+  stage: string,
+  error?: unknown,
+  reason?: string
+): Promise<void> {
+  await captureServerEvent(userId, "credit_usage_failed", {
+    feature,
+    credits_requested: credits,
+    failure_stage: stage,
+    failure_category: reason || classifyAnalyticsError(error),
+    outcome: "failure",
+  });
+}
 
 /**
  * Read-only quota check. No credits are deducted.
@@ -46,18 +64,30 @@ export async function commitAiRequest(
   userId: string,
   client: SupabaseClient,
   credits = 1,
-  projectId?: string
+  projectId?: string,
+  feature = "unknown"
 ): Promise<void> {
   const params = {
     p_user_id: userId,
     p_credits: credits,
     ...(isContestEnabled() && projectId ? { p_project_id: projectId } : {}),
   };
-  const { error } = await client.rpc("commit_ai_request", params);
+  const { data, error } = await client.rpc("commit_ai_request", params);
 
   if (error) {
+    await recordCreditFailure(userId, feature, credits, "credit_commit", error);
     console.error("[rate-limit] commit_ai_request failed (credits not deducted):", error.message);
+    return;
   }
+
+  const topupCreditsSpent = typeof data?.topup_spent === "number" ? data.topup_spent : 0;
+  await captureServerEvent(userId, "credit_used", {
+    feature,
+    credits_charged: credits,
+    included_credits_spent: Math.max(0, credits - topupCreditsSpent),
+    topup_credits_spent: topupCreditsSpent,
+    outcome: "success",
+  });
 }
 
 /**
@@ -79,11 +109,19 @@ export async function checkRateLimit(
   userId: string,
   client: SupabaseClient,
   credits = 1,
-  projectId?: string
+  projectId?: string,
+  feature = "unknown"
 ): Promise<{ block: Response | null; remaining: number }> {
-  const result = await checkAiQuota(userId, client, credits, projectId);
+  let result: RateLimitResult;
+  try {
+    result = await checkAiQuota(userId, client, credits, projectId);
+  } catch (error) {
+    await recordCreditFailure(userId, feature, credits, "quota_check", error);
+    throw error;
+  }
 
   if (!result.allowed) {
+    await recordCreditFailure(userId, feature, credits, "quota_denied", undefined, result.reason);
     const message = result.reason === "contest_limit"
       ? "You've used all the AI credits reserved for your contest manuscript. Your normal Xvault allowance is still available in your other projects."
       : result.reason === "trial_limit"
@@ -109,7 +147,8 @@ export async function commitRateLimit(
   userId: string,
   client: SupabaseClient,
   credits = 1,
-  projectId?: string
+  projectId?: string,
+  feature = "unknown"
 ): Promise<void> {
-  await commitAiRequest(userId, client, credits, projectId);
+  await commitAiRequest(userId, client, credits, projectId, feature);
 }

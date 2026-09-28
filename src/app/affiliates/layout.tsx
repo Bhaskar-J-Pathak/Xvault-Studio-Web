@@ -1,17 +1,7 @@
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Affiliates",
-  description: "Join the Xvault Studio affiliate program. Earn commission by recommending the AI writing studio for novelists.",
-  alternates: { canonical: "https://xvault.dev/affiliates" },
-  openGraph: {
-    title: "Affiliates | Xvault Studio",
-    description: "Join the Xvault Studio affiliate program. Earn commission by recommending the AI writing studio for novelists.",
-    url: "https://xvault.dev/affiliates",
-    type: "website",
-  },
-};
+import { notFound } from "next/navigation";
+import { AFFILIATE_PROGRAM_ENABLED } from "@/lib/affiliate-config";
 
 export default function AffiliatesLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  if (!AFFILIATE_PROGRAM_ENABLED) notFound();
+  return children;
 }

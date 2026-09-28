@@ -36,6 +36,9 @@ type Plan = {
 };
 
 const TOTAL_SEATS = 30;
+const CURRENT_FOUNDER_PRICE = 59;
+const NEXT_FOUNDER_PRICE = 69;
+const NEXT_PRICE_AT_SEATS = 10;
 
 const PLANS: Plan[] = [
   // Hobbyist
@@ -68,14 +71,15 @@ const PLANS: Plan[] = [
     title: "FOUNDER'S CIRCLE",
     tagline: "Pay once. Keep the full writing studio.",
     desc: "For early writers who want more room to write and a real person helping when something does not work.",
-    lifetimePrice: 49,
-    credits: 500,
+    lifetimePrice: CURRENT_FOUNDER_PRICE,
+    credits: 1000,
     buttonText: "Claim lifetime access",
     productId: process.env.NEXT_PUBLIC_DODO_LINK_LIFETIME!,
     badge: "ONLY 30 SEATS",
     isLifetime: true,
     features: [
-      { text: "500 AI credits every month (no rollover)" },
+      { text: "1,000 AI credits every month (no rollover)" },
+      { text: "500 welcome credits (never expire)" },
       { text: "Unlimited active manuscripts" },
       { text: "Personal onboarding call with the founder" },
       { text: "Message the founder directly when blocked" },
@@ -91,6 +95,7 @@ function SeatsBar({ seats }: { seats: SeatInfo }) {
   const { taken, left, loading } = seats;
   const soldOut = left === 0;
   const pct = Math.min(100, (taken / TOTAL_SEATS) * 100);
+  const seatsAtCurrentPrice = Math.max(0, NEXT_PRICE_AT_SEATS - taken);
 
   // Color thresholds
   const barColor =
@@ -141,6 +146,25 @@ function SeatsBar({ seats }: { seats: SeatInfo }) {
           ? "All 30 seats have been claimed"
           : `${left} of ${TOTAL_SEATS} founding memberships remain`}
       </p>
+      {!soldOut && (
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3 text-xs font-semibold">
+            <span className="text-amber-900">{`$${CURRENT_FOUNDER_PRICE} now`}</span>
+            <span className="text-amber-700">{`$${NEXT_FOUNDER_PRICE} next`}</span>
+          </div>
+          <div className="my-2 h-1.5 overflow-hidden rounded-full bg-amber-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-700"
+              style={{ width: `${Math.min(100, (taken / NEXT_PRICE_AT_SEATS) * 100)}%` }}
+            />
+          </div>
+          <p className="text-[11px] leading-4 text-amber-800">
+            {seatsAtCurrentPrice > 0
+              ? `${seatsAtCurrentPrice} ${seatsAtCurrentPrice === 1 ? "seat" : "seats"} left at $${CURRENT_FOUNDER_PRICE}. The price becomes $${NEXT_FOUNDER_PRICE} after ${NEXT_PRICE_AT_SEATS} Founder seats are claimed.`
+              : `The next Founder price is $${NEXT_FOUNDER_PRICE}.`}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -445,7 +469,7 @@ export default function Pricing({ signedIn = false }: { signedIn?: boolean }) {
         </div>
 
         <p className="text-center text-sm text-violet-700/60 -mt-8 mb-14">
-          Founder&apos;s Circle is a one-time $49 payment. It is not a recurring subscription.
+          Founder&apos;s Circle is a one-time $59 payment. It is not a recurring subscription.
         </p>
 
         {/* Cards - 2 columns */}

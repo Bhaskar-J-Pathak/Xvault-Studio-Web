@@ -16,9 +16,11 @@ CREATE TABLE shared_excerpts (
 
 ALTER TABLE shared_excerpts ENABLE ROW LEVEL SECURITY;
 
--- Anyone can read a shared excerpt (public link)
-CREATE POLICY "Public read shared excerpts"
-  ON shared_excerpts FOR SELECT USING (true);
+-- Public links are read through the server's service-role client. Direct table
+-- access stays private so tokens and manuscript text cannot be enumerated.
+CREATE POLICY "Owner read shared excerpts"
+  ON shared_excerpts FOR SELECT
+  USING (created_by = auth.uid());
 
 -- Only the owner can create
 CREATE POLICY "Owner insert shared excerpts"
@@ -30,10 +32,12 @@ CREATE POLICY "Owner delete shared excerpts"
   ON shared_excerpts FOR DELETE
   USING (created_by = auth.uid());
 
--- Owner can increment views via update (or we handle via service role)
-CREATE POLICY "Service role update shared excerpts"
+-- Owners may edit their own shares. The service role bypasses RLS when the
+-- public reading route needs to maintain server-side metadata.
+CREATE POLICY "Owner update shared excerpts"
   ON shared_excerpts FOR UPDATE
-  USING (true);
+  USING (created_by = auth.uid())
+  WITH CHECK (created_by = auth.uid());
 
 CREATE INDEX shared_excerpts_token_idx ON shared_excerpts(token);
 CREATE INDEX shared_excerpts_created_by_idx ON shared_excerpts(created_by);

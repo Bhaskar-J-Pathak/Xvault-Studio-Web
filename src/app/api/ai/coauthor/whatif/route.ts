@@ -18,7 +18,7 @@
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     .single();
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
 
-  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 1, projectId);
+  const { block, remaining } = await checkRateLimit(user.id, createServiceClient(), 1, projectId, "what_if");
   if (block) return block;
 
   // Style fingerprint from the writer's prose immediately before the selection
@@ -93,11 +93,15 @@ Write 2–3 short branches exploring this scenario. Each branch shows what happe
   try {
     raw = await geminiGenerate(userPrompt, systemPrompt, 900, false, "gemini-2.5-flash");
   } catch (err) {
+    await recordCreditFailure(user.id, "what_if", 1, "ai_generation", err);
     console.error("[whatif] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), 1, projectId);
+  if (!raw.trim()) {
+    await recordCreditFailure(user.id, "what_if", 1, "validation", undefined, "empty_response");
+    return Response.json({ error: "Empty response" }, { status: 500 });
+  }
 
   // Parse "Option A:\n...\n\nOption B:\n..." format
   const branches: Array<{ label: string; text: string }> = [];
@@ -133,5 +137,6 @@ Write 2–3 short branches exploring this scenario. Each branch shows what happe
     });
   }
 
+  await commitRateLimit(user.id, createServiceClient(), 1, projectId, "what_if");
   return Response.json({ ok: true, branches: branches.slice(0, 3), remaining });
 }

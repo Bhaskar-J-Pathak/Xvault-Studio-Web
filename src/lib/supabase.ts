@@ -20,6 +20,8 @@ export interface Profile {
   referral_code: string;
   referred_by: string | null;
   bonus_credits: number;
+  topup_credits?: number;
+  founder_welcome_credits_granted_at?: string | null;
   referral_count: number;
   welcome_email_sent: boolean;
   is_lifetime?: boolean;
@@ -59,7 +61,7 @@ export function contestDaysLeft(profile: Profile): number {
 export const PLAN_LIMITS: Record<string, number> = {
   free: 50,
   hobbyist: 300,
-  founder_circle: 500,
+  founder_circle: 1000,
 };
 
 export const PLAN_LABELS: Record<string, string> = {
@@ -107,9 +109,9 @@ export function getCreditLimit(profile: {
   is_lifetime?: boolean | null;
   bonus_credits?: number | null;
 }): number {
-  // Founder's Circle / lifetime always get 500
+  // Founder's Circle / lifetime always get 1,000 monthly credits.
   if (profile.is_lifetime || profile.plan === "founder_circle") {
-    return 500 + (profile.bonus_credits ?? 0);
+    return 1000 + (profile.bonus_credits ?? 0);
   }
 
   const base = PLAN_LIMITS[profile.plan ?? "free"] ?? 50;
@@ -126,16 +128,17 @@ export function creditsRemaining(profile: Profile, projectId?: string): number {
     return Math.max(0, profile.contest_credits_remaining ?? 0);
   }
   const bonus = profile.bonus_credits ?? 0;
+  const topup = profile.topup_credits ?? 0;
 
   if (isInTrial(profile)) {
-    return Math.max(0, TRIAL_CREDITS + bonus - (profile.ai_requests_total ?? 0));
+    return Math.max(0, TRIAL_CREDITS + bonus - (profile.ai_requests_total ?? 0)) + topup;
   }
 
   const limit = getCreditLimit(profile);
   const cycleHasReset = Boolean(
     profile.credits_reset_at && new Date(profile.credits_reset_at) <= new Date()
   );
-  return Math.max(0, limit - (cycleHasReset ? 0 : (profile.ai_requests_this_month ?? 0)));
+  return Math.max(0, limit - (cycleHasReset ? 0 : (profile.ai_requests_this_month ?? 0))) + topup;
 }
 
 /** Total credit cap for display. */

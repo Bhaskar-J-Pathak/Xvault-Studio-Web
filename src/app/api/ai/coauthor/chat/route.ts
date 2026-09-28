@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiChat } from "@/lib/ai";
 import { assembleCoauthorContext, saveCoauthorMessages } from "@/lib/coauthor-context";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 
 interface HistoryMessage {
   role: "user" | "assistant";
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
   let rateLimitResult: { block: Response | null; remaining: number };
   try {
-    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), 1, projectId);
+    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), 1, projectId, "coauthor_chat");
   } catch (err) {
     console.error("[coauthor/chat] Rate limit check failed:", err);
     return Response.json({ error: "Service temporarily unavailable", reply: "Something went wrong on my end. Give it a moment and try again." }, { status: 503 });
@@ -165,6 +165,7 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
       body.chapterId
     ));
   } catch (err) {
+    await recordCreditFailure(user.id, "coauthor_chat", 1, "context_assembly", err);
     const detail = err instanceof Error ? err.message : String(err);
     console.error("[coauthor/chat] Context assembly failed:", detail);
     return Response.json({ error: "Failed to load story context. Try again.", detail }, { status: 500 });
@@ -180,14 +181,18 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
       "gemini-2.5-flash"
     );
   } catch (err) {
+    await recordCreditFailure(user.id, "coauthor_chat", 1, "ai_generation", err);
     console.error("[coauthor/chat] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), 1, projectId);
-
   reply = reply.trim();
-  if (!reply) return Response.json({ error: "Empty response" }, { status: 500 });
+  if (!reply) {
+    await recordCreditFailure(user.id, "coauthor_chat", 1, "validation", undefined, "empty_response");
+    return Response.json({ error: "Empty response" }, { status: 500 });
+  }
+
+  await commitRateLimit(user.id, createServiceClient(), 1, projectId, "coauthor_chat");
 
   const lower = reply.toLowerCase();
   const messageType =

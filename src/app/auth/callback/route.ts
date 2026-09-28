@@ -63,6 +63,20 @@ export async function GET(request: NextRequest) {
             { onConflict: "id", ignoreDuplicates: true }
           );
 
+          const affiliateCode = cookieStore.get("xv_affiliate")?.value;
+          if (affiliateCode) {
+            const { data: claim, error: claimError } = await service.rpc("claim_affiliate_referral", {
+              p_referred_id: user.id,
+              p_code: affiliateCode,
+              p_source: "oauth_cookie",
+            });
+            if (claimError) {
+              console.error("[callback] affiliate attribution failed:", claimError.message);
+            } else if (claim?.ok) {
+              cookieStore.delete("xv_affiliate");
+            }
+          }
+
           // Atomically mark email as sent — only succeeds if it hasn't been sent yet.
           // If the update touches 0 rows (already true), skip the send.
           const { data: updated } = await service

@@ -283,7 +283,7 @@ function AuthForm() {
                     )}
                     {refInput && refValid && (
                       <p className="text-[11px] text-emerald-600 font-medium">
-                        Code applied. You&apos;ll get bonus credits on signup!
+                        Referral recorded. The person who invited you earns only if you later buy a plan.
                       </p>
                     )}
                   </div>

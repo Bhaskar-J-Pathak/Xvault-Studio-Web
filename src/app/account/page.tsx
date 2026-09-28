@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Crown } from "lucide-react";
-import { getUser, getProfile } from "@/lib/auth";
+import { ArrowRight, Coins, Crown } from "lucide-react";
+import { getUser, getProfile, createServerSupabaseClient } from "@/lib/auth";
 import { isInTrial, trialDaysLeft, PLAN_LABELS, PLAN_LIMITS, TRIAL_CREDITS } from "@/lib/supabase";
 import AccountSignOut from "./_components/account-sign-out";
-import ReferralCard from "@/app/dashboard/_components/referral-card";
+import AffiliateCard from "./_components/affiliate-card";
+import { AFFILIATE_PROGRAM_ENABLED } from "@/lib/affiliate-config";
 
 export default async function AccountPage() {
   const user = await getUser();
@@ -12,6 +13,30 @@ export default async function AccountPage() {
 
   const profile = await getProfile(user.id);
   if (!profile) redirect("/auth");
+  const supabase = await createServerSupabaseClient();
+  const [
+    { data: affiliateSummary },
+    { data: commissions },
+    { data: withdrawals },
+    { data: redemptions },
+  ] = await Promise.all([
+    supabase.rpc("get_my_affiliate_summary"),
+    supabase.from("affiliate_commissions").select("id,commission_amount_cents,status,available_at,created_at").order("created_at", { ascending: false }).limit(8),
+    supabase.from("affiliate_withdrawals").select("id,amount_cents,status,requested_at").order("requested_at", { ascending: false }).limit(8),
+    supabase.from("affiliate_redemptions").select("id,amount_cents,credits,created_at").order("created_at", { ascending: false }).limit(8),
+  ]);
+  const pendingCents = Number(affiliateSummary?.pending_cents ?? 0);
+  const heldCents = Number(affiliateSummary?.held_cents ?? 0);
+  const availableCents = Number(affiliateSummary?.available_cents ?? 0);
+  const lifetimeEarnedCents = Number(affiliateSummary?.lifetime_earned_cents ?? 0);
+  const payoutPendingCents = Number(affiliateSummary?.payout_pending_cents ?? 0);
+  const convertedCredits = Number(affiliateSummary?.converted_credits ?? 0);
+  const affiliateActivity = [
+    ...(commissions ?? []).map((item) => ({ id: item.id, kind: "commission" as const, amountCents: item.commission_amount_cents, status: item.status, date: item.created_at, availableAt: item.available_at })),
+    ...(withdrawals ?? []).map((item) => ({ id: item.id, kind: "payout" as const, amountCents: item.amount_cents, status: item.status, date: item.requested_at })),
+    ...(redemptions ?? []).map((item) => ({ id: item.id, kind: "credits" as const, amountCents: item.amount_cents, credits: item.credits, status: "completed", date: item.created_at })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
+
 
   const inTrial   = isInTrial(profile);
   const daysLeft  = trialDaysLeft(profile);
@@ -85,6 +110,13 @@ export default async function AccountPage() {
             </p>
           </div>
           <Row label="Total AI requests" value={profile.ai_requests_total.toLocaleString()} />
+          <Row label="Top-up credits" value={(profile.topup_credits ?? 0).toLocaleString()} />
+          <Link
+            href="/credits"
+            className="mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#0F0F0F] px-4 text-xs font-semibold text-white transition-colors hover:bg-[#2A2A2A] dark:bg-white dark:text-[#0E0C1B] dark:hover:bg-white/90"
+          >
+            <Coins size={13} /> Buy credits
+          </Link>
         </div>
 
         {/* Sign out */}
@@ -94,12 +126,19 @@ export default async function AccountPage() {
       </section>
 
       {/* Referral */}
-      {profile.referral_code && (
+      {AFFILIATE_PROGRAM_ENABLED && profile.referral_code && (
         <div className="mt-6">
-          <ReferralCard
+          <AffiliateCard
             referralCode={profile.referral_code}
             referralCount={profile.referral_count ?? 0}
-            bonusCredits={profile.bonus_credits ?? 0}
+            pendingCents={pendingCents}
+            availableCents={availableCents}
+            lifetimeEarnedCents={lifetimeEarnedCents}
+            payoutPendingCents={payoutPendingCents}
+            heldCents={heldCents}
+            convertedCredits={convertedCredits}
+            accountEmail={user.email ?? ""}
+            activity={affiliateActivity}
           />
         </div>
       )}

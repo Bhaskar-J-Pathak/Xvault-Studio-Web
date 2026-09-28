@@ -5,30 +5,27 @@ import { useRouter } from "next/navigation";
 
 /**
  * Invisible component that runs once on dashboard mount.
- * If a referral code was stored in localStorage (from /auth?ref=CODE or
- * manually entered on the auth page), it calls /api/referral/link which
- * links the referral and immediately awards credits to both parties.
- * Refreshes the page on success so the updated credit count is shown.
+ * Claims either a referral code stored in localStorage or the secure
+ * 90-day affiliate cookie, then links it for paid conversion attribution.
+ * Refreshes the page on success so account data stays current.
  */
 export default function ReferralLinker() {
   const router = useRouter();
 
   useEffect(() => {
     const code = localStorage.getItem("xv_ref");
-    if (!code) return;
-
-    localStorage.removeItem("xv_ref");
 
     const controller = new AbortController();
     fetch("/api/referral/link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify(code ? { code } : {}),
       signal: controller.signal,
     })
       .then((r) => r.json())
       .then((data) => {
         if (data.ok) {
+          if (code) localStorage.removeItem("xv_ref");
           router.refresh();
         }
       })

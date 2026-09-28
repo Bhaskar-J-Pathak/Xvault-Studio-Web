@@ -8,7 +8,7 @@ const compiled = ts.transpileModule(fs.readFileSync('src/lib/extraction.ts', 'ut
 }).outputText;
 const moduleBox = { exports: {} };
 new Function('require', 'module', 'exports', compiled)(require, moduleBox, moduleBox.exports);
-const { resolveEntityId, findMatchingThreadIndex, parseExtractionResponse, mergeExtractionIntoGraph, buildEntitySummary, isPersistentRelationshipLabel } = moduleBox.exports;
+const { resolveEntityId, findMatchingThreadIndex, parseExtractionResponse, mergeExtractionIntoGraph, buildEntitySummary, isPersistentRelationshipLabel, hasWorldBoardChanges } = moduleBox.exports;
 
 const entities = [
   { id: 'ring', name: 'Black Obsidian Ring', attributes: {} },
@@ -139,7 +139,7 @@ test('merge stores relationship predicates without leading is/are wording', asyn
       };
     },
   };
-  await mergeExtractionIntoGraph('project', 'chapter', 1, {
+  const mergeResult = await mergeExtractionIntoGraph('project', 'chapter', 1, {
     entities: [],
     relationships: [{ source: 'Nyx', target: 'Arthur', label: 'is mother of' }],
     threads: [],
@@ -150,6 +150,10 @@ test('merge stores relationship predicates without leading is/are wording', asyn
   ], client, []);
   assert.equal(inserts.length, 1);
   assert.equal(inserts[0].value.label, 'mother of');
+  assert.deepEqual(mergeResult.changes.addedRelationships[0], {
+    sourceId: 'nyx', targetId: 'arthur', source: 'Nyx', target: 'Arthur', label: 'mother of',
+  });
+  assert.equal(hasWorldBoardChanges(mergeResult.changes), true);
 });
 
 test('merge updates a paraphrased existing thread instead of inserting a duplicate', async () => {
@@ -184,4 +188,12 @@ test('merge updates a paraphrased existing thread instead of inserting a duplica
   }]);
   assert.equal(updates.length, 1);
   assert.equal(inserts.length, 0);
+});
+
+
+test('unchanged extraction does not create noisy update history', async () => {
+  const result = await mergeExtractionIntoGraph('project', 'chapter', 2, {
+    entities: [], relationships: [], threads: [], inconsistencies: [],
+  }, [], { from() { throw new Error('database should not be called'); } }, []);
+  assert.equal(hasWorldBoardChanges(result.changes), false);
 });

@@ -1,0 +1,17 @@
+Most AI writing tools remember the last paragraph.
+
+Xvault Studio keeps track of the story behind it.
+
+It builds your World Board automatically, tracks emotional continuity with Story Pulse, and keeps prose generation inside the manuscript.
+
+I built it because writing a novel should not mean re-explaining your own book to the AI.
+
+Try it free: https://xvault.dev
+
+FIRST REPLY
+
+Xvault is free to try, with no card required.
+
+I also opened a small Founder's Circle: $49 once, 500 credits every month for life, personal onboarding, and direct access to me while I build it.
+
+https://xvault.dev/pricing

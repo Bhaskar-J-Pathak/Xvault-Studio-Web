@@ -21,7 +21,7 @@ const rows: { feature: string; xvault: React.ReactNode; opponent: React.ReactNod
   { feature: "Free trial",                 xvault: <Yes />, opponent: <Yes />,     note: "Xvault: 14 days, 100 credits, no card. Sudowrite: 10,000 words free." },
   { feature: "Monthly price",              xvault: "$11.99", opponent: "$19–$59",  note: "Sudowrite's Hobby tier starts at $19/mo. Professional at $39/mo." },
   { feature: "Annual price",               xvault: "$119/yr", opponent: "$120–$528/yr" },
-  { feature: "Lifetime option",            xvault: <Yes />, opponent: <No />,      note: "Xvault Founder's Circle: $49 lifetime." },
+  { feature: "Lifetime option",            xvault: <Yes />, opponent: <No />,      note: "Xvault Founder's Circle: $59 lifetime." },
   { feature: "Reads full manuscript",      xvault: <Yes />, opponent: <Partial />, note: "Sudowrite has context window limits that cause it to lose character details in long manuscripts." },
   { feature: "Auto story bible",           xvault: <Yes />, opponent: <No />,      note: "Xvault extracts plot threads automatically. Sudowrite requires manual Story Bible entry." },
   { feature: "Auto world board",           xvault: <Yes />, opponent: <No /> },
@@ -82,7 +82,7 @@ const faqSchema = {
       name: "Is Xvault Studio cheaper than Sudowrite?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Xvault Studio costs $11.99 per month or $119 per year. Sudowrite starts at $19 per month and goes up to $59 per month. Xvault also offers a $49 one-time lifetime access option that Sudowrite does not have.",
+        text: "Yes. Xvault Studio costs $11.99 per month or $119 per year. Sudowrite starts at $19 per month and goes up to $59 per month. Xvault also offers a $59 one-time lifetime access option that Sudowrite does not have.",
       },
     },
     {
@@ -196,7 +196,7 @@ export default function VsSudowritePage() {
             <h2 className="text-xl font-semibold text-stone-900 mb-4">The Pricing Problem</h2>
             <p className="text-stone-600 leading-relaxed mb-4">Sudowrite has changed its credit system multiple times since launch. Writers who joined under "unlimited" plans found access significantly reduced after each restructure. The community shorthand for this ("so damn expensive") appears consistently in writing forums and has become part of how the tool is discussed.</p>
             <p className="text-stone-600 leading-relaxed mb-4">The current pricing is $19 to $59 per month at monthly rates, or $10 to $44 per month annually. These are not unreasonable numbers for a professional tool, but the history of changes makes writers understandably cautious about committing to an annual plan.</p>
-            <p className="text-stone-600 leading-relaxed">Xvault's Hobbyist tier is $11.99 per month or $119 per year. The Founder's Circle lifetime access is $49, a one-time payment with no future credit restructures.</p>
+            <p className="text-stone-600 leading-relaxed">Xvault's Hobbyist tier is $11.99 per month or $119 per year. The Founder's Circle lifetime access is $59, a one-time payment with no future credit restructures.</p>
           </div>
 
           <div>

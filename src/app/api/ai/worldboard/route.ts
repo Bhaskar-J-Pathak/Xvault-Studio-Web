@@ -18,7 +18,7 @@ import {
   hasWorldBoardChanges,
   type WorldBoardMergeResult,
 } from "@/lib/extraction";
-import { checkRateLimit, commitRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
 import { CREDITS } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
   let rateLimitResult: { block: Response | null; remaining: number };
   try {
-    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk, projectId);
+    rateLimitResult = await checkRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk, projectId, "worldboard_extraction");
   } catch (err) {
     console.error("[worldboard] Rate limit check failed:", err);
     return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
       WORLDBOARD_MODEL
     );
   } catch (err) {
+    await recordCreditFailure(user.id, "worldboard_extraction", CREDITS.worldboardPerChunk, "ai_generation", err);
     console.error("[worldboard] AI extraction failed:", err);
     return Response.json({ error: "AI extraction failed" }, { status: 502 });
   }
@@ -105,6 +106,7 @@ export async function POST(request: NextRequest) {
   // ── Parse ───────────────────────────────────────────────────────────────────
   const extracted = parseExtractionResponse(rawResponse);
   if (!extracted) {
+    await recordCreditFailure(user.id, "worldboard_extraction", CREDITS.worldboardPerChunk, "validation", undefined, "invalid_response");
     console.error("[worldboard] Parse failed. Raw:", rawResponse.slice(0, 300));
     return Response.json({ error: "Failed to parse extraction result" }, { status: 500 });
   }
@@ -122,6 +124,7 @@ export async function POST(request: NextRequest) {
       openThreads ?? []
     );
   } catch (err) {
+    await recordCreditFailure(user.id, "worldboard_extraction", CREDITS.worldboardPerChunk, "persistence", err);
     console.error("[worldboard] Failed to save extraction:", err);
     return Response.json({ error: "Could not save extracted World Board data" }, { status: 500 });
   }
@@ -153,11 +156,12 @@ export async function POST(request: NextRequest) {
     p_word_delta: currentWordCount,
   });
   if (watermarkError) {
+    await recordCreditFailure(user.id, "worldboard_extraction", CREDITS.worldboardPerChunk, "persistence", watermarkError);
     console.error("[worldboard] Could not update extraction watermark:", watermarkError);
     return Response.json({ error: "Extraction completed but could not be finalized. Please retry." }, { status: 500 });
   }
 
-  await commitRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk, projectId);
+  await commitRateLimit(user.id, createServiceClient(), CREDITS.worldboardPerChunk, projectId, "worldboard_extraction");
   return Response.json({
     ok:                true,
     updateId,

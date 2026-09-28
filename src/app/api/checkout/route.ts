@@ -1,23 +1,25 @@
 // src/app/api/checkout/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import DodoPayments from "dodopayments";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createServiceClient } from "@/lib/auth";
+import { createDodoClient, getCheckoutBaseUrl, getDodoEnvironment } from "@/lib/dodo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const environment =
-    (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") ||
-    (process.env.NODE_ENV === "production" ? "live_mode" : "test_mode");
-
-  const dodo = new DodoPayments({
-    bearerToken: environment === "live_mode"
-      ? process.env.DODO_API_KEY_LIVE!
-      : process.env.DODO_API_KEY_TEST!,
-    environment,
-  });
+  let environment: "test_mode" | "live_mode";
+  let dodo: ReturnType<typeof createDodoClient>;
+  let appUrl: string;
+  try {
+    environment = getDodoEnvironment();
+    dodo = createDodoClient(environment);
+    appUrl = getCheckoutBaseUrl(req.url, environment);
+  } catch (configurationError) {
+    console.error("checkout:configuration_error", { configurationError });
+    return NextResponse.json({ error: "Checkout is temporarily unavailable" }, { status: 503 });
+  }
 
   const body = (await req.json().catch(() => null)) as
     | { productId?: string; planPurchased?: string }
@@ -47,6 +49,21 @@ export async function POST(req: NextRequest) {
   if (!planPurchased || requestedPlan !== planPurchased) {
     return NextResponse.json({ error: "Invalid product or plan" }, { status: 400 });
   }
+  // Read the server-owned Dodo product price so future Founder price changes
+  // automatically produce the correct 40% commission. Never trust the browser.
+  let amountCents: number;
+  try {
+    const product = await dodo.products.retrieve(productId);
+    const price = product.price;
+    const expectedType = planPurchased === "founder_circle" ? "one_time_price" : "recurring_price";
+    if (price.type !== expectedType || !("price" in price) || price.currency !== "USD" || !Number.isInteger(price.price) || price.price <= 0) {
+      throw new Error("Dodo product price does not match the expected Xvault plan");
+    }
+    amountCents = price.price;
+  } catch (priceError) {
+    console.error("checkout:product_price_failed", { productId, planPurchased, priceError });
+    return NextResponse.json({ error: "Could not verify the current plan price" }, { status: 502 });
+  }
 
   // Auth: ensure user is logged in
   const cookieStore = await cookies();
@@ -73,6 +90,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
+  const affiliateCode = cookieStore.get("xv_affiliate")?.value;
+  if (affiliateCode) {
+    const service = createServiceClient();
+    const { error: attributionError } = await service.rpc("claim_affiliate_referral", {
+      p_referred_id: user.id,
+      p_code: affiliateCode,
+      p_source: "checkout_cookie",
+    });
+    if (attributionError) {
+      console.error("checkout:affiliate_claim_failed", { userId: user.id, error: attributionError.message });
+    }
+  }
+
 
   // Create a pending order
   const { data: order, error: orderErr } = await supabase
@@ -81,6 +111,8 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       product_id: productId, // Ensure this is a real Dodo product_id (e.g., "prod_123")
       plan_purchased: planPurchased,
+      amount_cents: amountCents,
+      currency: "USD",
       status: "pending",
     })
     .select()
@@ -92,7 +124,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Build return URL
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
   const returnUrl = `${appUrl}/checkout/success?orderId=${order.id}`;
 
   // Create Dodo checkout session
