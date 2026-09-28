@@ -1,12 +1,12 @@
 import DodoPayments from "dodopayments";
 
 const packs = [
-  { env: "DODO_PRODUCT_CREDITS_100_LIVE", name: "100 credits", cents: 500 },
-  { env: "DODO_PRODUCT_CREDITS_200_LIVE", name: "200 credits", cents: 1000 },
-  { env: "DODO_PRODUCT_CREDITS_400_LIVE", name: "400 credits", cents: 1500 },
-  { env: "DODO_PRODUCT_CREDITS_600_LIVE", name: "600 credits", cents: 2000 },
-  { env: "DODO_PRODUCT_CREDITS_1750_LIVE", name: "1,750 credits", cents: 5000 },
-  { env: "DODO_PRODUCT_CREDITS_4000_LIVE", name: "4,000 credits", cents: 10000 },
+  { env: "DODO_PRODUCT_CREDITS_100", name: "100 credits", cents: 500 },
+  { env: "DODO_PRODUCT_CREDITS_200", name: "200 credits", cents: 1000 },
+  { env: "DODO_PRODUCT_CREDITS_400", name: "400 credits", cents: 1500 },
+  { env: "DODO_PRODUCT_CREDITS_600", name: "600 credits", cents: 2000 },
+  { env: "DODO_PRODUCT_CREDITS_1750", name: "1,750 credits", cents: 5000 },
+  { env: "DODO_PRODUCT_CREDITS_4000", name: "4,000 credits", cents: 10000 },
 ];
 
 function requireEnv(name) {

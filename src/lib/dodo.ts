@@ -46,14 +46,17 @@ export function getDodoWebhookSecret(environment = getDodoEnvironment()): string
 }
 
 export function getDodoProductId(baseEnvironmentName: string, environment = getDodoEnvironment()): string {
-  const modeSpecificName = `${baseEnvironmentName}_${environment === "live_mode" ? "LIVE" : "TEST"}`;
-  const modeSpecificId = process.env[modeSpecificName]?.trim();
-  if (modeSpecificId) return modeSpecificId;
+  if (environment === "live_mode") {
+    return requireEnvironmentVariable(baseEnvironmentName);
+  }
 
-  // Existing test environments used the unsuffixed names. Live mode never
-  // falls back, which prevents test product IDs from leaking into production.
-  if (environment === "test_mode") return requireEnvironmentVariable(baseEnvironmentName);
-  throw new DodoConfigurationError(`${modeSpecificName} is not configured`);
+  const testName = `${baseEnvironmentName}_TEST`;
+  const testId = process.env[testName]?.trim();
+  if (testId) return testId;
+
+  // Preserve the existing local test setup, which used unsuffixed product
+  // variables before dedicated _TEST variables were introduced.
+  return requireEnvironmentVariable(baseEnvironmentName);
 }
 
 export function getCheckoutBaseUrl(requestUrl: string, environment = getDodoEnvironment()): string {
