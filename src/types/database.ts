@@ -43,6 +43,9 @@ export interface DbChapter {
   word_count: number;
   position: number;
   summary: string | null;
+  summary_source_hash?: string | null;
+  summary_word_count?: number;
+  summary_updated_at?: string | null;
   last_embedded_word: number;
   last_extracted_word: number;
   created_at: string;
@@ -55,6 +58,7 @@ export interface DbStoryBible {
   project_intent: string | null;
   style_notes:    string | null;
   synopsis:       string | null;
+  synopsis_source_hash?: string | null;
   created_at: string;
   updated_at: string;
 }

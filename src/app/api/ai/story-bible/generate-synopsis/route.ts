@@ -8,6 +8,7 @@
  */
 
 import { NextRequest } from "next/server";
+import { createHash } from "node:crypto";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
@@ -39,17 +40,9 @@ export async function POST(request: NextRequest) {
   // Fetch existing bible (for intent + existing synopsis)
   const { data: bible } = await supabase
     .from("story_bibles")
-    .select("id, project_intent, synopsis")
+    .select("id, project_intent, synopsis, synopsis_source_hash")
     .eq("project_id", projectId)
     .maybeSingle();
-
-  if (bible?.synopsis && !force) {
-    return Response.json({ ok: true, synopsis: bible.synopsis, skipped: true });
-  }
-
-  // Costs 2 credits — charged every time we actually generate (first-time or forced).
-  const { block } = await checkRateLimit(user.id, createServiceClient(), 2, projectId, "story_synopsis");
-  if (block) return block;
 
   // Fetch chapters with summaries, ordered by position
   const { data: chapters } = await supabase
@@ -65,6 +58,18 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const sourceHash = createHash("sha256").update(JSON.stringify({
+    intent: bible?.project_intent ?? "",
+    chapters: summarised.map((chapter) => [chapter.id, chapter.summary]),
+  })).digest("hex");
+  if (bible?.synopsis && bible.synopsis_source_hash === sourceHash && !force) {
+    return Response.json({ ok: true, synopsis: bible.synopsis, skipped: true });
+  }
+
+  // Costs 2 credits only when a new synopsis is actually needed.
+  const { block } = await checkRateLimit(user.id, createServiceClient(), 2, projectId, "story_synopsis");
+  if (block) return block;
 
   const chapterBlock = summarised
     .map((c) => `Chapter ${c.position + 1} — "${c.title}":\n${c.summary}`)
@@ -109,7 +114,7 @@ Be specific — use character names and concrete events. Present tense. No edito
 
   // Upsert into story_bibles
   const { error: saveError } = await supabase.from("story_bibles").upsert(
-    { project_id: projectId, synopsis, updated_at: new Date().toISOString() },
+    { project_id: projectId, synopsis, synopsis_source_hash: sourceHash, updated_at: new Date().toISOString() },
     { onConflict: "project_id" }
   );
   if (saveError) {

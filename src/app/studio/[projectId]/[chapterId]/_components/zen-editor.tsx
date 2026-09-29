@@ -21,6 +21,7 @@ type GhostMode = "write" | "rewrite" | "continue";
 type ProseLength = "short" | "medium" | "long";
 type EditorThemeName = EditorPrefs["theme"];
 const PROSE_LENGTH_KEY = "xv_prose_length";
+const CREDIT_SYNC_KEY = "xv_credit_sync";
 
 // ── Direct editor action (toolbar → Lexical, bypasses ghost overlay) ──────────
 type DirectAction =
@@ -29,8 +30,7 @@ type DirectAction =
 type CursorContext = ProseCursorContext & {
   viewportAnchor?: { x: number; top: number; bottom: number };
 };
-import { createClient, creditsRemaining } from "@/lib/supabase";
-import type { Profile } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase";
 import { Check, ChevronDown, GripHorizontal, Loader2, Wand2, X, PenLine, Settings, MoreHorizontal, Share2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
@@ -265,6 +265,7 @@ interface StoryBiblePluginProps {
   chapterId:           string;
   initialLastEmbedded: number;
   hasSummary:          boolean;
+  initialSummaryWordCount: number;
 }
 
 function StoryBiblePlugin({
@@ -272,13 +273,17 @@ function StoryBiblePlugin({
   chapterId,
   initialLastEmbedded,
   hasSummary,
+  initialSummaryWordCount,
 }: StoryBiblePluginProps) {
   const [editor] = useLexicalComposerContext();
 
   const lastEmbeddedRef  = useRef(initialLastEmbedded);
   const hasSummarizedRef = useRef(hasSummary);
+  const lastSummarizedRef = useRef(initialSummaryWordCount);
   const embedTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const summaryTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const embeddingRef     = useRef(false);
+  const summarizingRef   = useRef(false);
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
@@ -316,13 +321,33 @@ function StoryBiblePlugin({
         }, 30000);
       }
 
-      if (!hasSummarizedRef.current && wc >= 300) {
-        hasSummarizedRef.current = true;
-        fetch("/api/ai/story-bible/summarize", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ chapterId, projectId }),
-        }).catch(console.error);
+      const needsFirstSummary = !hasSummarizedRef.current && wc >= 300;
+      const needsSummaryRefresh = hasSummarizedRef.current &&
+        Math.abs(wc - lastSummarizedRef.current) >= 1000;
+      if ((needsFirstSummary || needsSummaryRefresh) && !summarizingRef.current) {
+        if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current);
+        // Summary work is deliberately much less frequent than autosave and
+        // vector indexing. It runs only after the writer has been idle.
+        summaryTimerRef.current = setTimeout(async () => {
+          if (summarizingRef.current) return;
+          summarizingRef.current = true;
+          try {
+            const response = await fetch("/api/ai/story-bible/summarize", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ chapterId, projectId }),
+            });
+            if (response.ok) {
+              const result = await response.json().catch(() => ({})) as { wordCount?: number };
+              hasSummarizedRef.current = true;
+              lastSummarizedRef.current = result.wordCount ?? wc;
+            }
+          } catch (error) {
+            console.error(error);
+          } finally {
+            summarizingRef.current = false;
+          }
+        }, needsFirstSummary ? 45000 : 120000);
       }
     });
   }, [editor, chapterId, projectId]);
@@ -699,6 +724,7 @@ interface Props {
   initialLastExtracted: number;
   initialLastEmbedded:  number;
   initialSummary:       string | null;
+  initialSummaryWordCount: number;
   initialCoauthor:      DbCoauthor | null;
   initialCredits:       number;
   initialCreditCap:     number;
@@ -719,6 +745,7 @@ export default function ZenEditor({
   initialLastExtracted,
   initialLastEmbedded,
   initialSummary,
+  initialSummaryWordCount,
   initialCoauthor,
   initialCredits,
   initialCreditCap,
@@ -773,33 +800,23 @@ export default function ZenEditor({
   const [credits,          setCredits]          = useState(initialCredits);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Keep credits in sync with server via Supabase Realtime
+  // AI responses already return the authoritative remaining balance. Mirror
+  // it to other tabs through browser storage instead of holding a persistent
+  // Supabase Realtime subscription open.
   useEffect(() => {
-    const supabase = createClient();
-    let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user || cancelled) return;
-      channel = supabase
-        .channel(`profile-credits-${user.id}`)
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-          (payload) => {
-            const updated = payload.new as Profile;
-            const remaining = creditsRemaining(updated, projectId);
-            setCredits(remaining);
-            if (remaining <= 0) setShowUpgradeModal(true);
-          }
-        )
-        .subscribe();
-    });
-
-    return () => {
-      cancelled = true;
-      if (channel) supabase.removeChannel(channel);
+    const syncCredits = (event: StorageEvent) => {
+      if (event.key !== CREDIT_SYNC_KEY || !event.newValue) return;
+      try {
+        const update = JSON.parse(event.newValue) as { projectId?: string; remaining?: number };
+        if (update.projectId !== projectId || typeof update.remaining !== "number") return;
+        setCredits(update.remaining);
+        if (update.remaining <= 0) setShowUpgradeModal(true);
+      } catch {
+        // Ignore malformed values written by an older browser session.
+      }
     };
+    window.addEventListener("storage", syncCredits);
+    return () => window.removeEventListener("storage", syncCredits);
   }, [projectId]);
 
   // Co-author
@@ -998,7 +1015,8 @@ export default function ZenEditor({
   const handleCreditUpdate = useCallback((remaining: number) => {
     setCredits(remaining);
     if (remaining <= 0) setShowUpgradeModal(true);
-  }, []);
+    localStorage.setItem(CREDIT_SYNC_KEY, JSON.stringify({ projectId, remaining, at: Date.now() }));
+  }, [projectId]);
 
   const [refineError, setRefineError] = useState<string | null>(null);
 
@@ -1399,6 +1417,7 @@ export default function ZenEditor({
             chapterId={chapterId}
             initialLastEmbedded={initialLastEmbedded}
             hasSummary={initialSummary !== null}
+            initialSummaryWordCount={initialSummaryWordCount}
           />
           <CoAuthorPlugin
             projectId={projectId}

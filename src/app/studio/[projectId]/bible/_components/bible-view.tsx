@@ -20,6 +20,10 @@ interface BibleChapter {
   position: number;
   word_count: number;
   summary: string | null;
+  summary_source_hash: string | null;
+  summary_word_count: number;
+  summary_updated_at: string | null;
+  last_embedded_word: number;
 }
 
 interface BibleEntity {
@@ -173,6 +177,12 @@ export default function BibleView({
   const [summaries,     setSummaries]     = useState<Record<string, string>>(
     Object.fromEntries(chapters.map((c) => [c.id, c.summary ?? ""]))
   );
+  const [summaryWordCounts, setSummaryWordCounts] = useState<Record<string, number>>(
+    Object.fromEntries(chapters.map((c) => [c.id, c.summary_word_count ?? 0]))
+  );
+  const [summaryFresh, setSummaryFresh] = useState<Record<string, boolean>>(
+    Object.fromEntries(chapters.map((c) => [c.id, Boolean(c.summary_source_hash)]))
+  );
   const [generating,    setGenerating]    = useState<Record<string, boolean>>({});
   const [generateError, setGenerateError] = useState<Record<string, string>>({});
 
@@ -196,6 +206,8 @@ export default function BibleView({
   const intentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const genreTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const styleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirtySummaryIdsRef = useRef<Set<string>>(new Set());
+  const dirtyEntityIdsRef  = useRef<Set<string>>(new Set());
 
   // Global save state
   type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -224,6 +236,8 @@ export default function BibleView({
     setSaveStatus("saving");
 
     const supabase = createClient();
+    const dirtySummaryIds = new Set(dirtySummaryIdsRef.current);
+    const dirtyEntityIds = new Set(dirtyEntityIdsRef.current);
 
     const ops: Promise<boolean>[] = [
       // All bible text fields in one upsert
@@ -232,12 +246,12 @@ export default function BibleView({
       Promise.resolve(supabase.from("projects").update({ genre }).eq("id", projectId))
         .then(({ error }) => !error),
       // Chapter summaries
-      ...chapters.map((ch) =>
+      ...chapters.filter((ch) => dirtySummaryIds.has(ch.id)).map((ch) =>
         Promise.resolve(supabase.from("chapters").update({ summary: summaries[ch.id] ?? "" }).eq("id", ch.id))
           .then(({ error }) => !error)
       ),
       // Character attributes
-      ...entities.filter((e) => e.type === "character").map((entity) =>
+      ...entities.filter((e) => e.type === "character" && dirtyEntityIds.has(e.id)).map((entity) =>
         Promise.resolve(
           supabase.from("entities")
             .update({ attributes: { ...(entity.attributes ?? {}), ...entityAttrs[entity.id] } })
@@ -250,6 +264,10 @@ export default function BibleView({
     try {
       const results = await Promise.all(ops);
       allOk = results.every(Boolean);
+      if (allOk) {
+        dirtySummaryIds.forEach((id) => dirtySummaryIdsRef.current.delete(id));
+        dirtyEntityIds.forEach((id) => dirtyEntityIdsRef.current.delete(id));
+      }
     } catch (err) {
       console.error("[bible] save failed:", err);
     }
@@ -327,7 +345,7 @@ export default function BibleView({
       const res  = await fetch("/api/ai/story-bible/generate-synopsis", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ projectId, force: true }),
+        body:    JSON.stringify({ projectId, force: false }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -344,11 +362,14 @@ export default function BibleView({
 
   // ── Chapter summaries ─────────────────────────────────────────────────────
   const handleSummarySave = useCallback(async (chapterId: string, value: string) => {
+    if (!dirtySummaryIdsRef.current.has(chapterId)) return;
     const supabase = createClient();
     const { error } = await supabase.from("chapters").update({ summary: value }).eq("id", chapterId);
     if (error) {
       console.error("[bible] chapter summary save failed:", error);
       setGenerateError((p) => ({ ...p, [chapterId]: "Could not save summary. Please try again." }));
+    } else {
+      dirtySummaryIdsRef.current.delete(chapterId);
     }
   }, []);
 
@@ -368,6 +389,10 @@ export default function BibleView({
       }
       if (data.summary) {
         setSummaries((p) => ({ ...p, [chapterId]: data.summary }));
+        if (typeof data.wordCount === "number") {
+          setSummaryWordCounts((p) => ({ ...p, [chapterId]: data.wordCount }));
+        }
+        setSummaryFresh((p) => ({ ...p, [chapterId]: true }));
       } else if (data.reason === "too_short") {
         setGenerateError((p) => ({ ...p, [chapterId]: "Chapter needs 100+ words first" }));
       }
@@ -380,6 +405,7 @@ export default function BibleView({
 
   // ── Character sheet ───────────────────────────────────────────────────────
   const handleAttrSave = useCallback(async (entityId: string, attrs: CharacterAttrs) => {
+    if (!dirtyEntityIdsRef.current.has(entityId)) return;
     const entity = entities.find((e) => e.id === entityId);
     if (!entity) return;
     const supabase = createClient();
@@ -389,11 +415,15 @@ export default function BibleView({
     if (error) {
       console.error("[bible] character save failed:", error);
       setAnalyzeError((p) => ({ ...p, [entityId]: "Could not save character details." }));
+    } else {
+      dirtyEntityIdsRef.current.delete(entityId);
     }
   }, [entities]);
 
-  const updateAttr = (entityId: string, key: keyof CharacterAttrs, value: string) =>
+  const updateAttr = (entityId: string, key: keyof CharacterAttrs, value: string) => {
+    dirtyEntityIdsRef.current.add(entityId);
     setEntityAttrs((p) => ({ ...p, [entityId]: { ...p[entityId], [key]: value } }));
+  };
 
   const handleAnalyze = useCallback(async (entityId: string) => {
     setAnalyzing((p) => ({ ...p, [entityId]: true }));
@@ -428,6 +458,13 @@ export default function BibleView({
 
   const activeThreads  = threads.filter((t) => t.status === "open");
   const hasSomeSummary = chapters.some((c) => summaries[c.id]?.trim());
+  const indexedCount = chapters.filter((chapter) => chapter.last_embedded_word > 0).length;
+  const summarisedCount = chapters.filter((chapter) => summaries[chapter.id]?.trim()).length;
+  const staleSummaryCount = chapters.filter((chapter) =>
+    Boolean(summaries[chapter.id]?.trim()) &&
+    (!summaryFresh[chapter.id] ||
+      Math.abs(chapter.word_count - (summaryWordCounts[chapter.id] ?? 0)) >= 1000)
+  ).length;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -466,6 +503,25 @@ export default function BibleView({
           </div>
         </div>
 
+        <section className="mb-10 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-[13px] font-semibold text-[#1A1A1A]">Memory coverage</h2>
+              <p className="mt-1 text-[11px] leading-relaxed text-[#1A1A1A]/45">
+                Alex retrieves a maximum of four relevant older passages per request. Indexing and summaries refresh only after meaningful changes.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-violet-600">
+              {chapters.length ? Math.round((indexedCount / chapters.length) * 100) : 0}% indexed
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-lg font-semibold text-[#1A1A1A]">{indexedCount}/{chapters.length}</p><p className="text-[10px] text-[#1A1A1A]/40">chapters indexed</p></div>
+            <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-lg font-semibold text-[#1A1A1A]">{summarisedCount}/{chapters.length}</p><p className="text-[10px] text-[#1A1A1A]/40">summaries ready</p></div>
+            <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-lg font-semibold text-[#1A1A1A]">{staleSummaryCount}</p><p className="text-[10px] text-[#1A1A1A]/40">need refresh</p></div>
+          </div>
+        </section>
+
         {/* ── Braindump / Intent ──────────────────────────────────────────── */}
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-1">
@@ -492,7 +548,7 @@ export default function BibleView({
             {genreError && <span className="text-[11px] text-red-400">Save failed. Check your connection</span>}
           </div>
           <p className="text-[11px] text-[#1A1A1A]/40 mb-3">
-            Genre shapes tone, pacing, and reader expectations. Be specific: "Dark Portal Fantasy" beats "Fantasy".
+            Genre shapes tone, pacing, and reader expectations. Be specific: &quot;Dark Portal Fantasy&quot; beats &quot;Fantasy&quot;.
           </p>
           <input
             type="text"
@@ -603,7 +659,10 @@ export default function BibleView({
 
                   <textarea
                     value={summaries[chapter.id] ?? ""}
-                    onChange={(e) => setSummaries((p) => ({ ...p, [chapter.id]: e.target.value }))}
+                    onChange={(e) => {
+                      dirtySummaryIdsRef.current.add(chapter.id);
+                      setSummaries((p) => ({ ...p, [chapter.id]: e.target.value }));
+                    }}
                     onBlur={(e) => handleSummarySave(chapter.id, e.target.value)}
                     placeholder={
                       chapter.word_count < 100

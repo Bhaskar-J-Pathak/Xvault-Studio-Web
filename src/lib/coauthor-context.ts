@@ -5,6 +5,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { lexicalToText } from "./chunking";
+import { retrieveStoryMemory } from "./story-memory";
 
 interface CoauthorContext {
   systemPrompt: string;
@@ -18,7 +19,8 @@ export async function assembleCoauthorContext(
   coauthorPersonality: string | null,
   recentText: string,
   chapterId?: string,
-  purpose: "conversation" | "prose" = "conversation"
+  purpose: "conversation" | "prose" = "conversation",
+  retrievalQuery = ""
 ): Promise<CoauthorContext> {
   // Fetch everything in parallel, including full chapter content if chapterId provided
   const [
@@ -27,6 +29,7 @@ export async function assembleCoauthorContext(
     { data: entities },
     { data: threads },
     { data: chapter },
+    relevantMemory,
   ] = await Promise.all([
     supabase
       .from("projects")
@@ -57,6 +60,9 @@ export async function assembleCoauthorContext(
           .eq("project_id", projectId)
           .single()
       : Promise.resolve({ data: null }),
+    retrievalQuery
+      ? retrieveStoryMemory(supabase, projectId, retrievalQuery, chapterId)
+      : Promise.resolve(""),
   ]);
 
   // Build character profiles block
@@ -146,6 +152,12 @@ ${characterBlock}
 ${worldBlock ? `\nWORLD ELEMENTS:\n${worldBlock}\n` : ""}
 OPEN PLOT THREADS:
 ${threadBlock}
+
+${relevantMemory ? `RELEVANT MANUSCRIPT MEMORY (older passages retrieved for this request):
+${relevantMemory}
+
+Use these passages for continuity, but respect chronology. A character cannot know something before the cited chapter occurred.
+` : ""}
 
 ${contextBlock}`;
 

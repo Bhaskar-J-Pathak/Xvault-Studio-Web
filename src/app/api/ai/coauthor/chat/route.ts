@@ -162,7 +162,9 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
       coauthorName,
       coauthorPersonality,
       recentText,
-      body.chapterId
+      body.chapterId,
+      "conversation",
+      `${message.trim()}\n${recentText.slice(-1600)}`
     ));
   } catch (err) {
     await recordCreditFailure(user.id, "coauthor_chat", 1, "context_assembly", err);

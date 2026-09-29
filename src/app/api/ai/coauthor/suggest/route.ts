@@ -143,7 +143,13 @@ export async function POST(request: NextRequest) {
       coauthor?.personality ?? null,
       contextText,
       body.chapterId,
-      "prose"
+      "prose",
+      [
+        instruction ?? mode,
+        selectedText,
+        contextText.slice(-1600),
+        afterCursor.slice(0, 500),
+      ].filter(Boolean).join("\n")
     ));
   } catch (err) {
     await recordCreditFailure(user.id, "prose_suggestion", 1, "context_assembly", err);

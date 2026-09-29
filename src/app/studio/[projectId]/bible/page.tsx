@@ -40,7 +40,7 @@ export default async function BiblePage({
       .maybeSingle(),
     supabase
       .from("chapters")
-      .select("id, title, position, word_count, summary")
+      .select("id, title, position, word_count, summary, summary_source_hash, summary_word_count, summary_updated_at, last_embedded_word")
       .eq("project_id", projectId)
       .order("position"),
     supabase

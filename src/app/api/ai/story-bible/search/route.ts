@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   // pgvector similarity search via Supabase RPC
   const { data: chunks, error: rpcError } = await supabase.rpc(
-    "search_story_chunks",
+    "search_story_memory",
     {
       p_project_id:         projectId,
       p_embedding:          `[${queryEmbedding.join(",")}]`,
@@ -63,20 +63,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: true, results: [] });
   }
 
-  // Fetch chapter metadata for display labels
-  const chapterIds = [...new Set(chunks.map((c: { chapter_id: string }) => c.chapter_id))];
-  const { data: chapterRows } = await supabase
-    .from("chapters")
-    .select("id, title, position")
-    .in("id", chapterIds);
-
-  const chapterMap = new Map(
-    (chapterRows ?? []).map((ch: { id: string; title: string; position: number }) => [ch.id, ch])
-  );
-
   const results = chunks.map((c: {
     id: string;
     chapter_id: string;
+    chapter_title: string;
+    chapter_position: number;
     content: string;
     chunk_index: number;
     similarity: number;
@@ -84,8 +75,8 @@ export async function POST(request: NextRequest) {
     id:              c.id,
     content:         c.content,
     chapterId:       c.chapter_id,
-    chapterTitle:    chapterMap.get(c.chapter_id)?.title ?? "Chapter",
-    chapterPosition: (chapterMap.get(c.chapter_id)?.position ?? 0) + 1,
+    chapterTitle:    c.chapter_title ?? "Chapter",
+    chapterPosition: (c.chapter_position ?? 0) + 1,
     similarity:      Math.round(c.similarity * 100) / 100,
   }));
 

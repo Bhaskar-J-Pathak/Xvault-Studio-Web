@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
   const replacementRows = changedChunks.map((chunk, index) => {
     const embedding = embeddings[index] as number[];
     return {
+      id:          (chunk.existing?.id as string | undefined) ?? crypto.randomUUID(),
       project_id:  projectId,
       chapter_id:  chapterId,
       content:     chunk.content,
@@ -127,21 +128,19 @@ export async function POST(request: NextRequest) {
   });
 
   if (replacementRows.length) {
-    const { error: insertError } = await supabase.from("story_chunks").insert(replacementRows);
-    if (insertError) {
+    const { error: upsertError } = await supabase.from("story_chunks").upsert(replacementRows, {
+      onConflict: "id",
+    });
+    if (upsertError) {
       return Response.json({ error: "Could not save the updated story index" }, { status: 500 });
     }
   }
 
-  const replacedIds = changedChunks.flatMap((chunk, index) =>
-    embeddings[index] && chunk.existing ? [chunk.existing.id as string] : []
-  );
-  const idsToDelete = [...staleIds, ...replacedIds];
-  if (idsToDelete.length) {
+  if (staleIds.length) {
     const { error: deleteError } = await supabase
       .from("story_chunks")
       .delete()
-      .in("id", idsToDelete);
+      .in("id", staleIds);
     if (deleteError) {
       return Response.json({ error: "The new story index was saved, but old chunks could not be removed" }, { status: 500 });
     }
@@ -158,7 +157,7 @@ export async function POST(request: NextRequest) {
   return Response.json({
     ok: true,
     chunksCreated: replacementRows.length,
-    chunksDeleted: idsToDelete.length,
+    chunksDeleted: staleIds.length,
     chunksUnchanged: chunks.length - changedChunks.length,
     wordCount: words.length,
   });

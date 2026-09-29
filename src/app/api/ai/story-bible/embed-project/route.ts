@@ -61,6 +61,20 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: true, chaptersEmbedded: 0, reason: "no_chapters" });
   }
 
+  const { data: existingChunks, error: existingChunksError } = await supabase
+    .from("story_chunks")
+    .select("id, chapter_id, chunk_index")
+    .eq("project_id", projectId);
+  if (existingChunksError) {
+    return Response.json({ error: "Could not read the current story index" }, { status: 500 });
+  }
+  const existingChunkIds = new Map(
+    (existingChunks ?? []).map((chunk) => [
+      `${chunk.chapter_id}:${chunk.chunk_index}`,
+      chunk.id as string,
+    ])
+  );
+
   let chaptersEmbedded = 0;
 
   for (const chapter of chapters) {
@@ -75,31 +89,36 @@ export async function POST(request: NextRequest) {
 
     const chunks     = chunkText(text);
     const embeddings = await embedBatch(chunks.map((c) => c.content));
+    if (embeddings.some((embedding) => !embedding)) continue;
 
-    await supabase.from("story_chunks").delete().eq("chapter_id", chapter.id);
+    const rows = chunks.map((chunk, index) => ({
+      id:          existingChunkIds.get(`${chapter.id}:${index}`) ?? crypto.randomUUID(),
+      project_id:  projectId,
+      chapter_id:  chapter.id,
+      content:     chunk.content,
+      embedding:   `[${(embeddings[index] as number[]).join(",")}]`,
+      chunk_index: index,
+      word_start:  chunk.wordStart,
+    }));
+    const { error: upsertError } = await supabase.from("story_chunks").upsert(rows, {
+      onConflict: "id",
+    });
+    if (upsertError) continue;
 
-    let chunksCreated = 0;
-    for (let i = 0; i < chunks.length; i++) {
-      const embedding = embeddings[i];
-      if (!embedding) continue;
+    // Remove only chunks beyond the new chapter length. Existing positions
+    // were updated in place by the bulk upsert above.
+    const { error: staleDeleteError } = await supabase.from("story_chunks")
+      .delete()
+      .eq("chapter_id", chapter.id)
+      .gte("chunk_index", chunks.length);
+    if (staleDeleteError) continue;
 
-      const { error } = await supabase.from("story_chunks").insert({
-        project_id:  projectId,
-        chapter_id:  chapter.id,
-        content:     chunks[i].content,
-        embedding:   `[${embedding.join(",")}]`,
-        chunk_index: i,
-        word_start:  chunks[i].wordStart,
-      });
-
-      if (!error) chunksCreated++;
-    }
-
-    if (chunksCreated > 0) {
-      await supabase
+    if (rows.length > 0) {
+      const { error: watermarkError } = await supabase
         .from("chapters")
         .update({ last_embedded_word: words.length })
         .eq("id", chapter.id);
+      if (watermarkError) continue;
       chaptersEmbedded++;
     }
   }
