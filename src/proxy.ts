@@ -8,6 +8,8 @@ const PROTECTED_PAGES = ["/studio", "/dashboard", "/account"];
 const PROTECTED_API = ["/api/ai/", "/api/account/"];
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
   // OAuth providers may return to the configured Supabase Site URL when the
   // requested callback URL is not an exact allow-list match. Intercept the
   // authorization code before the landing page renders and complete the
@@ -16,6 +18,17 @@ export async function proxy(request: NextRequest) {
     const callbackUrl = request.nextUrl.clone();
     callbackUrl.pathname = "/auth/callback";
     return NextResponse.redirect(callbackUrl);
+  }
+
+  const isProtectedPage = PROTECTED_PAGES.some((p) => pathname.startsWith(p));
+  const isProtectedApi = PROTECTED_API.some((p) => pathname.startsWith(p));
+  const isAuthPage = pathname === "/auth";
+
+  // Public marketing pages and public APIs do not need an authenticated user.
+  // Skipping Supabase here prevents one anonymous page load from causing an
+  // unnecessary token validation/refresh request in the proxy.
+  if (!isProtectedPage && !isProtectedApi && !isAuthPage) {
+    return NextResponse.next();
   }
 
   let supabaseResponse = NextResponse.next({ request });
@@ -47,10 +60,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-
   // Gate protected page routes → redirect to /auth
-  const isProtectedPage = PROTECTED_PAGES.some((p) => pathname.startsWith(p));
   if (isProtectedPage && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth";
@@ -59,7 +69,6 @@ export async function proxy(request: NextRequest) {
   }
 
   // Gate protected API routes → return 401 JSON (no redirect for API calls)
-  const isProtectedApi = PROTECTED_API.some((p) => pathname.startsWith(p));
   if (isProtectedApi && !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
