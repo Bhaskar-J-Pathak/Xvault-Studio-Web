@@ -4,7 +4,7 @@
  * Chunks a chapter's text and embeds each chunk with Gemini text-embedding-004.
  * Results stored in story_chunks for semantic search (Story Bible panel + co-author).
  *
- * Called client-side (fire-and-forget) after save when word count changes by >150.
+ * Called client-side after an idle period when the manuscript changed materially.
  * Body: { chapterId: string, projectId: string }
  */
 
@@ -14,8 +14,6 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/auth";
 import { geminiEmbed } from "@/lib/ai";
 import { lexicalToText, chunkText } from "@/lib/chunking";
-
-const EMBED_MIN_DELTA = 150;
 
 /** Embed a batch of texts in parallel, capped at 5 concurrent calls. */
 async function embedBatch(texts: string[]): Promise<(number[] | null)[]> {
@@ -67,42 +65,101 @@ export async function POST(request: NextRequest) {
   const text  = lexicalToText(chapter.content);
   const words = text.split(/\s+/).filter(Boolean);
 
+  const { data: existingChunks, error: existingError } = await supabase
+    .from("story_chunks")
+    .select("id, chunk_index, content")
+    .eq("chapter_id", chapterId);
+
+  if (existingError) {
+    return Response.json({ error: "Could not read the current story index" }, { status: 500 });
+  }
+
   if (words.length < 50) {
-    return Response.json({ ok: true, chunksCreated: 0, reason: "too_short" });
+    if (existingChunks?.length) {
+      const { error: deleteError } = await supabase
+        .from("story_chunks")
+        .delete()
+        .eq("chapter_id", chapterId);
+      if (deleteError) {
+        return Response.json({ error: "Could not clear the old story index" }, { status: 500 });
+      }
+    }
+    await supabase
+      .from("chapters")
+      .update({ last_embedded_word: words.length })
+      .eq("id", chapterId);
+    return Response.json({ ok: true, chunksCreated: 0, chunksDeleted: existingChunks?.length ?? 0, wordCount: words.length, reason: "too_short" });
   }
 
-  const lastEmbedded = (chapter.last_embedded_word as number) ?? 0;
-  if (Math.abs(words.length - lastEmbedded) < EMBED_MIN_DELTA) {
-    return Response.json({ ok: true, chunksCreated: 0, reason: "unchanged" });
+  const chunks = chunkText(text);
+  const existingByIndex = new Map(
+    (existingChunks ?? []).map((chunk) => [chunk.chunk_index as number, chunk])
+  );
+  const changedChunks = chunks
+    .map((chunk, index) => ({ ...chunk, index, existing: existingByIndex.get(index) }))
+    .filter((chunk) => !chunk.existing || chunk.existing.content !== chunk.content);
+  const staleIds = (existingChunks ?? [])
+    .filter((chunk) => (chunk.chunk_index as number) >= chunks.length)
+    .map((chunk) => chunk.id as string);
+
+  if (changedChunks.length === 0 && staleIds.length === 0) {
+    await supabase
+      .from("chapters")
+      .update({ last_embedded_word: words.length })
+      .eq("id", chapterId);
+    return Response.json({ ok: true, chunksCreated: 0, chunksDeleted: 0, wordCount: words.length, reason: "unchanged" });
   }
 
-  const chunks     = chunkText(text);
-  const embeddings = await embedBatch(chunks.map((c) => c.content));
-
-  // Replace all existing chunks for this chapter atomically
-  await supabase.from("story_chunks").delete().eq("chapter_id", chapterId);
-
-  let chunksCreated = 0;
-  for (let i = 0; i < chunks.length; i++) {
-    const embedding = embeddings[i];
-    if (!embedding) continue;
-
-    const { error } = await supabase.from("story_chunks").insert({
+  const embeddings = await embedBatch(changedChunks.map((chunk) => chunk.content));
+  if (embeddings.some((embedding) => !embedding)) {
+    return Response.json({ error: "Could not generate every story index embedding" }, { status: 502 });
+  }
+  const replacementRows = changedChunks.map((chunk, index) => {
+    const embedding = embeddings[index] as number[];
+    return {
       project_id:  projectId,
       chapter_id:  chapterId,
-      content:     chunks[i].content,
+      content:     chunk.content,
       embedding:   `[${embedding.join(",")}]`,
-      chunk_index: i,
-      word_start:  chunks[i].wordStart,
-    });
+      chunk_index: chunk.index,
+      word_start:  chunk.wordStart,
+    };
+  });
 
-    if (!error) chunksCreated++;
+  if (replacementRows.length) {
+    const { error: insertError } = await supabase.from("story_chunks").insert(replacementRows);
+    if (insertError) {
+      return Response.json({ error: "Could not save the updated story index" }, { status: 500 });
+    }
   }
 
-  await supabase
+  const replacedIds = changedChunks.flatMap((chunk, index) =>
+    embeddings[index] && chunk.existing ? [chunk.existing.id as string] : []
+  );
+  const idsToDelete = [...staleIds, ...replacedIds];
+  if (idsToDelete.length) {
+    const { error: deleteError } = await supabase
+      .from("story_chunks")
+      .delete()
+      .in("id", idsToDelete);
+    if (deleteError) {
+      return Response.json({ error: "The new story index was saved, but old chunks could not be removed" }, { status: 500 });
+    }
+  }
+
+  const { error: watermarkError } = await supabase
     .from("chapters")
     .update({ last_embedded_word: words.length })
     .eq("id", chapterId);
+  if (watermarkError) {
+    return Response.json({ error: "Story index updated, but its progress marker could not be saved" }, { status: 500 });
+  }
 
-  return Response.json({ ok: true, chunksCreated });
+  return Response.json({
+    ok: true,
+    chunksCreated: replacementRows.length,
+    chunksDeleted: idsToDelete.length,
+    chunksUnchanged: chunks.length - changedChunks.length,
+    wordCount: words.length,
+  });
 }

@@ -100,6 +100,7 @@ function AutoSavePlugin({
   const saveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialRef  = useRef(true);
+  const lastSavedContentRef = useRef<string | null>(null);
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState, dirtyElements, dirtyLeaves }) => {
@@ -107,6 +108,7 @@ function AutoSavePlugin({
 
       if (isInitialRef.current) {
         isInitialRef.current = false;
+        lastSavedContentRef.current = JSON.stringify(editorState.toJSON());
         return;
       }
 
@@ -119,7 +121,15 @@ function AutoSavePlugin({
       saveTimerRef.current = setTimeout(async () => {
         try {
           const json = editorState.toJSON();
+          const serialized = JSON.stringify(json);
           const wc   = countWords(editorState);
+
+          // Lexical can emit dirty updates that ultimately serialize to the same
+          // document. Avoid rewriting the full chapter JSON in that case.
+          if (serialized === lastSavedContentRef.current) {
+            cbRef.current.onSaveStatusChange("idle");
+            return;
+          }
 
           const supabase = createClient();
           const { error } = await supabase
@@ -131,6 +141,7 @@ function AutoSavePlugin({
             })
             .eq("id", chapterId);
 
+          if (!error) lastSavedContentRef.current = serialized;
           cbRef.current.onSaveStatusChange(error ? "error" : "saved");
         } catch {
           cbRef.current.onSaveStatusChange("error");
@@ -140,7 +151,7 @@ function AutoSavePlugin({
           () => cbRef.current.onSaveStatusChange("idle"),
           2000
         );
-      }, 1000);
+      }, 2500);
     });
   }, [editor, chapterId]);
 
@@ -267,6 +278,7 @@ function StoryBiblePlugin({
   const lastEmbeddedRef  = useRef(initialLastEmbedded);
   const hasSummarizedRef = useRef(hasSummary);
   const embedTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const embeddingRef     = useRef(false);
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
@@ -277,16 +289,31 @@ function StoryBiblePlugin({
       const words = fullText ? fullText.split(/\s+/) : [];
       const wc    = words.length;
 
-      if (Math.abs(wc - lastEmbeddedRef.current) >= 200) {
+      // Re-indexing vectors is one of the editor's most disk-intensive tasks.
+      // Keep short new chapters discoverable, then batch later changes so Nano
+      // compute does not rebuild an index after every few paragraphs.
+      const embedThreshold = lastEmbeddedRef.current === 0 ? 500 : 1000;
+      if (Math.abs(wc - lastEmbeddedRef.current) >= embedThreshold && !embeddingRef.current) {
         if (embedTimerRef.current) clearTimeout(embedTimerRef.current);
-        embedTimerRef.current = setTimeout(() => {
-          lastEmbeddedRef.current = wc;
-          fetch("/api/ai/story-bible/embed", {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ chapterId, projectId }),
-          }).catch(console.error);
-        }, 5000);
+        embedTimerRef.current = setTimeout(async () => {
+          if (embeddingRef.current) return;
+          embeddingRef.current = true;
+          try {
+            const response = await fetch("/api/ai/story-bible/embed", {
+              method:  "POST",
+              headers: { "Content-Type": "application/json" },
+              body:    JSON.stringify({ chapterId, projectId }),
+            });
+            if (response.ok) {
+              const result = await response.json().catch(() => ({})) as { wordCount?: number };
+              lastEmbeddedRef.current = result.wordCount ?? wc;
+            }
+          } catch (error) {
+            console.error(error);
+          } finally {
+            embeddingRef.current = false;
+          }
+        }, 30000);
       }
 
       if (!hasSummarizedRef.current && wc >= 300) {
