@@ -1,245 +1,104 @@
-"use client";
-
-import { useEffect, useRef } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
 import Link from "next/link";
-import { LavenderAurora } from "./LavenderAurora";
-import { MagneticButton } from "./MagneticButton";
-import { gsap, useGSAP } from "@/lib/gsap";
 
-const features = [
-  "Characters & Relationships",
-  "Emotional Continuity",
-  "Plot Threads",
-  "Voice-Aware Writing",
-];
+const findings = [
+  ["Character", "Nadia Voronova", "cautious · distrustful of Marcus"],
+  ["Open thread", "The missing dossier", "introduced in Chapter 2 · unresolved"],
+  ["Continuity", "The silver locket", "described as gold in Chapter 3"],
+] as const;
 
 export default function Hero() {
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const auroraX = useSpring(mx, { stiffness: 40, damping: 20 });
-  const auroraY = useSpring(my, { stiffness: 40, damping: 20 });
-
-  const wmx = useMotionValue(0);
-  const wmy = useMotionValue(0);
-  const watermarkX = useSpring(wmx, { stiffness: 28, damping: 22 });
-  const watermarkY = useSpring(wmy, { stiffness: 28, damping: 22 });
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      const nx = e.clientX / window.innerWidth - 0.5;
-      const ny = e.clientY / window.innerHeight - 0.5;
-      mx.set(nx * 22);
-      my.set(ny * 14);
-      wmx.set(nx * -48);
-      wmy.set(ny * -30);
-    };
-    window.addEventListener("mousemove", onMove, { passive: true });
-    return () => window.removeEventListener("mousemove", onMove);
-  }, [mx, my, wmx, wmy]);
-
-  // ── Cinematic entrance timeline ────────────────────────────
-  const heroRef = useRef<HTMLDivElement>(null);
-
-  useGSAP(
-    () => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-      // Aurora bloom in
-      tl.from(".hero-aurora", { opacity: 0, scale: 1.08, duration: 1.6, ease: "power2.out" }, 0);
-
-      // Badge drops in
-      tl.from(".hero-badge", { opacity: 0, y: -14, duration: 0.6 }, 0.4);
-
-      // Headline: first line slides from left, second from right
-      tl.from(".hero-line-1", { opacity: 0, x: -50, duration: 0.9 }, 0.6);
-      tl.from(".hero-line-2", { opacity: 0, x: 50, duration: 0.9 }, 0.75);
-
-      // Subtext fades up
-      tl.from(".hero-sub", { opacity: 0, y: 20, duration: 0.8 }, 0.95);
-
-      // CTA scales in with spring feel
-      tl.from(".hero-cta", { opacity: 0, y: 18, scale: 0.95, duration: 0.75, ease: "back.out(1.4)" }, 1.1);
-
-      // Chips stagger in
-      tl.from(".hero-chip", {
-        opacity: 0,
-        y: 12,
-        duration: 0.55,
-        stagger: 0.08,
-      }, 1.3);
-
-      // Google Cloud badge fades in last
-      tl.from(".hero-gcps", { opacity: 0, y: 8, duration: 0.5 }, 1.65);
-    },
-    { scope: heroRef }
-  );
-
   return (
-    <section
-      ref={heroRef}
-      className="relative flex min-h-screen flex-col overflow-hidden bg-[#EDE8FF]"
-    >
+    <section className="bg-[#F4F0E8] px-6 pb-20 pt-32 text-[#191714] lg:px-10 lg:pb-24 lg:pt-36">
+      <div className="mx-auto max-w-[1280px] border-t border-[#191714]/15">
+        <div className="grid gap-14 py-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-20 lg:py-16">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#A6402D]">
+              Manuscript intelligence for novelists
+            </p>
 
-      {/* ── Aurora background with mouse parallax ─────────── */}
-      <motion.div
-        className="hero-aurora absolute inset-[-4%]"
-        style={{ x: auroraX, y: auroraY }}
-      >
-        <LavenderAurora className="absolute inset-0" />
-      </motion.div>
+            <h1 className="mt-7 max-w-[700px] font-display text-[clamp(4rem,7.2vw,7.2rem)] leading-[0.88] tracking-[-0.055em]">
+              Your whole novel, mapped.
+            </h1>
 
-      {/* Watermark */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none"
-      >
-        <motion.div style={{ x: watermarkX, y: watermarkY }}>
-          <span
-            className="font-display text-[22vw] font-light italic leading-none text-violet-900/[0.035]"
-            style={{ fontVariationSettings: '"opsz" 144, "SOFT" 0, "WONK" 0' }}
-          >
-            Story
-          </span>
-        </motion.div>
-      </div>
+            <p className="mt-8 max-w-[600px] text-[1.08rem] leading-8 text-[#191714]/70">
+              Upload your manuscript. Xvault finds the characters, relationships, open plot threads, and continuity details already on the page. It keeps that story context beside you while you write.
+            </p>
 
-      {/* Dot grid */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.35]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(124,58,237,0.12) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-          maskImage:
-            "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
-        }}
-      />
-
-      {/* Noise grain */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.022]"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          backgroundSize: "256px 256px",
-        }}
-      />
-
-      {/* ── Content ───────────────────────────────────────── */}
-      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-6 pb-24 pt-32 text-center">
-
-        <div className="flex flex-col items-center gap-7">
-
-          {/* Badge */}
-          <div className="hero-badge">
-            <span className="inline-flex items-center gap-2 rounded-full border border-violet-300/50 bg-white/60 px-4 py-1.5 shadow-sm backdrop-blur-md">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-500 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-600" />
-              </span>
-              <span className="text-[0.72rem] font-semibold tracking-wide text-violet-700">
-                See what your manuscript is already doing
-              </span>
-            </span>
-          </div>
-
-          {/* Headline */}
-          <h1 className="font-display text-display text-[#1A0A3C]">
-            <span className="hero-line-1 block">Upload three chapters.</span>
-            <em
-              className="hero-line-2 not-italic block"
-              style={{
-                background: "linear-gradient(135deg, #7C3AED 0%, #5B21B6 55%, #3B0764 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              See what your story is becoming.
-            </em>
-          </h1>
-
-          {/* Subtext */}
-          <p className="hero-sub max-w-[44ch] text-[1.0625rem] leading-[1.85] text-violet-900/50">
-            Xvault maps the characters and relationships already on the page,
-            follows emotional arcs, and shows where your story may be losing coherence.
-          </p>
-
-          {/* CTA */}
-          <div className="hero-cta flex flex-col items-center gap-3 mt-1">
-            <MagneticButton strength={0.3}>
+            <div className="mt-9 flex flex-col gap-5 sm:flex-row sm:items-center">
               <Link
                 href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
-                className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-2xl bg-violet-700 px-8 py-4 text-[0.9375rem] font-medium text-white shadow-[0_8px_24px_rgba(109,40,217,0.4),0_2px_8px_rgba(109,40,217,0.2)] transition-all duration-300 hover:bg-violet-600 hover:shadow-[0_12px_32px_rgba(109,40,217,0.55)] hover:-translate-y-0.5 active:translate-y-0"
+                className="inline-flex min-h-12 items-center justify-center bg-[#A6402D] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#7F2F22]"
               >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full"
-                />
-                Scan my manuscript free
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <path
-                    d="M2 7h10M7 2l5 5-5 5"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                Map my first chapters&nbsp;&nbsp;→
               </Link>
-            </MagneticButton>
-            <p className="text-[0.74rem] text-violet-500/60">
-              Scan your manuscript free · 100 AI credits · no credit card
-            </p>
-          </div>
-
-          {/* Feature chips */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-            {features.map((f) => (
-              <span
-                key={f}
-                className="hero-chip rounded-full border border-violet-300/40 bg-white/50 px-3.5 py-1.5 text-[0.72rem] font-medium text-violet-700/80 shadow-sm backdrop-blur-sm"
+              <Link
+                href="/continuity-check"
+                className="group inline-flex min-h-12 items-center justify-center text-sm font-semibold sm:justify-start"
               >
-                {f}
-              </span>
-            ))}
-          </div>
-
-          {/* Google Cloud for Startups */}
-          <div className="hero-gcps mt-2 flex flex-col items-center gap-2">
-            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-violet-900/25">
-              Supported by
-            </p>
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/50 px-4 py-2 shadow-sm backdrop-blur-sm">
-              <svg width="14" height="14" viewBox="0 0 48 48" aria-hidden="true">
-                <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
-                <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
-                <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
-                <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
-              </svg>
-              <span className="text-[0.72rem] font-medium text-violet-900/50">
-                Google Cloud for Startups
-              </span>
+                <span className="border-b border-[#191714]/35 pb-1 transition-colors group-hover:border-[#A6402D] group-hover:text-[#A6402D]">
+                  Try the free continuity check
+                </span>
+              </Link>
             </div>
+
+            <p className="mt-5 text-xs tracking-wide text-[#191714]/62">
+              100 credits included · No credit card · Your original file stays untouched
+            </p>
           </div>
 
+          <figure>
+            <div className="border border-[#191714]/15 bg-[#FFFDF8] shadow-[12px_14px_0_rgba(25,23,20,0.07)]">
+              <div className="flex items-center justify-between border-b border-[#191714]/12 px-5 py-4 sm:px-7">
+                <div>
+                  <p className="font-display text-lg">The Glass Meridian</p>
+                  <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-[#191714]/58">Sample manuscript · Chapter 7</p>
+                </div>
+                <span className="font-mono text-[10px] text-[#A6402D]">2,841 words</span>
+              </div>
+
+              <div className="grid md:grid-cols-[1.05fr_0.95fr]">
+                <div className="border-b border-[#191714]/12 px-6 py-8 md:border-b-0 md:border-r sm:px-8 sm:py-10">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#191714]/58">From the manuscript</p>
+                  <blockquote className="mt-8 font-display text-[1.55rem] leading-[1.55] tracking-[-0.02em] text-[#191714]/82">
+                    “Marcus was already at the archive when Nadia arrived. She touched the silver locket at her throat and wondered how he had passed the sealed doors.”
+                  </blockquote>
+                  <p className="mt-8 border-l-2 border-[#A6402D] pl-4 text-xs leading-5 text-[#191714]/65">
+                    Xvault connects this passage to details established elsewhere in the draft.
+                  </p>
+                </div>
+
+                <div className="px-6 py-8 sm:px-7 sm:py-10">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#191714]/58">What it surfaces</p>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#A6402D]">For your review</span>
+                  </div>
+
+                  <div className="mt-6 border-t border-[#191714]/12">
+                    {findings.map(([type, title, detail], index) => (
+                      <div key={type} className="grid grid-cols-[28px_1fr] gap-3 border-b border-[#191714]/12 py-5">
+                        <span className="font-mono text-[9px] text-[#A6402D]">0{index + 1}</span>
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#191714]/58">{type}</p>
+                          <p className="mt-1.5 font-display text-lg leading-6">{title}</p>
+                          <p className="mt-1 text-[11px] leading-5 text-[#191714]/64">{detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <figcaption className="mt-4 text-right font-mono text-[9px] uppercase tracking-[0.14em] text-[#191714]/55">
+              Example analysis from a sample manuscript
+            </figcaption>
+          </figure>
+        </div>
+
+        <div className="flex flex-col justify-between gap-2 border-y border-[#191714]/15 py-4 text-xs text-[#191714]/62 sm:flex-row sm:items-center">
+          <span>The manuscript remains the source of truth. You decide what every finding means.</span>
+          <span>Built for long fiction, not one-off prompts.</span>
         </div>
       </div>
-
-      {/* Gradient bleed */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 left-0 right-0 h-40"
-        style={{
-          background: "linear-gradient(to bottom, transparent, #DDD6FE)",
-        }}
-      />
-
     </section>
   );
 }

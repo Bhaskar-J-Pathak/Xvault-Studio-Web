@@ -26,7 +26,7 @@ export default function DashboardClient({ isBeta = false, autoOpenImport = false
             setImportOpen(true);
           }}
           disabled={isBeta}
-          title={isBeta ? "Import is not available during the beta" : undefined}
+          title={isBeta ? "Import is not available for this account" : undefined}
           className={`group flex items-center gap-3 rounded-2xl border px-4 py-4 text-left transition-all ${
             isBeta
               ? "text-[#C4C4C7] dark:text-white/20 cursor-not-allowed"

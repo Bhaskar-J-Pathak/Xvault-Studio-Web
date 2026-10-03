@@ -1,270 +1,85 @@
-"use client";
+import Link from "next/link";
+import { HomepageSectionLink } from "./HomepageSectionLink";
 
-import { useRef, useState } from "react";
-import { AnimatePresence, motion, useInView } from "framer-motion";
-
-const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
-
-const FAQS = [
+const questions = [
   {
-    q: "Is Xvault Studio free to start?",
-    a: "Yes. Sign up in 10 seconds, with no credit card needed. You get 100 AI credits and 14 days of full access. When you need more credits, you can choose a paid plan from the pricing page.",
+    question: "Can I try Xvault before paying?",
+    answer: "Yes. Every new account includes 14 days of access and 100 AI credits. You can start without entering a credit card.",
   },
   {
-    q: "Is this the full product?",
-    a: "Xvault Studio is in public beta. The core writing experience — Alex, cursor-aware prose generation, World Board, Story Bible, Story Pulse, and Global Replace — is ready to use today. Beta writers get full access to the current product and can directly shape what we build next.",
+    question: "What can I bring into the studio?",
+    answer: "Import a .docx or .txt manuscript. Xvault detects the chapters and keeps the original file untouched. Your first Story Scan can map up to three eligible chapters.",
   },
   {
-    q: "What exactly is Alex?",
-    a: "Alex is your story studio. It receives your manuscript context before responding, so you can ask about characters, chapters, and open threads without pasting the book into another chat. It can also help you plan or draft from the cursor.",
+    question: "What does Xvault build from my manuscript?",
+    answer: "Story Scan identifies characters, locations, relationships, threads, and emotional movement. Those findings feed the Story Bible, World Board, and Story Pulse so you can inspect the book from different angles.",
   },
   {
-    q: "How does cursor-aware writing follow my voice?",
-    a: "Place the cursor anywhere in the editor and click Write. Alex uses your existing chapters to match the story and your voice. Choose a length, preview the result, then insert, refine, or dismiss it.",
+    question: "What is Alex?",
+    answer: "Alex is the manuscript-aware assistant inside the studio. It receives relevant project context before responding, so you can discuss characters, chapters, and open threads without rebuilding the story in a separate chat.",
   },
   {
-    q: "Can I export my manuscript?",
-    a: "Yes. You can export your manuscript as a Word document (.docx) from the studio sidebar at any time. EPUB and PDF export are in development and coming at full launch. Your work is always yours to take.",
+    question: "Does generated prose enter my chapter automatically?",
+    answer: "No. Writing suggestions appear in a separate preview. You can refine, insert, or dismiss them, and the chapter stays unchanged until you choose to insert something.",
   },
   {
-    q: "Is my manuscript safe in the cloud?",
-    a: "Yes. Your chapters are encrypted in transit and at rest. Only you can access your projects. We never use your manuscript to train AI models, and you can export or delete your data at any time.",
+    question: "Can I export my manuscript?",
+    answer: "Yes. You can export the current manuscript as a Word document from the studio sidebar whenever you want.",
   },
   {
-    q: "Do I need to install anything?",
-    a: "Nothing. Xvault Studio runs entirely in your browser: Chrome, Firefox, Safari, Edge. Open a tab and start writing. Your work is auto-saved to the cloud, so you can pick up on any device, anywhere.",
+    question: "How is my manuscript handled?",
+    answer: "Manuscripts are private by default. Xvault uses encrypted connections and account access controls, masks manuscript text from session replay, and does not sell your writing or use it to train AI models.",
   },
-];
-
-// ─── Mobile accordion item ──────────────────────────────────────────────────
-
-function AccordionItem({
-  faq,
-  index,
-  isOpen,
-  onToggle,
-  delay,
-}: {
-  faq: typeof FAQS[number];
-  index: number;
-  isOpen: boolean;
-  onToggle: () => void;
-  delay: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 14 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay, duration: 0.65, ease }}
-      className="border-b border-violet-200/50"
-    >
-      <button
-        onClick={onToggle}
-        className="flex w-full items-start justify-between gap-6 py-5 text-left"
-        aria-expanded={isOpen}
-      >
-        <div className="flex items-start gap-4">
-          <span
-            className={`mt-0.5 shrink-0 font-mono text-[0.6rem] font-bold tracking-[0.2em] transition-colors duration-300 ${
-              isOpen ? "text-violet-600" : "text-violet-400/40"
-            }`}
-          >
-            0{index + 1}
-          </span>
-          <span
-            className={`text-[0.9rem] font-medium leading-snug tracking-tight transition-colors duration-300 ${
-              isOpen ? "text-[#1A0A3C]" : "text-violet-900/55"
-            }`}
-          >
-            {faq.q}
-          </span>
-        </div>
-        <motion.div
-          animate={{ rotate: isOpen ? 45 : 0 }}
-          transition={{ duration: 0.28, ease }}
-          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
-            isOpen
-              ? "border-violet-200 bg-violet-50 text-violet-600"
-              : "border-violet-200/60 text-violet-900/40"
-          }`}
-        >
-          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true">
-            <path d="M4.5 1v7M1 4.5h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </motion.div>
-      </button>
-
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease }}
-            className="overflow-hidden"
-          >
-            <div className="mb-5 ml-9 flex gap-3">
-              <div className="w-[2px] shrink-0 rounded-full bg-violet-500/30" />
-              <p className="text-[0.875rem] leading-[1.85] text-violet-900/50">{faq.a}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-// ─── Section ────────────────────────────────────────────────────────────────
+  {
+    question: "Do I need to install anything?",
+    answer: "No. Xvault runs in a modern web browser and saves your work to the cloud, so you can return to the project from another supported device.",
+  },
+] as const;
 
 export default function FAQ() {
-  const [active, setActive] = useState(0);
-
-  const hRef    = useRef<HTMLDivElement>(null);
-  const hInView  = useInView(hRef, { once: true, margin: "-60px" });
-  const listRef  = useRef<HTMLDivElement>(null);
-  const listInView = useInView(listRef, { once: true, margin: "-40px" });
-
   return (
-    <section id="faq" className="bg-[#EDE8FF] px-6 py-24 lg:px-10 lg:py-32">
-      <div className="mx-auto max-w-[1380px]">
+    <section id="faq" className="scroll-mt-[72px] bg-[#F4F0E8] px-6 py-24 text-[#191714] lg:px-10 lg:py-32">
+      <div className="mx-auto max-w-[1280px] border-t border-[#191714]/15 pt-8 lg:pt-10">
+        <div className="grid gap-16 lg:grid-cols-[0.78fr_1.22fr] lg:gap-20">
+          <div>
+            <div className="lg:sticky lg:top-28">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#A6402D]">11 / Questions</p>
+              <h2 className="mt-7 max-w-[560px] font-display text-[clamp(3.5rem,5.6vw,6rem)] leading-[0.92] tracking-[-0.055em]">
+                Before you bring the draft.
+              </h2>
+              <p className="mt-8 max-w-[480px] text-base leading-8 text-[#191714]/70">
+                Straight answers about starting, manuscript context, author control, and what happens to your writing.
+              </p>
 
-        {/* Header */}
-        <div ref={hRef} className="mb-16">
-          <motion.div
-            initial={{ opacity: 0, x: -12 }}
-            animate={hInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.55 }}
-            className="mb-6 flex items-center gap-3"
-          >
-            <div className="h-px w-8 bg-violet-300/60" />
-            <span className="text-[0.63rem] font-semibold uppercase tracking-[0.28em] text-violet-600/50">
-              FAQ
-            </span>
-          </motion.div>
-
-          <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div className="overflow-hidden">
-              <motion.h2
-                initial={{ y: "100%" }}
-                animate={hInView ? { y: "0%" } : {}}
-                transition={{ delay: 0.06, duration: 0.85, ease }}
-                className="font-display font-bold leading-[1.03] tracking-[-0.04em] text-[#1A0A3C]"
-                style={{ fontSize: "clamp(2.4rem,4vw,3.6rem)" }}
-              >
-                Questions &amp; answers.
-              </motion.h2>
+              <div className="mt-10 flex flex-wrap gap-x-7 gap-y-4 border-t border-[#191714]/15 pt-6 text-[10px] font-semibold uppercase tracking-[0.14em]">
+                <HomepageSectionLink targetId="pricing" className="underline decoration-[#A6402D]/45 underline-offset-8 transition-colors hover:text-[#A6402D]">View pricing</HomepageSectionLink>
+                <Link href="/privacy" className="underline decoration-[#A6402D]/45 underline-offset-8 transition-colors hover:text-[#A6402D]">Privacy policy</Link>
+                <a href="mailto:hello@xvaultstudio.com" className="underline decoration-[#A6402D]/45 underline-offset-8 transition-colors hover:text-[#A6402D]">Ask a question</a>
+              </div>
             </div>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={hInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.3, duration: 0.6, ease }}
-              className="text-[0.875rem] text-violet-900/50"
-            >
-              Something else?{" "}
-              <a
-                href="mailto:hello@xvaultstudio.com"
-                className="font-medium text-violet-600 underline-offset-2 hover:underline"
-              >
-                Email us &rarr;
-              </a>
-            </motion.p>
-          </div>
-        </div>
-
-        {/* ── Desktop: split panel ── */}
-        <div ref={listRef} className="hidden lg:grid lg:grid-cols-[1fr_1.3fr] lg:gap-20 xl:gap-28">
-
-          {/* Left — question list */}
-          <div className="border-t border-violet-200/50">
-            {FAQS.map((faq, i) => (
-              <motion.button
-                key={faq.q}
-                initial={{ opacity: 0, x: -12 }}
-                animate={listInView ? { opacity: 1, x: 0 } : {}}
-                transition={{ delay: i * 0.07, duration: 0.6, ease }}
-                onClick={() => setActive(i)}
-                className={`group flex w-full items-start gap-4 border-b border-violet-200/50 py-6 text-left transition-all duration-200 ${
-                  active === i ? "" : "hover:bg-white/50"
-                }`}
-              >
-                {/* Active indicator */}
-                <div className="mt-1.5 flex h-4 w-4 shrink-0 items-center justify-center">
-                  <motion.div
-                    animate={{ scale: active === i ? 1 : 0 }}
-                    transition={{ duration: 0.25, ease }}
-                    className="h-1.5 w-1.5 rounded-full bg-violet-500"
-                  />
-                </div>
-
-                <div className="flex flex-1 items-start gap-3">
-                  <span
-                    className={`mt-0.5 shrink-0 font-mono text-[0.58rem] font-bold tracking-[0.2em] transition-colors duration-200 ${
-                      active === i ? "text-violet-600" : "text-violet-400/40"
-                    }`}
-                  >
-                    0{i + 1}
-                  </span>
-                  <span
-                    className={`text-[0.9rem] font-medium leading-snug tracking-tight transition-colors duration-200 ${
-                      active === i
-                        ? "text-[#1A0A3C]"
-                        : "text-violet-900/50 group-hover:text-violet-900/90"
-                    }`}
-                  >
-                    {faq.q}
-                  </span>
-                </div>
-              </motion.button>
-            ))}
           </div>
 
-          {/* Right — active answer */}
-          <div className="flex items-start pt-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active}
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.32, ease }}
-                className="w-full"
-              >
-                <div className="mb-1 font-mono text-[0.6rem] font-bold uppercase tracking-[0.22em] text-violet-600">
-                  0{active + 1}
-                </div>
-                <h3 className="mb-6 font-display text-[1.25rem] font-bold leading-snug tracking-[-0.025em] text-[#1A0A3C]">
-                  {FAQS[active].q}
-                </h3>
-                <div className="flex gap-4">
-                  <div className="w-[2px] shrink-0 rounded-full bg-violet-500/25" />
-                  <p className="text-[0.9375rem] leading-[1.88] text-violet-900/50">
-                    {FAQS[active].a}
+          <div className="border-t border-[#191714]/15">
+            {questions.map((item, index) => (
+              <details key={item.question} className="group border-b border-[#191714]/15" open={index === 0}>
+                <summary className="grid cursor-pointer list-none grid-cols-[34px_1fr_24px] items-start gap-4 py-7 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#A6402D] [&::-webkit-details-marker]:hidden sm:grid-cols-[46px_1fr_28px] sm:gap-6 sm:py-8">
+                  <span className="pt-1 font-mono text-[9px] font-semibold text-[#A6402D]">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="font-display text-[clamp(1.55rem,2.6vw,2.35rem)] leading-[1.08] tracking-[-0.035em]">{item.question}</span>
+                  <span aria-hidden="true" className="relative mt-1 block h-6 w-6 text-[#191714]">
+                    <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 bg-current" />
+                    <span className="absolute left-1/2 top-1/2 h-5 w-px -translate-x-1/2 -translate-y-1/2 bg-current transition-transform duration-200 group-open:scale-y-0" />
+                  </span>
+                </summary>
+                <div className="grid grid-cols-[34px_1fr] gap-4 pb-8 sm:grid-cols-[46px_1fr] sm:gap-6 sm:pb-10">
+                  <span aria-hidden="true" />
+                  <p className="max-w-[650px] border-l border-[#A6402D]/45 pl-5 text-[15px] leading-8 text-[#191714]/70 sm:pl-7">
+                    {item.answer}
                   </p>
                 </div>
-              </motion.div>
-            </AnimatePresence>
+              </details>
+            ))}
           </div>
-
         </div>
-
-        {/* ── Mobile: accordion ── */}
-        <div className="border-t border-violet-200/50 lg:hidden">
-          {FAQS.map((faq, i) => (
-            <AccordionItem
-              key={faq.q}
-              faq={faq}
-              index={i}
-              isOpen={active === i}
-              onToggle={() => setActive(active === i ? -1 : i)}
-              delay={0.04 + i * 0.06}
-            />
-          ))}
-        </div>
-
       </div>
     </section>
   );

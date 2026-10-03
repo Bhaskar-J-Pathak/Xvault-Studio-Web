@@ -36,7 +36,7 @@ const pricingSchema = {
       name: "Founder's Circle",
       price: "59",
       priceCurrency: "USD",
-      description: "One-time lifetime access. 1,000 AI credits per month plus 500 non-expiring welcome credits. Limited to 30 seats.",
+      description: "One-time lifetime access with a personal full-manuscript setup and diagnostic, 1,000 AI credits per month, and 500 non-expiring welcome credits. Limited to 30 seats.",
     },
   ],
 };
@@ -66,7 +66,7 @@ const faqSchema = {
       name: "What is the Founder's Circle?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "The Founder's Circle is currently a one-time $59 founding membership limited to 30 writers. It includes 1,000 AI credits per month, 500 non-expiring welcome credits, direct founder access, and a voice in shaping the product. The price increases to $69 after 10 Founder seats are claimed.",
+        text: "The Founder's Circle is currently a one-time $59 founding membership limited to 30 writers. It includes a personal full-manuscript setup and diagnostic, 1,000 AI credits per month, 500 non-expiring welcome credits, direct founder access, and a voice in shaping the product. The price increases to $69 after 10 Founder seats are claimed.",
       },
     },
     {

@@ -70,7 +70,7 @@ const PLANS: Plan[] = [
       { text: "Direct access to founder (lifetime)" },
       { text: "Priority feature requests" },
       { text: "Early access to new tools" },
-      { text: "Personal onboarding call" },
+      { text: "Personal full-manuscript setup and diagnostic" },
     ],
   },
 ];
@@ -282,7 +282,7 @@ export default function Pricing() {
             Simple pricing
           </h2>
           <p className="mt-4 text-lg text-violet-700/70">
-            Free during public beta · Early supporters get lifetime access
+            Start with 14 days free · No credit card required
           </p>
         </div>
 

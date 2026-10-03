@@ -45,7 +45,7 @@ export default function TermsPage() {
             <p>By creating an account or using Xvault Studio at <a href={SITE_URL}>{SITE_URL}</a> (the &quot;Service&quot;), you agree to these Terms. If you do not agree, do not use the Service.</p>
           </Section>
 
-          <Section title="2. Beta service">
+          <Section title="2. Service availability">
             <p>Xvault Studio is actively being developed. Features may evolve, and occasional interruptions or defects may occur. We may modify or retire features, but we will provide reasonable notice when a change materially affects a paid plan where practical. You should keep exports or backups of work that you cannot afford to lose.</p>
           </Section>
 

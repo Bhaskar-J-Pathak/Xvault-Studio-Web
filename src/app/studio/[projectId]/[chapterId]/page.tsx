@@ -19,7 +19,7 @@ export default async function ChapterPage({
     getProfile(user.id),
     supabase
       .from("chapters")
-      .select("id, title, content, word_count, project_id, position, last_extracted_word, last_embedded_word, summary, summary_word_count")
+      .select("id, title, content, word_count, project_id, position, last_extracted_word")
       .eq("id", chapterId)
       .eq("project_id", projectId)
       .single(),
@@ -48,9 +48,6 @@ export default async function ChapterPage({
       projectId={projectId}
       chapterNumber={(chapter.position ?? 0) + 1}
       initialLastExtracted={chapter.last_extracted_word ?? 0}
-      initialLastEmbedded={chapter.last_embedded_word ?? 0}
-      initialSummary={(chapter.summary as string | null) ?? null}
-      initialSummaryWordCount={chapter.summary_word_count ?? 0}
       initialCoauthor={coauthor ?? null}
       initialCredits={initialCredits}
       initialCreditCap={profile ? creditsCap(profile as Parameters<typeof creditsCap>[0], projectId) : 100}

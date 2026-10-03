@@ -1,201 +1,173 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+import { HomepageSectionLink, HomepageSectionScrollRestorer } from "./HomepageSectionLink";
+
+const navLinks = [
+  { label: "Product", targetId: "story-scan" },
+  { label: "How it works", targetId: "how-it-works" },
+  { label: "Pricing", targetId: "pricing" },
+  { label: "Guides", href: "/guides" },
+  { label: "Blog", href: "/blog" },
+  { label: "Free check", href: "/continuity-check" },
+] as const;
 
 function Logo() {
   return (
-    <div className="flex items-center gap-2.5">
-      <Image src="/XVault.svg" alt="Xvault Studio" width={32} height={32} className="shrink-0" />
-      <span className="font-display text-[1.05rem] tracking-tight text-stone-900">
-        Xvault<span className="ml-1 text-stone-400">Studio</span>
+    <span className="flex items-center gap-2.5">
+      <Image src="/XVault.svg" alt="" width={30} height={30} className="shrink-0" />
+      <span className="font-display text-[1.05rem] tracking-[-0.02em] text-[#191714]">
+        Xvault <span className="text-[#191714]/62">Studio</span>
       </span>
-    </div>
+    </span>
   );
 }
 
-const navLinks = [
-  { label: "Features",     href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Blog",         href: "/blog" },
-  { label: "Guides",       href: "/guides" },
-  { label: "Compare",      href: "/compare" },
-  { label: "FAQ",          href: "#faq" },
-];
-
-const BEZ = [0.16, 1, 0.3, 1] as [number, number, number, number];
-
-const desktopContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.15 } },
-};
-const desktopItem = {
-  hidden: { opacity: 0, y: -8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: BEZ } },
-};
-const overlayContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
-};
-const overlayItem = {
-  hidden: { opacity: 0, y: 32 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: BEZ } },
-};
-
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen]  = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    onScroll();
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    if (!menuOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
+  const closeMenu = () => setMenuOpen(false);
 
   return (
     <>
-      <nav
-        className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
-          scrolled ? "px-3 pt-3" : "px-4 pt-4 lg:px-6 lg:pt-5"
-        }`}
-      >
-        <div
-          className={`mx-auto flex max-w-[1380px] items-center justify-between rounded-full px-5 py-3 transition-all duration-300 lg:px-7 ${
-            scrolled
-              ? "border border-black/[0.08] bg-white/88 shadow-[0_4px_24px_rgba(0,0,0,0.07)] backdrop-blur-xl"
-              : "border border-black/[0.06] bg-white/52 backdrop-blur-sm"
-          }`}
-        >
-          {/* Logo */}
-          <Link href="/"><Logo /></Link>
+      <HomepageSectionScrollRestorer />
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-[#191714]/15 bg-[#F4F0E8]/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-0">
+          <Link href="/" aria-label="Xvault Studio home">
+            <Logo />
+          </Link>
 
-          {/* Desktop nav links */}
-          <motion.div
-            variants={desktopContainer}
-            initial="hidden"
-            animate="visible"
-            className="hidden items-center gap-8 md:flex"
-          >
+          <nav aria-label="Primary navigation" className="hidden items-center gap-7 lg:flex">
             {navLinks.map((link) => (
-              <motion.div key={link.href} variants={desktopItem}>
+              "targetId" in link ? (
+                <HomepageSectionLink
+                  key={link.label}
+                  targetId={link.targetId}
+                  className="text-[12px] font-medium text-[#191714]/70 transition-colors hover:text-[#191714] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A6402D]"
+                >
+                  {link.label}
+                </HomepageSectionLink>
+              ) : (
                 <Link
+                  key={link.href}
                   href={link.href}
-                  className="text-sm text-stone-500 transition-colors hover:text-stone-900"
+                  className="text-[12px] font-medium text-[#191714]/70 transition-colors hover:text-[#191714] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A6402D]"
                 >
                   {link.label}
                 </Link>
-              </motion.div>
+              )
             ))}
-          </motion.div>
+          </nav>
 
-          {/* Desktop right CTAs */}
-          <motion.div
-            variants={desktopContainer}
-            initial="hidden"
-            animate="visible"
-            className="hidden items-center gap-3 md:flex"
-          >
-            <motion.div variants={desktopItem}>
-              <Link
-                href="/auth"
-                className="text-sm text-stone-500 transition-colors hover:text-stone-900"
-              >
-                Sign in
-              </Link>
-            </motion.div>
-            <motion.div variants={desktopItem}>
-              <Link
-                href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
-                className="btn-shimmer inline-flex items-center rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white transition-transform duration-300 hover:-translate-y-0.5"
-              >
-                Scan my story
-              </Link>
-            </motion.div>
-          </motion.div>
+          <div className="hidden items-center gap-5 lg:flex">
+            <Link
+              href="/auth"
+              className="text-[13px] font-semibold text-[#191714]/75 transition-colors hover:text-[#191714] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A6402D]"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
+              className="inline-flex min-h-10 items-center justify-center rounded-[2px] bg-[#A6402D] px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#7F2F22] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A6402D]"
+            >
+              Start free
+            </Link>
+          </div>
 
-          {/* Mobile hamburger */}
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-black/[0.08] bg-stone-100 text-stone-600 md:hidden"
+            className="flex size-10 items-center justify-center border border-[#191714]/20 text-[#191714] transition-colors hover:border-[#191714]/50 lg:hidden"
             aria-label="Open menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="size-5" aria-hidden="true" />
           </button>
         </div>
-      </nav>
+      </header>
 
-      {/* Mobile fullscreen overlay */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            key="overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 bg-[#FAFAF8]"
-          >
-            <div className="flex items-center justify-between px-6 pt-6">
-              <Link href="/" onClick={() => setMenuOpen(false)}><Logo /></Link>
-              <button
-                type="button"
-                onClick={() => setMenuOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.08] bg-stone-100 text-stone-600"
-                aria-label="Close menu"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <motion.nav
-              variants={overlayContainer}
-              initial="hidden"
-              animate="visible"
-              className="mt-16 flex flex-col gap-2 px-6"
+      {menuOpen && (
+        <div id="mobile-navigation" className="fixed inset-0 z-50 bg-[#F4F0E8] lg:hidden">
+          <div className="flex h-[72px] items-center justify-between border-b border-[#191714]/15 px-6">
+            <Link href="/" aria-label="Xvault Studio home" onClick={closeMenu}>
+              <Logo />
+            </Link>
+            <button
+              type="button"
+              onClick={closeMenu}
+              className="flex size-10 items-center justify-center border border-[#191714]/20 text-[#191714] transition-colors hover:border-[#191714]/50"
+              aria-label="Close menu"
             >
-              {navLinks.map((link) => (
-                <motion.div key={link.href} variants={overlayItem}>
-                  <Link
-                    href={link.href}
-                    onClick={() => setMenuOpen(false)}
-                    className="menu-overlay-link block transition-colors"
+              <X className="size-5" aria-hidden="true" />
+            </button>
+          </div>
+
+          <nav aria-label="Mobile navigation" className="flex h-[calc(100%_-_72px)] flex-col px-6 pb-8 pt-10">
+            <div className="border-t border-[#191714]/15">
+              {navLinks.map((link, index) => (
+                "targetId" in link ? (
+                  <HomepageSectionLink
+                    key={link.label}
+                    targetId={link.targetId}
+                    onNavigate={closeMenu}
+                    className="grid grid-cols-[32px_1fr] items-center border-b border-[#191714]/15 py-5 font-display text-[2rem] leading-none tracking-[-0.035em] text-[#191714] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#A6402D]"
                   >
+                    <span className="font-mono text-[10px] text-[#A6402D]">0{index + 1}</span>
+                    {link.label}
+                  </HomepageSectionLink>
+                ) : (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    className="grid grid-cols-[32px_1fr] items-center border-b border-[#191714]/15 py-5 font-display text-[2rem] leading-none tracking-[-0.035em] text-[#191714] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#A6402D]"
+                  >
+                    <span className="font-mono text-[10px] text-[#A6402D]">0{index + 1}</span>
                     {link.label}
                   </Link>
-                </motion.div>
+                )
               ))}
-
-              <motion.div variants={overlayItem} className="mt-6 border-t border-black/[0.08] pt-8">
-                <div className="flex flex-col gap-5">
-                  <Link
-                    href="/auth"
-                    onClick={() => setMenuOpen(false)}
-                    className="text-xl font-semibold text-stone-600 transition-colors hover:text-stone-900"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
-                    onClick={() => setMenuOpen(false)}
-                    className="btn-shimmer inline-flex w-fit items-center rounded-full bg-stone-900 px-6 py-3 text-base font-semibold text-white"
-                  >
-                    Scan my story free
-                  </Link>
-                </div>
-              </motion.div>
-            </motion.nav>
-
-            <div className="absolute bottom-8 left-6 text-sm text-stone-400">
-              AI writing studio for novelists
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+            <div className="mt-auto grid gap-3 pt-10 sm:grid-cols-2">
+              <Link
+                href="/auth"
+                onClick={closeMenu}
+                className="inline-flex min-h-12 items-center justify-center border border-[#191714]/20 text-sm font-semibold text-[#191714]"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1"
+                onClick={closeMenu}
+                className="inline-flex min-h-12 items-center justify-center bg-[#A6402D] text-sm font-semibold text-white"
+              >
+                Start free
+              </Link>
+            </div>
+          </nav>
+        </div>
+      )}
     </>
   );
 }

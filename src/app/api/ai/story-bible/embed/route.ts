@@ -84,10 +84,12 @@ export async function POST(request: NextRequest) {
         return Response.json({ error: "Could not clear the old story index" }, { status: 500 });
       }
     }
-    await supabase
-      .from("chapters")
-      .update({ last_embedded_word: words.length })
-      .eq("id", chapterId);
+    if ((chapter.last_embedded_word ?? 0) !== words.length) {
+      await supabase
+        .from("chapters")
+        .update({ last_embedded_word: words.length })
+        .eq("id", chapterId);
+    }
     return Response.json({ ok: true, chunksCreated: 0, chunksDeleted: existingChunks?.length ?? 0, wordCount: words.length, reason: "too_short" });
   }
 
@@ -103,10 +105,12 @@ export async function POST(request: NextRequest) {
     .map((chunk) => chunk.id as string);
 
   if (changedChunks.length === 0 && staleIds.length === 0) {
-    await supabase
-      .from("chapters")
-      .update({ last_embedded_word: words.length })
-      .eq("id", chapterId);
+    if ((chapter.last_embedded_word ?? 0) !== words.length) {
+      await supabase
+        .from("chapters")
+        .update({ last_embedded_word: words.length })
+        .eq("id", chapterId);
+    }
     return Response.json({ ok: true, chunksCreated: 0, chunksDeleted: 0, wordCount: words.length, reason: "unchanged" });
   }
 

@@ -315,7 +315,7 @@ export default function WorldBoardView({
           {tab === "canvas" && (
             <button
               onClick={() => { setSelectedEntityId(null); setCreatingNew(true); }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-violet-600 border border-violet-200 bg-violet-50 hover:bg-violet-100 transition-colors"
+              className="world-board-action flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-violet-600 border border-violet-200 bg-violet-50 hover:bg-violet-100 transition-colors"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -330,7 +330,7 @@ export default function WorldBoardView({
               <select
                 value={selectedChapterId ?? ""}
                 onChange={(e) => setSelectedChapterId(e.target.value || null)}
-                className="text-[11px] text-[#1A1A1A]/60 bg-white border border-black/[0.08] rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-violet-200 cursor-pointer"
+                className="world-board-select text-[11px] text-[#1A1A1A]/60 bg-white border border-black/[0.08] rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-violet-200 cursor-pointer"
               >
                 <option value="">All chapters</option>
                 {chapters.map((ch) => (
@@ -344,7 +344,7 @@ export default function WorldBoardView({
                 <button
                   onClick={() => openConfirm(selectedChapterId)}
                   title="Reset this chapter's entities"
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-amber-600 border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors"
+                  className="world-board-action flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-amber-600 border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-colors"
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -362,7 +362,7 @@ export default function WorldBoardView({
               onClick={handleDedup}
               disabled={deduping}
               title="Merge duplicate entities"
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 transition-colors"
+              className="world-board-action flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 transition-colors"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" />
@@ -386,7 +386,7 @@ export default function WorldBoardView({
             <button
               onClick={() => openConfirm("project")}
               title="Reset entire world board"
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-red-500 border border-red-200 bg-red-50 hover:bg-red-100 transition-colors"
+              className="world-board-danger flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-red-500 border border-red-200 bg-red-50 hover:bg-red-100 transition-colors"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="3 6 5 6 21 6" />

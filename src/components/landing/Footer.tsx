@@ -1,94 +1,115 @@
-"use client";
-
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+import { HomepageSectionLink } from "./HomepageSectionLink";
 
-const NAV = [
-  { label: "Features",     href: "#features" },
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Pricing",      href: "/pricing" },
-  { label: "FAQ",          href: "#faq" },
-  { label: "Sign up",      href: "/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1" },
-  { label: "Privacy",      href: "/privacy" },
-  { label: "Terms",        href: "/terms" },
-];
-
-const SOCIAL = [
+const columns = [
   {
-    label: "Twitter / X",
-    href: "https://x.com/a1siel",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-        <path d="M12.6 1h2.5L9.6 6.9 16 15h-4.9l-3.9-5.1L2.5 15H0l5.8-6.6L0 1h5l3.5 4.6L12.6 1zm-.9 12.6h1.4L4.4 2.3H2.9l8.8 11.3z" />
-      </svg>
-    ),
+    title: "Product",
+    links: [
+      { label: "Story Scan", targetId: "story-scan" },
+      { label: "Story model", targetId: "story-model" },
+      { label: "Story Pulse", targetId: "story-pulse" },
+      { label: "How it works", targetId: "how-it-works" },
+      { label: "Pricing", targetId: "pricing" },
+    ],
   },
   {
-    label: "Instagram",
-    href: "https://www.instagram.com/a1siel",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-        <path d="M8 1.4c2.1 0 2.4 0 3.2.05.8.04 1.2.17 1.5.28.37.14.64.32.92.6.28.28.46.55.6.92.11.3.24.7.28 1.5.04.8.05 1.1.05 3.2s0 2.4-.05 3.2c-.04.8-.17 1.2-.28 1.5-.14.37-.32.64-.6.92-.28.28-.55.46-.92.6-.3.11-.7.24-1.5.28-.8.04-1.1.05-3.2.05s-2.4 0-3.2-.05c-.8-.04-1.2-.17-1.5-.28a2.6 2.6 0 0 1-.92-.6 2.6 2.6 0 0 1-.6-.92c-.11-.3-.24-.7-.28-1.5C1.4 10.4 1.4 10.1 1.4 8s0-2.4.05-3.2c.04-.8.17-1.2.28-1.5.14-.37.32-.64.6-.92.28-.28.55-.46.92-.6.3-.11.7-.24 1.5-.28.8-.04 1.1-.05 3.2-.05ZM8 0C5.87 0 5.6.01 4.75.05c-.86.04-1.44.18-1.95.38a3.94 3.94 0 0 0-1.42.93c-.44.44-.72.9-.93 1.42C.25 3.3.11 3.89.07 4.75.01 5.6 0 5.87 0 8s.01 2.4.05 3.25c.04.86.18 1.44.38 1.95.2.52.48.98.93 1.42.44.44.9.72 1.42.93.51.2 1.1.34 1.95.38C5.6 15.99 5.87 16 8 16s2.4-.01 3.25-.05c.86-.04 1.44-.18 1.95-.38a3.94 3.94 0 0 0 1.42-.93c.44-.44.72-.9.93-1.42.2-.51.34-1.1.38-1.95.04-.85.05-1.12.05-3.25s-.01-2.4-.05-3.25c-.04-.86-.18-1.44-.38-1.95a3.94 3.94 0 0 0-.93-1.42 3.94 3.94 0 0 0-1.42-.93c-.51-.2-1.1-.34-1.95-.38C10.4.01 10.13 0 8 0Zm0 3.9a4.1 4.1 0 1 0 0 8.2A4.1 4.1 0 0 0 8 3.9Zm0 6.76a2.66 2.66 0 1 1 0-5.32 2.66 2.66 0 0 1 0 5.32Zm4.26-6.92a.96.96 0 1 1-1.92 0 .96.96 0 0 1 1.92 0Z" />
-      </svg>
-    ),
+    title: "For writers",
+    links: [
+      { label: "Free continuity check", href: "/continuity-check" },
+      { label: "Guides", href: "/guides" },
+      { label: "Writing articles", href: "/blog" },
+      { label: "Comparisons", href: "/compare" },
+      { label: "Affiliates", href: "/affiliates" },
+    ],
   },
-];
+  {
+    title: "Account",
+    links: [
+      { label: "Start free", href: "/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1" },
+      { label: "Sign in", href: "/auth" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+    ],
+  },
+] as const;
+
+const socials = [
+  ["X", "https://x.com/a1siel"],
+  ["Instagram", "https://www.instagram.com/a1siel"],
+] as const;
 
 export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#EDE8FF]">
-      <div className="mx-auto max-w-[1080px] px-6 lg:px-10">
+    <footer className="bg-[#F4F0E8] px-6 pb-8 text-[#191714] lg:px-10">
+      <div className="mx-auto max-w-[1280px] border-t border-[#191714]/15 pt-10 lg:pt-14">
+        <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+          <div>
+            <Link href="/" aria-label="Xvault Studio home" className="inline-flex items-center gap-3">
+              <Image src="/XVault.svg" alt="" width={34} height={34} />
+              <span className="font-display text-2xl tracking-[-0.035em]">Xvault Studio</span>
+            </Link>
 
-        {/* Top divider */}
-        <div className="h-px bg-violet-300/30" />
+            <p className="mt-7 max-w-[460px] font-display text-[clamp(2.2rem,3.5vw,3.9rem)] leading-[1] tracking-[-0.045em]">
+              A writing studio that remembers the manuscript.
+            </p>
+            <p className="mt-6 max-w-[430px] text-sm leading-7 text-[#191714]/68">
+              Map the people, relationships, threads, and emotional movement already inside the draft, then keep that context beside you as the book grows.
+            </p>
 
-        {/* Main row */}
-        <div className="flex flex-col gap-6 py-8 lg:flex-row lg:items-center lg:justify-between">
+            <a
+              href="mailto:hello@xvaultstudio.com"
+              className="mt-8 inline-flex text-[10px] font-semibold uppercase tracking-[0.16em] underline decoration-[#A6402D]/50 underline-offset-8 transition-colors hover:text-[#A6402D]"
+            >
+              hello@xvaultstudio.com
+            </a>
+          </div>
 
-          {/* Logo */}
-          <Link href="/" className="inline-flex shrink-0 items-center gap-2">
-            <Image src="/XVault.svg" alt="Xvault Studio" width={22} height={22} />
-            <span className="font-display text-[0.9rem] tracking-tight text-[#1A0A3C]/60">
-              Xvault<span className="ml-1 text-[#1A0A3C]/25">Studio</span>
-            </span>
-          </Link>
-
-          {/* Nav */}
-          <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer">
-            {NAV.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="text-[0.78rem] text-violet-900/35 transition-colors duration-150 hover:text-violet-900/70"
-              >
-                {item.label}
-              </Link>
+          <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-x-8 gap-y-10 border-t border-[#191714]/15 pt-7 sm:grid-cols-3 lg:border-t-0 lg:pt-0">
+            {columns.map((column) => (
+              <div key={column.title}>
+                <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A6402D]">{column.title}</p>
+                <ul className="mt-5 space-y-3.5">
+                  {column.links.map((link) => (
+                    <li key={link.label}>
+                      {"targetId" in link ? (
+                        <HomepageSectionLink targetId={link.targetId} className="text-sm text-[#191714]/68 transition-colors hover:text-[#191714]">
+                          {link.label}
+                        </HomepageSectionLink>
+                      ) : (
+                        <Link href={link.href} className="text-sm text-[#191714]/68 transition-colors hover:text-[#191714]">
+                          {link.label}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </nav>
+        </div>
 
-          {/* Social */}
-          <div className="flex shrink-0 items-center gap-2">
-            {SOCIAL.map((s) => (
-              <a
-                key={s.label}
-                href={s.href}
-                aria-label={s.label}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-violet-300/40 text-violet-900/30 transition-all duration-150 hover:border-violet-400/60 hover:text-violet-900/65"
-              >
-                {s.icon}
+        <div className="mt-16 border-y border-[#191714]/15 py-6 lg:mt-20">
+          <p className="overflow-hidden whitespace-nowrap font-display text-[clamp(3.4rem,10.7vw,9.6rem)] leading-[0.82] tracking-[-0.065em] text-[#191714]/92">
+            Xvault Studio
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-5 pt-6 text-[10px] uppercase tracking-[0.12em] text-[#191714]/64 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <span>© {year} Xvault Studio</span>
+            <span>Built for fiction writers</span>
+          </div>
+          <div className="flex items-center gap-5">
+            {socials.map(([label, href]) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[#A6402D]">
+                {label}
               </a>
             ))}
           </div>
         </div>
-
-        {/* Bottom bar */}
-        <div className="flex items-center justify-between border-t border-violet-200/30 py-4 text-[0.68rem] text-violet-900/25">
-          <span>&copy; {year} Xvault Studio</span>
-          <span>Made for writers.</span>
-        </div>
-
       </div>
     </footer>
   );

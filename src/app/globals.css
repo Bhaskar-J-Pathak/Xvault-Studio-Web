@@ -741,6 +741,145 @@ button, a, input, textarea, select {
   border-top: 1px solid #e7e5e4;
   margin: 2.5em 0;
 }
+
+/* Editorial reading pages */
+.editorial-prose {
+  color: rgba(25, 23, 20, 0.76);
+  font-size: 1.0625rem;
+  line-height: 1.9;
+}
+
+.editorial-prose > :first-child { margin-top: 0; }
+.editorial-prose p { margin: 1.55em 0; }
+
+.editorial-prose h2 {
+  margin: 2.25em 0 0.7em;
+  color: #191714;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(2.15rem, 4vw, 3.4rem);
+  font-weight: 300;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.editorial-prose h3 {
+  margin: 2em 0 0.65em;
+  color: #191714;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(1.55rem, 2.7vw, 2.15rem);
+  font-weight: 300;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.editorial-prose strong {
+  color: #191714;
+  font-weight: 650;
+}
+
+.editorial-prose em { font-style: italic; }
+
+.editorial-prose a {
+  color: #8f3526;
+  text-decoration: underline;
+  text-decoration-color: rgba(166, 64, 45, 0.42);
+  text-underline-offset: 5px;
+}
+
+.editorial-prose a:hover { color: #A6402D; }
+
+.editorial-prose ul,
+.editorial-prose ol {
+  margin: 1.5em 0;
+  padding-left: 1.4em;
+}
+
+.editorial-prose li { margin: 0.55em 0; padding-left: 0.25em; }
+.editorial-prose ul li { list-style-type: disc; }
+.editorial-prose ol li { list-style-type: decimal; }
+.editorial-prose li::marker { color: #A6402D; }
+
+.editorial-prose blockquote {
+  margin: 2.25em 0;
+  border-left: 2px solid #A6402D;
+  padding: 0.25em 0 0.25em 1.5em;
+  color: rgba(25, 23, 20, 0.7);
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.35rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.editorial-prose code {
+  border: 1px solid rgba(25, 23, 20, 0.14);
+  background: rgba(25, 23, 20, 0.035);
+  padding: 0.12em 0.4em;
+  color: #8f3526;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.86em;
+}
+
+.editorial-prose hr {
+  margin: 3em 0;
+  border: 0;
+  border-top: 1px solid rgba(25, 23, 20, 0.15);
+}
+
+.editorial-prose table {
+  width: 100%;
+  margin: 2.5em 0;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.editorial-prose th,
+.editorial-prose td {
+  border-bottom: 1px solid rgba(25, 23, 20, 0.15);
+  padding: 0.8rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.editorial-prose th {
+  color: #191714;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Bring interactive article diagrams into the paper and vermilion system. */
+.editorial-prose :is(.text-violet-400, .text-violet-500, .text-violet-600, .text-violet-700) {
+  color: #A6402D !important;
+}
+
+.editorial-prose :is(.bg-violet-50, .bg-violet-100) {
+  background-color: #EFE7DC !important;
+}
+
+.editorial-prose .bg-violet-600 { background-color: #A6402D !important; }
+
+.editorial-prose :is(.border-violet-200, .border-violet-300, .border-violet-400, .border-violet-500) {
+  border-color: rgba(166, 64, 45, 0.32) !important;
+}
+
+.editorial-prose :is(.decoration-violet-300, .decoration-violet-400) {
+  text-decoration-color: rgba(166, 64, 45, 0.42) !important;
+}
+
+@media (max-width: 640px) {
+  .editorial-prose {
+    font-size: 1rem;
+    line-height: 1.82;
+  }
+
+  .editorial-prose table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
 /* Non-blocking feature-tour focus. The control remains clickable. */
 .xv-tour-highlight {
   z-index: 101 !important;
@@ -937,3 +1076,140 @@ html[data-editor-theme="dark"] .world-board-body,
 html[data-editor-theme="dark"] .world-board-muted { color: rgba(224,221,213,0.62) !important; }
 html[data-editor-theme="dark"] .world-board-inset,
 html[data-editor-theme="dark"] .world-board-chip { background-color: rgba(255,255,255,0.06) !important; }
+
+/* Keep analysis tools visually inside the chosen Studio theme. */
+html[data-editor-theme="sepia"] .story-scan :is(.text-violet-300, .text-violet-500, .text-violet-600, .text-violet-700),
+html[data-editor-theme="sepia"] .story-pulse :is(.text-violet-300, .text-violet-500, .text-violet-600, .text-violet-700, .text-violet-800) {
+  color: #7A461F !important;
+}
+html[data-editor-theme="sepia"] .story-scan .scan-notice,
+html[data-editor-theme="sepia"] .story-pulse .pulse-notice {
+  background: rgba(107,62,26,0.055) !important;
+  border-color: rgba(107,62,26,0.13) !important;
+  color: rgba(107,62,26,0.72) !important;
+}
+html[data-editor-theme="dark"] .story-scan .scan-notice,
+html[data-editor-theme="dark"] .story-pulse .pulse-notice {
+  background: rgba(255,255,255,0.055) !important;
+  border-color: rgba(255,255,255,0.09) !important;
+  color: rgba(224,221,213,0.72) !important;
+}
+
+html[data-editor-theme="sepia"] .world-board .world-board-action,
+html[data-editor-theme="sepia"] .world-board .world-board-select {
+  background: #FFFBEF !important;
+  border-color: rgba(107,62,26,0.16) !important;
+  color: #6B3E1A !important;
+}
+html[data-editor-theme="sepia"] .world-board .world-board-danger {
+  background: rgba(146,64,48,0.07) !important;
+  border-color: rgba(146,64,48,0.20) !important;
+  color: #874535 !important;
+}
+html[data-editor-theme="sepia"] .world-board [class*="bg-violet-"],
+html[data-editor-theme="sepia"] .world-board [class*="bg-emerald-"],
+html[data-editor-theme="sepia"] .world-board [class*="bg-orange-"],
+html[data-editor-theme="sepia"] .world-board [class*="bg-cyan-"],
+html[data-editor-theme="sepia"] .world-board [class*="bg-blue-"],
+html[data-editor-theme="sepia"] .world-board [class*="bg-indigo-"],
+html[data-editor-theme="sepia"] .world-board [class*="bg-amber-"] {
+  background-color: rgba(107,62,26,0.065) !important;
+  border-color: rgba(107,62,26,0.14) !important;
+}
+html[data-editor-theme="sepia"] .world-board [class*="text-violet-"],
+html[data-editor-theme="sepia"] .world-board [class*="text-emerald-"],
+html[data-editor-theme="sepia"] .world-board [class*="text-orange-"],
+html[data-editor-theme="sepia"] .world-board [class*="text-cyan-"],
+html[data-editor-theme="sepia"] .world-board [class*="text-blue-"],
+html[data-editor-theme="sepia"] .world-board [class*="text-indigo-"],
+html[data-editor-theme="sepia"] .world-board [class*="text-amber-"] {
+  color: #7A461F !important;
+}
+html[data-editor-theme="dark"] .world-board .world-board-action,
+html[data-editor-theme="dark"] .world-board .world-board-select {
+  background: #202020 !important;
+  border-color: rgba(255,255,255,0.11) !important;
+  color: #E0DDD5 !important;
+}
+html[data-editor-theme="dark"] .world-board .world-board-danger {
+  background: rgba(248,113,113,0.09) !important;
+  border-color: rgba(248,113,113,0.20) !important;
+  color: #FCA5A5 !important;
+}
+
+/* Story Bible uses the same surfaces and ink colors as the manuscript. */
+.story-bible {
+  background: #FAFAF8;
+  color: #1A1A1A;
+}
+html[data-editor-theme="sepia"] .story-bible {
+  background: #F8F4E8 !important;
+  color: #6B3E1A;
+}
+html[data-editor-theme="sepia"] .story-bible .bible-memory,
+html[data-editor-theme="sepia"] .story-bible .bible-card,
+html[data-editor-theme="sepia"] .story-bible .bg-white {
+  background: #FFFBEF !important;
+  border-color: rgba(107,62,26,0.12) !important;
+}
+html[data-editor-theme="sepia"] .story-bible :is(input, textarea, select) {
+  background: #FFFBEF !important;
+  border-color: rgba(107,62,26,0.14) !important;
+  color: #6B3E1A !important;
+}
+html[data-editor-theme="sepia"] .story-bible :is(input, textarea)::placeholder {
+  color: rgba(107,62,26,0.28) !important;
+}
+html[data-editor-theme="sepia"] .story-bible .bible-title,
+html[data-editor-theme="sepia"] .story-bible [class*="text-[#1A1A1A]"] {
+  color: #6B3E1A !important;
+}
+html[data-editor-theme="sepia"] .story-bible .bible-muted {
+  color: rgba(107,62,26,0.56) !important;
+}
+html[data-editor-theme="sepia"] .story-bible .bible-chip,
+html[data-editor-theme="sepia"] .story-bible .bg-violet-50,
+html[data-editor-theme="sepia"] .story-bible .bg-violet-100 {
+  background: rgba(107,62,26,0.07) !important;
+  color: #6B3E1A !important;
+}
+html[data-editor-theme="sepia"] .story-bible .bible-primary {
+  background: #6B3E1A !important;
+  color: #F8F4E8 !important;
+}
+
+html[data-editor-theme="dark"] .story-bible {
+  background: #111111 !important;
+  color: #E0DDD5;
+}
+html[data-editor-theme="dark"] .story-bible .bible-memory,
+html[data-editor-theme="dark"] .story-bible .bible-card,
+html[data-editor-theme="dark"] .story-bible .bg-white {
+  background: #1C1C1C !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+html[data-editor-theme="dark"] .story-bible :is(input, textarea, select) {
+  background: #1C1C1C !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  color: #E0DDD5 !important;
+}
+html[data-editor-theme="dark"] .story-bible :is(input, textarea)::placeholder {
+  color: rgba(224,221,213,0.26) !important;
+}
+html[data-editor-theme="dark"] .story-bible .bible-title,
+html[data-editor-theme="dark"] .story-bible [class*="text-[#1A1A1A]"] {
+  color: #E0DDD5 !important;
+}
+html[data-editor-theme="dark"] .story-bible .bible-muted {
+  color: rgba(224,221,213,0.58) !important;
+}
+html[data-editor-theme="dark"] .story-bible .bible-chip,
+html[data-editor-theme="dark"] .story-bible .bg-violet-50,
+html[data-editor-theme="dark"] .story-bible .bg-violet-100 {
+  background: rgba(255,255,255,0.065) !important;
+  color: #E0DDD5 !important;
+}
+html[data-editor-theme="dark"] .story-bible .bible-primary {
+  background: #E0DDD5 !important;
+  color: #1C1C1C !important;
+}

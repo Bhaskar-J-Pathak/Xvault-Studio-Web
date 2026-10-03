@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { LandingShell }   from "@/components/landing/LandingShell";
 import Navbar             from "@/components/landing/Navbar";
 import Hero               from "@/components/landing/Hero";
-import FeaturesShowcase   from "@/components/landing/FeaturesShowcase";
 import WhyXvault          from "@/components/landing/WhyXvault";
 import HowItWorks         from "@/components/landing/HowItWorks";
 import SocialProof        from "@/components/landing/SocialProof";
@@ -10,16 +9,23 @@ import FAQ                from "@/components/landing/FAQ";
 import Pricing            from "@/components/landing/Pricing";
 import CTA                from "@/components/landing/CTA";
 import Footer             from "@/components/landing/Footer";
+import CredibilityBand    from "@/components/landing/CredibilityBand";
+import ProblemSection     from "@/components/landing/ProblemSection";
+import StoryScanSection   from "@/components/landing/StoryScanSection";
+import StoryModelSection  from "@/components/landing/StoryModelSection";
+import StoryPulseSection  from "@/components/landing/StoryPulseSection";
+import WritingContextSection from "@/components/landing/WritingContextSection";
+import ManuscriptOwnershipSection from "@/components/landing/ManuscriptOwnershipSection";
 
 export const metadata: Metadata = {
-  title: "Xvault Studio | See What Your Story Is Becoming",
+  title: "Xvault Studio | Map Your Entire Novel",
   description:
-    "Upload your manuscript and reveal its characters, relationships, plot threads, and emotional arcs. Scan your first chapters free with Xvault Studio.",
+    "Turn your manuscript into a living Story Bible, World Board, continuity map, and emotional timeline. Map your first chapters free with Xvault Studio.",
   alternates: { canonical: "https://xvault.dev" },
   openGraph: {
-    title: "Xvault Studio | See What Your Story Is Becoming",
+    title: "Xvault Studio | Map Your Entire Novel",
     description:
-      "Upload your manuscript and reveal its characters, relationships, plot threads, and emotional arcs. Scan your first chapters free.",
+      "Turn your manuscript into a living Story Bible, World Board, continuity map, and emotional timeline. Map your first chapters free.",
     url: "https://xvault.dev",
     type: "website",
   },
@@ -107,10 +113,10 @@ const faqSchema = {
     },
     {
       "@type": "Question",
-      name: "Is this the full product?",
+      name: "What is included in Xvault Studio?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Xvault Studio is in public beta. The core writing experience (Alex, Ghost Writing, World Board, Story Bible, and Global Replace) is ready to use today. Beta writers get full access to the current product and can directly shape what we build next.",
+        text: "Xvault Studio includes Alex, cursor-aware prose generation, the World Board, Story Bible, Story Pulse, Global Replace, and manuscript export. You can import a draft, map the story already on the page, and continue writing in the same studio.",
       },
     },
     {
@@ -134,7 +140,7 @@ const faqSchema = {
       name: "Can I export my manuscript?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. You can export your manuscript as a Word document (.docx) from the studio sidebar at any time. EPUB and PDF export are in development and coming at full launch. Your work is always yours to take.",
+        text: "Yes. You can export your manuscript as a Word document (.docx) from the studio sidebar at any time. EPUB and PDF export are in development. Your work is always yours to take.",
       },
     },
     {
@@ -178,12 +184,18 @@ export default function HomePage() {
       <Navbar />
       <main>
         <Hero />
-        <FeaturesShowcase />
-        <WhyXvault />
+        <CredibilityBand />
+        <ProblemSection />
+        <StoryScanSection />
+        <StoryModelSection />
+        <StoryPulseSection />
+        <WritingContextSection />
         <HowItWorks />
+        <ManuscriptOwnershipSection />
+        <WhyXvault />
         <SocialProof />
-        <FAQ />
         <Pricing />
+        <FAQ />
         <CTA />
       </main>
       <Footer />

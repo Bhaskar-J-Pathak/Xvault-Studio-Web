@@ -129,7 +129,7 @@ export default function StoryScanView(props: Props) {
             <div className="px-6 py-7 sm:px-9">
               {worldChapters.length ? (
                 <>
-                  <div className="mb-5 flex flex-col gap-2 rounded-2xl border border-violet-100 bg-violet-50/60 px-4 py-3 text-xs text-violet-900/70 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="scan-notice mb-5 flex flex-col gap-2 rounded-2xl border border-violet-100 bg-violet-50/60 px-4 py-3 text-xs text-violet-900/70 sm:flex-row sm:items-center sm:justify-between">
                     <span>Scanning {worldChapters.length} {worldChapters.length === 1 ? "chapter" : "chapters"} · {worldChapters.reduce((sum, row) => sum + row.word_count, 0).toLocaleString()} words</span>
                     <span className="font-semibold text-violet-700">Uses approximately {estimatedCredits} AI credits</span>
                   </div>

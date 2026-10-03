@@ -260,101 +260,6 @@ function ExtractionPlugin({
 
 // ── Story Bible plugin ────────────────────────────────────────────────────────
 
-interface StoryBiblePluginProps {
-  projectId:           string;
-  chapterId:           string;
-  initialLastEmbedded: number;
-  hasSummary:          boolean;
-  initialSummaryWordCount: number;
-}
-
-function StoryBiblePlugin({
-  projectId,
-  chapterId,
-  initialLastEmbedded,
-  hasSummary,
-  initialSummaryWordCount,
-}: StoryBiblePluginProps) {
-  const [editor] = useLexicalComposerContext();
-
-  const lastEmbeddedRef  = useRef(initialLastEmbedded);
-  const hasSummarizedRef = useRef(hasSummary);
-  const lastSummarizedRef = useRef(initialSummaryWordCount);
-  const embedTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const summaryTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const embeddingRef     = useRef(false);
-  const summarizingRef   = useRef(false);
-
-  useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
-      let fullText = "";
-      editorState.read(() => {
-        fullText = $getRoot().getTextContent().trim();
-      });
-      const words = fullText ? fullText.split(/\s+/) : [];
-      const wc    = words.length;
-
-      // Re-indexing vectors is one of the editor's most disk-intensive tasks.
-      // Keep short new chapters discoverable, then batch later changes so Nano
-      // compute does not rebuild an index after every few paragraphs.
-      const embedThreshold = lastEmbeddedRef.current === 0 ? 500 : 1000;
-      if (Math.abs(wc - lastEmbeddedRef.current) >= embedThreshold && !embeddingRef.current) {
-        if (embedTimerRef.current) clearTimeout(embedTimerRef.current);
-        embedTimerRef.current = setTimeout(async () => {
-          if (embeddingRef.current) return;
-          embeddingRef.current = true;
-          try {
-            const response = await fetch("/api/ai/story-bible/embed", {
-              method:  "POST",
-              headers: { "Content-Type": "application/json" },
-              body:    JSON.stringify({ chapterId, projectId }),
-            });
-            if (response.ok) {
-              const result = await response.json().catch(() => ({})) as { wordCount?: number };
-              lastEmbeddedRef.current = result.wordCount ?? wc;
-            }
-          } catch (error) {
-            console.error(error);
-          } finally {
-            embeddingRef.current = false;
-          }
-        }, 30000);
-      }
-
-      const needsFirstSummary = !hasSummarizedRef.current && wc >= 300;
-      const needsSummaryRefresh = hasSummarizedRef.current &&
-        Math.abs(wc - lastSummarizedRef.current) >= 1000;
-      if ((needsFirstSummary || needsSummaryRefresh) && !summarizingRef.current) {
-        if (summaryTimerRef.current) clearTimeout(summaryTimerRef.current);
-        // Summary work is deliberately much less frequent than autosave and
-        // vector indexing. It runs only after the writer has been idle.
-        summaryTimerRef.current = setTimeout(async () => {
-          if (summarizingRef.current) return;
-          summarizingRef.current = true;
-          try {
-            const response = await fetch("/api/ai/story-bible/summarize", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ chapterId, projectId }),
-            });
-            if (response.ok) {
-              const result = await response.json().catch(() => ({})) as { wordCount?: number };
-              hasSummarizedRef.current = true;
-              lastSummarizedRef.current = result.wordCount ?? wc;
-            }
-          } catch (error) {
-            console.error(error);
-          } finally {
-            summarizingRef.current = false;
-          }
-        }, needsFirstSummary ? 45000 : 120000);
-      }
-    });
-  }, [editor, chapterId, projectId]);
-
-  return null;
-}
-
 // ── Co-Author plugin ──────────────────────────────────────────────────────────
 // Handles recent text tracking, proactive observation, and AI writing actions.
 
@@ -722,9 +627,6 @@ interface Props {
   projectId:            string;
   chapterNumber:        number;
   initialLastExtracted: number;
-  initialLastEmbedded:  number;
-  initialSummary:       string | null;
-  initialSummaryWordCount: number;
   initialCoauthor:      DbCoauthor | null;
   initialCredits:       number;
   initialCreditCap:     number;
@@ -743,9 +645,6 @@ export default function ZenEditor({
   projectId,
   chapterNumber,
   initialLastExtracted,
-  initialLastEmbedded,
-  initialSummary,
-  initialSummaryWordCount,
   initialCoauthor,
   initialCredits,
   initialCreditCap,
@@ -1411,13 +1310,6 @@ export default function ZenEditor({
             initialLastExtracted={initialLastExtracted}
             onStatusChange={setExtractionStatus}
             onCreditUpdate={handleCreditUpdate}
-          />
-          <StoryBiblePlugin
-            projectId={projectId}
-            chapterId={chapterId}
-            initialLastEmbedded={initialLastEmbedded}
-            hasSummary={initialSummary !== null}
-            initialSummaryWordCount={initialSummaryWordCount}
           />
           <CoAuthorPlugin
             projectId={projectId}

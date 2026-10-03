@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import Footer from "@/components/landing/Footer";
+import Navbar from "@/components/landing/Navbar";
 
 export const metadata: Metadata = {
   title: "Xvault vs Other AI Writing Tools: Honest Comparisons",
-  description: "How does Xvault Studio compare to Sudowrite, NovelCrafter, NovelAI, Inkfluence AI, and ChatGPT? Honest side-by-side comparisons of pricing, features, and manuscript memory.",
+  description: "How Xvault Studio compares with Sudowrite, NovelCrafter, NovelAI, Inkfluence AI, and ChatGPT across manuscript memory, fiction tools, and pricing.",
   alternates: { canonical: "https://xvault.dev/compare" },
   openGraph: {
     title: "Xvault vs Other AI Writing Tools: Honest Comparisons",
-    description: "Honest side-by-side comparisons of AI writing tools for novelists. Pricing, features, manuscript memory, and content restrictions.",
+    description: "Direct comparisons of AI writing tools for novelists, including the places where competing tools are stronger.",
     url: "https://xvault.dev/compare",
     type: "website",
   },
@@ -18,136 +19,107 @@ const comparisons = [
   {
     slug: "xvault-vs-sudowrite",
     opponent: "Sudowrite",
-    tagline: "The established name, but pricing backlash and content restrictions are pushing writers away.",
-    xvaultWins: ["No content restrictions for serious fiction", "Reads entire manuscript before responding", "Transparent, stable pricing"],
-    opponentWins: ["Proprietary Muse model fine-tuned on published novels", "More established, larger community"],
+    tagline: "The established fiction platform with strong prose tools and a different approach to memory, restrictions, and pricing.",
+    xvault: "Manuscript context and automatic story structure",
+    other: "Mature craft tools and its proprietary Muse model",
   },
   {
     slug: "xvault-vs-novelcrafter",
     opponent: "NovelCrafter",
-    tagline: "157,000 users and growing, but BYOK friction and unpredictable API costs are its ceiling.",
-    xvaultWins: ["No API keys to manage", "Predictable flat pricing", "Automatic World Board, no manual entry"],
-    opponentWins: ["Flexible AI model selection", "Strong worldbuilding codex structure"],
+    tagline: "A flexible system for writers who want model choice and do not mind managing a codex and API access.",
+    xvault: "Automatic context with no API setup",
+    other: "Model flexibility and a detailed manual codex",
   },
   {
     slug: "xvault-vs-novelai",
     opponent: "NovelAI",
-    tagline: "The uncensored option: strong on freedom, weaker on prose quality and project management.",
-    xvaultWins: ["Voice matching keeps your prose sounding like you", "Auto story bible and plot thread tracking", "Full project management built in"],
-    opponentWins: ["Minimal content filtering", "Established fiction-trained models"],
+    tagline: "A permissive fiction generator built for drafting volume rather than complete manuscript management.",
+    xvault: "Continuity, project structure, and voice context",
+    other: "Content freedom and established fiction models",
   },
   {
     slug: "xvault-vs-inkfluence-ai",
     opponent: "Inkfluence AI",
-    tagline: "A content creation tool built for marketers. Not built for novelists writing long manuscripts.",
-    xvaultWins: ["Reads full manuscript before every response", "Auto story bible, world board, and continuity checking", "Dark fiction and mature content supported"],
-    opponentWins: ["Social media and marketing copy tools", "Content calendar and scheduling features"],
+    tagline: "A marketing content product compared with a studio designed around long-form fiction.",
+    xvault: "Novel-specific memory and continuity tools",
+    other: "Marketing workflows and content scheduling",
   },
   {
     slug: "xvault-vs-chatgpt",
     opponent: "ChatGPT",
-    tagline: "The most capable general assistant available. Still not a novel-writing tool.",
-    xvaultWins: ["Manuscript loaded automatically before every response", "Plot thread tracking and continuity checking built in", "Voice match scoring on every prose suggestion"],
-    opponentWins: ["General purpose: research, emails, coding, everything else", "Web search and real-time information access"],
+    tagline: "A capable general assistant compared with a workspace that treats the manuscript as the source of truth.",
+    xvault: "Persistent manuscript context and story tracking",
+    other: "Breadth, research, and general-purpose work",
   },
-];
+] as const;
 
 export default function ComparePage() {
   return (
-    <div className="min-h-screen bg-[#FAFAF8] text-stone-900">
-      {/* Nav */}
-      <header className="border-b border-black/[0.06] bg-[#FAFAF8]">
-        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
-          <Link
-            href="/"
-            className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors"
-          >
-            ← Xvault Studio
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F4F0E8] text-[#191714]">
+      <Navbar />
 
-      <main className="max-w-3xl mx-auto px-6 py-16">
-        {/* Hero */}
-        <div className="mb-14">
-          <p className="text-xs font-semibold tracking-widest uppercase text-violet-600 mb-3">
-            Tool Comparisons
-          </p>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold text-stone-900 leading-tight mb-5">
-            Xvault vs the alternatives.<br className="hidden sm:block" /> Honestly.
-          </h1>
-          <p className="text-stone-500 text-lg leading-relaxed max-w-xl">
-            Every AI writing tool makes the same claims. These pages compare the actual
-            differences in pricing, manuscript memory, content restrictions, and what the
-            tools are genuinely good and bad at.
-          </p>
-        </div>
-
-        {/* Comparison cards */}
-        <div className="space-y-5">
-          {comparisons.map(({ slug, opponent, tagline, xvaultWins, opponentWins }) => (
-            <Link
-              key={slug}
-              href={`/compare/${slug}`}
-              className="block rounded-2xl bg-white border border-black/[0.06] p-7 hover:border-violet-300 hover:shadow-sm transition-all group"
-            >
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <div>
-                  <p className="text-xs font-semibold tracking-widest uppercase text-violet-600/70 mb-1.5">
-                    Xvault vs {opponent}
-                  </p>
-                  <h2 className="font-display text-xl font-semibold text-stone-900 group-hover:text-violet-700 transition-colors">
-                    {tagline}
-                  </h2>
-                </div>
-                <ArrowRight size={18} className="text-stone-300 group-hover:text-violet-500 transition-colors shrink-0 mt-1" />
+      <main className="pt-[72px]">
+        <section className="px-6 pb-16 pt-16 lg:px-10 lg:pb-24 lg:pt-24">
+          <div className="mx-auto max-w-[1280px] border-t border-[#191714]/15 pt-8 lg:pt-10">
+            <div className="grid gap-10 lg:grid-cols-[0.32fr_1fr] lg:gap-16">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#A6402D]">Tool comparisons</p>
+                <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.16em] text-[#191714]/62">Memory / Craft / Cost</p>
               </div>
-
-              <div className="grid sm:grid-cols-2 gap-4 mt-5">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-widest uppercase text-emerald-600 mb-2">
-                    Where Xvault wins
-                  </p>
-                  <ul className="space-y-1">
-                    {xvaultWins.map((w) => (
-                      <li key={w} className="text-xs text-stone-500 flex items-start gap-1.5">
-                        <span className="text-emerald-500 mt-0.5">+</span> {w}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold tracking-widest uppercase text-amber-600 mb-2">
-                    Where {opponent} wins
-                  </p>
-                  <ul className="space-y-1">
-                    {opponentWins.map((w) => (
-                      <li key={w} className="text-xs text-stone-500 flex items-start gap-1.5">
-                        <span className="text-amber-500 mt-0.5">+</span> {w}
-                      </li>
-                    ))}
-                  </ul>
+              <div>
+                <h1 className="max-w-[980px] font-display text-[clamp(4.1rem,8.6vw,8.8rem)] leading-[0.87] tracking-[-0.065em]">Choose for the manuscript you have.</h1>
+                <div className="mt-10 grid gap-8 border-t border-[#191714]/15 pt-7 sm:grid-cols-[1fr_auto] sm:items-end lg:mt-14">
+                  <p className="max-w-[700px] text-base leading-8 text-[#191714]/70">Every writing tool makes broad claims. These comparisons focus on the workflow differences that become visible across a full novel.</p>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-[#191714]/62">Written by Xvault</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-6 pb-20 lg:px-10 lg:pb-28">
+          <div className="mx-auto max-w-[1280px] border-y border-[#191714]/15">
+            <Link href="/continuity-check" className="group grid gap-8 py-9 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#A6402D] md:grid-cols-[0.32fr_1fr_auto] md:items-end md:py-11">
+              <div><p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A6402D]">Interactive comparison</p></div>
+              <div>
+                <h2 className="font-display text-[clamp(2.5rem,4.5vw,4.8rem)] leading-[0.96] tracking-[-0.05em] transition-colors group-hover:text-[#A6402D]">Try the continuity workflow yourself.</h2>
+                <p className="mt-4 max-w-[680px] text-sm leading-7 text-[#191714]/66">Paste two excerpts and inspect repeated characters and possible detail changes side by side.</p>
+              </div>
+              <span aria-hidden="true" className="text-xl text-[#A6402D] transition-transform group-hover:translate-x-1">→</span>
             </Link>
-          ))}
-        </div>
+          </div>
+        </section>
 
-        {/* Bottom note */}
-        <div className="mt-14 pt-10 border-t border-stone-200">
-          <p className="text-stone-500 text-sm leading-relaxed max-w-xl">
-            These comparisons are written by the Xvault team and are therefore not neutral.
-            We have tried to be honest about where competitors are genuinely stronger.
-            Try Xvault free for 14 days, no credit card required. Make the decision yourself.
-          </p>
-          <Link
-            href="/auth"
-            className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors"
-          >
-            Start free trial
-          </Link>
-        </div>
+        <section className="px-6 pb-24 lg:px-10 lg:pb-32">
+          <div className="mx-auto max-w-[1280px] border-t border-[#191714]/15">
+            {comparisons.map((comparison, index) => (
+              <article key={comparison.slug} className="group border-b border-[#191714]/15">
+                <Link href={`/compare/${comparison.slug}`} className="grid gap-6 py-9 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#A6402D] md:grid-cols-[0.28fr_1fr_0.72fr_auto] md:gap-9 md:py-11">
+                  <div className="flex items-start gap-4">
+                    <span className="font-mono text-[9px] font-semibold text-[#A6402D]">{(index + 1).toString().padStart(2, "0")}</span>
+                    <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.15em] text-[#191714]/58">Xvault vs {comparison.opponent}</p>
+                  </div>
+                  <div>
+                    <h2 className="font-display text-[clamp(2.2rem,3.7vw,4.1rem)] leading-[0.98] tracking-[-0.045em] transition-colors group-hover:text-[#A6402D]">{comparison.tagline}</h2>
+                  </div>
+                  <div className="grid gap-5 text-sm leading-6 text-[#191714]/65 sm:grid-cols-2 md:grid-cols-1">
+                    <p><span className="mb-1 block font-mono text-[8px] font-semibold uppercase tracking-[0.13em] text-[#A6402D]">Xvault strength</span>{comparison.xvault}</p>
+                    <p><span className="mb-1 block font-mono text-[8px] font-semibold uppercase tracking-[0.13em] text-[#191714]/52">Their strength</span>{comparison.other}</p>
+                  </div>
+                  <span aria-hidden="true" className="self-end text-xl text-[#A6402D] transition-transform group-hover:translate-x-1">→</span>
+                </Link>
+              </article>
+            ))}
+
+            <div className="grid gap-8 py-10 md:grid-cols-[1fr_auto] md:items-end">
+              <p className="max-w-[720px] text-sm leading-7 text-[#191714]/62">These comparisons are written by the Xvault team, so they are not neutral. Each one states where the competing product is stronger so you can judge the tradeoff yourself.</p>
+              <Link href="/auth?mode=signup&next=%2Fdashboard%3Fscan%3D1" className="inline-flex min-h-12 items-center gap-4 bg-[#191714] px-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#F4F0E8] transition-colors hover:bg-[#A6402D]">Start free <span aria-hidden="true" className="text-lg">→</span></Link>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <Footer />
     </div>
   );
 }

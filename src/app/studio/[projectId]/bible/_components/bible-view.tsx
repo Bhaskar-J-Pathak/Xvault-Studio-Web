@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import type { EntityType } from "@/types/database";
 
@@ -123,6 +124,7 @@ export default function BibleView({
   entities,
   threads: initialThreads,
 }: Props) {
+  const router = useRouter();
   // ── Thread state ──────────────────────────────────────────────────────────
   const [threads,        setThreads]        = useState<BibleThread[]>(initialThreads);
   const [newThreadText,  setNewThreadText]  = useState("");
@@ -185,6 +187,9 @@ export default function BibleView({
   );
   const [generating,    setGenerating]    = useState<Record<string, boolean>>({});
   const [generateError, setGenerateError] = useState<Record<string, string>>({});
+  const [refreshingBible, setRefreshingBible] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState("");
+  const [refreshError, setRefreshError] = useState("");
 
   const [entityAttrs, setEntityAttrs] = useState<Record<string, CharacterAttrs>>(
     Object.fromEntries(
@@ -403,6 +408,62 @@ export default function BibleView({
     }
   }, [projectId]);
 
+  const handleRefreshBible = useCallback(async () => {
+    if (refreshingBible) return;
+    setRefreshingBible(true);
+    setRefreshNotice("");
+    setRefreshError("");
+
+    try {
+      for (const chapter of chapters.filter((item) => item.word_count >= 50)) {
+        const indexResponse = await fetch("/api/ai/story-bible/embed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId, chapterId: chapter.id }),
+        });
+        const indexData = await indexResponse.json().catch(() => ({})) as { error?: string };
+        if (!indexResponse.ok) {
+          throw new Error(indexData.error ?? `Could not index ${chapter.title}.`);
+        }
+      }
+
+      let summariesUpdated = 0;
+      for (const chapter of chapters.filter((item) => item.word_count >= 100)) {
+        const response = await fetch("/api/ai/story-bible/summarize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId, chapterId: chapter.id, manual: true }),
+        });
+        const data = await response.json().catch(() => ({})) as {
+          error?: string;
+          summary?: string | null;
+          skipped?: boolean;
+          wordCount?: number;
+        };
+        if (!response.ok) throw new Error(data.error ?? `Could not refresh ${chapter.title}.`);
+        if (data.summary) {
+          setSummaries((current) => ({ ...current, [chapter.id]: data.summary! }));
+          setSummaryFresh((current) => ({ ...current, [chapter.id]: true }));
+          if (typeof data.wordCount === "number") {
+            setSummaryWordCounts((current) => ({ ...current, [chapter.id]: data.wordCount! }));
+          }
+          if (!data.skipped) summariesUpdated++;
+        }
+      }
+
+      setRefreshNotice(
+        summariesUpdated
+          ? `Story Bible refreshed. ${summariesUpdated} ${summariesUpdated === 1 ? "summary was" : "summaries were"} updated.`
+          : "Story Bible is already up to date."
+      );
+      router.refresh();
+    } catch (reason) {
+      setRefreshError(reason instanceof Error ? reason.message : "Story Bible refresh failed.");
+    } finally {
+      setRefreshingBible(false);
+    }
+  }, [chapters, projectId, refreshingBible, router]);
+
   // ── Character sheet ───────────────────────────────────────────────────────
   const handleAttrSave = useCallback(async (entityId: string, attrs: CharacterAttrs) => {
     if (!dirtyEntityIdsRef.current.has(entityId)) return;
@@ -461,14 +522,15 @@ export default function BibleView({
   const indexedCount = chapters.filter((chapter) => chapter.last_embedded_word > 0).length;
   const summarisedCount = chapters.filter((chapter) => summaries[chapter.id]?.trim()).length;
   const staleSummaryCount = chapters.filter((chapter) =>
-    Boolean(summaries[chapter.id]?.trim()) &&
-    (!summaryFresh[chapter.id] ||
+    chapter.word_count >= 100 &&
+    (!summaries[chapter.id]?.trim() ||
+      !summaryFresh[chapter.id] ||
       Math.abs(chapter.word_count - (summaryWordCounts[chapter.id] ?? 0)) >= 1000)
   ).length;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="h-full overflow-y-auto bg-[#FAFAF8]">
+    <div className="story-bible h-full overflow-y-auto bg-[#FAFAF8]">
       <div className="max-w-[740px] mx-auto px-8 py-12">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -503,23 +565,37 @@ export default function BibleView({
           </div>
         </div>
 
-        <section className="mb-10 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
+        <section className="bible-memory mb-10 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-[13px] font-semibold text-[#1A1A1A]">Memory coverage</h2>
-              <p className="mt-1 text-[11px] leading-relaxed text-[#1A1A1A]/45">
-                Alex retrieves a maximum of four relevant older passages per request. Indexing and summaries refresh only after meaningful changes.
+              <h2 className="bible-title text-[13px] font-semibold text-[#1A1A1A]">Memory coverage</h2>
+              <p className="bible-muted mt-1 text-[11px] leading-relaxed text-[#1A1A1A]/45">
+                Alex can retrieve up to four relevant older passages while helping you write. Refresh after adding or substantially revising chapters.
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-violet-600">
+            <span className="bible-chip shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-violet-600">
               {chapters.length ? Math.round((indexedCount / chapters.length) * 100) : 0}% indexed
             </span>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-lg font-semibold text-[#1A1A1A]">{indexedCount}/{chapters.length}</p><p className="text-[10px] text-[#1A1A1A]/40">chapters indexed</p></div>
-            <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-lg font-semibold text-[#1A1A1A]">{summarisedCount}/{chapters.length}</p><p className="text-[10px] text-[#1A1A1A]/40">summaries ready</p></div>
-            <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-lg font-semibold text-[#1A1A1A]">{staleSummaryCount}</p><p className="text-[10px] text-[#1A1A1A]/40">need refresh</p></div>
+            <div className="bible-card rounded-xl bg-white px-3 py-2.5"><p className="bible-title text-lg font-semibold text-[#1A1A1A]">{indexedCount}/{chapters.length}</p><p className="bible-muted text-[10px] text-[#1A1A1A]/40">chapters indexed</p></div>
+            <div className="bible-card rounded-xl bg-white px-3 py-2.5"><p className="bible-title text-lg font-semibold text-[#1A1A1A]">{summarisedCount}/{chapters.length}</p><p className="bible-muted text-[10px] text-[#1A1A1A]/40">summaries ready</p></div>
+            <div className="bible-card rounded-xl bg-white px-3 py-2.5"><p className="bible-title text-lg font-semibold text-[#1A1A1A]">{staleSummaryCount}</p><p className="bible-muted text-[10px] text-[#1A1A1A]/40">need refresh</p></div>
           </div>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="bible-muted text-[10px] leading-4 text-[#1A1A1A]/40">
+              Changed chapter summaries cost 1 AI credit each. Rechecking unchanged chapters is free.
+            </p>
+            <button
+              onClick={handleRefreshBible}
+              disabled={refreshingBible || chapters.length === 0}
+              className="bible-primary inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#1A1A1A] px-3 text-[11px] font-medium text-white disabled:opacity-45"
+            >
+              {refreshingBible ? <><Spinner size={11} /> Refreshing&</> : "Refresh Story Bible"}
+            </button>
+          </div>
+          {refreshNotice && <p className="bible-success mt-3 text-[11px] text-emerald-600">{refreshNotice}</p>}
+          {refreshError && <p role="alert" className="bible-error mt-3 text-[11px] text-red-500">{refreshError}</p>}
         </section>
 
         {/* ── Braindump / Intent ──────────────────────────────────────────── */}

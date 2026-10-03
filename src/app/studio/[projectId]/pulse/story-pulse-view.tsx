@@ -60,7 +60,7 @@ export default function StoryPulseView({
 
         {setupRequired && <p role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Story Pulse needs database migration <code>0023_story_pulse.sql</code> before its first analysis.</p>}
 
-        <div className="mb-7 rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3 text-xs text-violet-800">
+        <div className="pulse-notice mb-7 rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3 text-xs text-violet-800">
           Analyzes {usableChapters.length} saved {usableChapters.length === 1 ? "chapter" : "chapters"} · costs {usableChapters.length} AI {usableChapters.length === 1 ? "credit" : "credits"}
         </div>
         {error && <p role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}

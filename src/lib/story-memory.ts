@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { geminiEmbed } from "./ai";
-import { storyMemoryRetrievalEnabled } from "./story-bible-flags";
 
 interface StoryMemoryRow {
   chapter_title: string;
@@ -34,8 +33,6 @@ export async function retrieveStoryMemory(
   query: string,
   excludeChapterId?: string
 ): Promise<string> {
-  if (!storyMemoryRetrievalEnabled(projectId)) return "";
-
   const compact = compactQuery(query);
   if (compact.length < 24) return "";
 

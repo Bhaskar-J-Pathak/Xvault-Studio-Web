@@ -14,21 +14,22 @@ import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { lexicalToText } from "@/lib/chunking";
 import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
-import { storyBibleAutoRefreshEnabled } from "@/lib/story-bible-flags";
 
 export async function POST(request: NextRequest) {
-  let body: { chapterId: string; projectId: string; force?: boolean };
+  let body: { chapterId: string; projectId: string; force?: boolean; manual?: boolean };
   try {
     body = await request.json();
   } catch {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { chapterId, projectId, force = false } = body;
+  const { chapterId, projectId, force = false, manual = false } = body;
   if (!chapterId || !projectId) {
     return Response.json({ error: "Missing fields" }, { status: 400 });
   }
-  if (!force && !storyBibleAutoRefreshEnabled(projectId)) {
+  // Old editor clients may still send background summary requests during a
+  // rolling deployment. Only explicit user actions are allowed to generate.
+  if (!force && !manual) {
     return Response.json({ ok: true, skipped: true, reason: "auto_refresh_disabled" });
   }
 
@@ -60,9 +61,10 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: true, summary: chapter.summary, skipped: true, wordCount });
   }
 
-  // Forced regenerations cost 1 credit. Automatic refreshes remain free and
-  // only reach Gemini when the saved manuscript fingerprint actually changed.
-  if (force) {
+  const billable = force || manual;
+  // A manual refresh costs one credit only when this chapter actually needs a
+  // new summary. The fingerprint check above makes repeat clicks free.
+  if (billable) {
     const { block } = await checkRateLimit(user.id, createServiceClient(), 1, projectId, "story_bible_summary");
     if (block) return block;
   }
@@ -112,14 +114,14 @@ Use short paragraphs. Be specific and factual, past tense, no editorializing, no
       "gemini-2.5-flash"
     );
   } catch (err) {
-    if (force) await recordCreditFailure(user.id, "story_bible_summary", 1, "ai_generation", err);
+    if (billable) await recordCreditFailure(user.id, "story_bible_summary", 1, "ai_generation", err);
     console.error("[story-bible/summarize] AI failed:", err);
     return Response.json({ error: "AI failed" }, { status: 502 });
   }
 
   summary = summary.trim();
   if (!summary) {
-    if (force) await recordCreditFailure(user.id, "story_bible_summary", 1, "validation", undefined, "empty_response");
+    if (billable) await recordCreditFailure(user.id, "story_bible_summary", 1, "validation", undefined, "empty_response");
     return Response.json({ error: "Empty summary" }, { status: 500 });
   }
 
@@ -133,12 +135,12 @@ Use short paragraphs. Be specific and factual, past tense, no editorializing, no
     })
     .eq("id", chapterId);
   if (saveError) {
-    if (force) await recordCreditFailure(user.id, "story_bible_summary", 1, "persistence", saveError);
+    if (billable) await recordCreditFailure(user.id, "story_bible_summary", 1, "persistence", saveError);
     console.error("[story-bible/summarize] Save failed:", saveError);
     return Response.json({ error: "Summary was generated but could not be saved" }, { status: 500 });
   }
 
-  if (force) {
+  if (billable) {
     await commitRateLimit(user.id, createServiceClient(), 1, projectId, "story_bible_summary");
   }
 

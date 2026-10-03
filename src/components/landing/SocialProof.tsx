@@ -1,180 +1,75 @@
-"use client";
-
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
-
-const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
-
-const SENTIMENTS = [
+const notes = [
   {
-    text: "The AI matches my voice very well.",
-    tag: "Voice matching",
+    subject: "Voice",
+    quote: "The AI matches my voice very well.",
     name: "Sacha Ken",
-    role: "Fantasy",
+    genre: "Fantasy writer",
   },
   {
-    text: "Helps me brainstorm in ways I didn't expect.",
-    tag: "Co-author",
-    name: "Tamera Johnson",
-    role: "Dark fantasy",
-  },
-  {
-    text: "Six months in, 90,000 words, a cast of twenty. It hasn't lost a single character yet.",
-    tag: "Long-form",
+    subject: "Long-form memory",
+    quote: "Six months in, 90,000 words, a cast of twenty. It hasn't lost a single character yet.",
     name: "Davis",
-    role: "Dark fantasy",
+    genre: "Dark fantasy writer",
   },
-];
-
-const FEATURED_TESTIMONIAL = {
-  text: "It could recall the character I wanted to know about with just a description, across the entire manuscript. That level of intelligence surprised me.",
-  name: "Tamera Johnson",
-  genre: "Dark fantasy",
-};
+] as const;
 
 export default function SocialProof() {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-
   return (
-    <section className="relative bg-[#EDE8FF] px-6 py-24 lg:px-10 lg:py-32">
-
-      <div ref={ref} className="mx-auto max-w-[960px]">
-
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.55, ease }}
-          className="mb-10 flex justify-center"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-1.5">
-            <motion.span
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 2.2, repeat: Infinity }}
-              className="h-1.5 w-1.5 rounded-full bg-violet-500"
-            />
-            <span className="text-[0.67rem] font-semibold tracking-wide text-violet-600">
-              Early access feedback
-            </span>
-          </span>
-        </motion.div>
-
-        {/* Pull quote */}
-        <div className="mb-8 overflow-hidden text-center">
-          <motion.blockquote
-            initial={{ y: "108%" }}
-            animate={inView ? { y: "0%" } : {}}
-            transition={{ delay: 0.06, duration: 0.92, ease }}
-            className="font-display mx-auto text-[#1A0A3C]"
-            style={{
-              fontSize: "clamp(2.4rem, 5vw, 4.6rem)",
-              lineHeight: 1.02,
-              letterSpacing: "-0.03em",
-              fontWeight: 300,
-              maxWidth: "18ch",
-            }}
-          >
-            &ldquo;The AI actually knows my story.&rdquo;
-          </motion.blockquote>
+    <section id="writer-feedback" className="scroll-mt-[72px] bg-[#F4F0E8] px-6 py-24 text-[#191714] lg:px-10 lg:py-32">
+      <div className="mx-auto max-w-[1280px] border-t border-[#191714]/15 pt-8 lg:pt-10">
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:gap-20">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#A6402D]">09 / From writers</p>
+            <h2 className="mt-7 max-w-[700px] font-display text-[clamp(3.5rem,6vw,6.4rem)] leading-[0.92] tracking-[-0.055em]">
+              What writers notice is context.
+            </h2>
+          </div>
+          <p className="max-w-[560px] text-base leading-8 text-[#191714]/70 lg:pb-2">
+            The useful moment is rarely a flashy sentence. It is when the studio remembers a person, a thread, or a voice the writer expected to explain again.
+          </p>
         </div>
 
-        {/* Attribution */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.52, duration: 0.6 }}
-          className="mb-16 text-center text-[0.78rem] text-violet-900/30"
-        >
-          Early access writer · Closed beta
-        </motion.p>
+        <div className="mt-16 grid border-y border-[#191714]/15 lg:mt-20 lg:grid-cols-[1.2fr_0.8fr]">
+          <figure className="relative overflow-hidden py-12 lg:border-r lg:border-[#191714]/15 lg:py-16 lg:pr-16">
+            <span aria-hidden="true" className="pointer-events-none absolute -left-3 top-7 font-display text-[11rem] leading-none text-[#A6402D]/10 lg:text-[15rem]">
+              “
+            </span>
+            <div className="relative">
+              <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A6402D]">Manuscript memory</p>
+              <blockquote className="mt-12 max-w-[790px] font-display text-[clamp(2.7rem,5vw,5.5rem)] leading-[0.98] tracking-[-0.05em]">
+                “It could recall the character I wanted to know about with just a description, across the entire manuscript. That level of intelligence surprised me.”
+              </blockquote>
+              <figcaption className="mt-10 flex items-center gap-4 border-t border-[#191714]/15 pt-5">
+                <span className="font-display text-xl tracking-[-0.025em]">Tamera Johnson</span>
+                <span className="h-px w-8 bg-[#A6402D]/55" />
+                <span className="text-xs text-[#191714]/64">Dark fantasy writer</span>
+              </figcaption>
+            </div>
+          </figure>
 
-        {/* Divider */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={inView ? { scaleX: 1 } : {}}
-          transition={{ delay: 0.55, duration: 0.7, ease }}
-          className="mb-16 h-px w-full origin-left bg-gradient-to-r from-violet-200/60 via-violet-300/40 to-transparent"
-        />
-
-        {/* Sentiment chips */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          {SENTIMENTS.map((s, i) => (
-            <motion.div
-              key={s.tag}
-              initial={{ opacity: 0, y: 14 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.62 + i * 0.1, duration: 0.65, ease }}
-              className="rounded-2xl border border-violet-200/60 bg-white px-6 py-5 shadow-sm"
-            >
-              {/* Tag */}
-              <span className="mb-3 block text-[0.6rem] font-bold uppercase tracking-[0.2em] text-violet-400">
-                {s.tag}
-              </span>
-              {/* Quote */}
-              <p
-                className="font-display text-[#1A0A3C]/80 italic mb-4"
-                style={{ fontSize: "clamp(1rem, 1.4vw, 1.125rem)", lineHeight: 1.55, fontWeight: 300 }}
-              >
-                &ldquo;{s.text}&rdquo;
-              </p>
-              {/* Attribution */}
-              <div className="flex items-center gap-2">
-                <span className="text-[0.72rem] font-semibold text-[#1A0A3C]/60">{s.name}</span>
-                <span className="text-[0.72rem] text-violet-900/25">·</span>
-                <span className="text-[0.72rem] text-violet-900/40">{s.role}</span>
-              </div>
-            </motion.div>
-          ))}
+          <div className="border-t border-[#191714]/15 lg:border-t-0 lg:pl-14">
+            {notes.map((note, index) => (
+              <figure key={note.subject} className={`py-10 lg:py-12 ${index > 0 ? "border-t border-[#191714]/15" : ""}`}>
+                <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A6402D]">{note.subject}</p>
+                <blockquote className="mt-7 font-display text-[clamp(2rem,3.3vw,3.6rem)] leading-[1.02] tracking-[-0.04em]">
+                  “{note.quote}”
+                </blockquote>
+                <figcaption className="mt-7">
+                  <span className="text-sm font-semibold">{note.name}</span>
+                  <span className="mx-2 text-[#A6402D]">·</span>
+                  <span className="text-xs text-[#191714]/64">{note.genre}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
 
-        {/* Featured testimonial */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.95, duration: 0.65, ease }}
-          className="mt-5 rounded-2xl border border-violet-200/80 bg-white px-8 py-6 shadow-sm"
-        >
-          <span className="mb-3 block text-[0.6rem] font-bold uppercase tracking-[0.2em] text-violet-400">
-            Manuscript memory
-          </span>
-          <p
-            className="font-display text-[#1A0A3C]/80 italic mb-4"
-            style={{ fontSize: "clamp(1rem, 1.4vw, 1.125rem)", lineHeight: 1.55, fontWeight: 300 }}
-          >
-            &ldquo;{FEATURED_TESTIMONIAL.text}&rdquo;
+        <div className="grid gap-5 border-b border-[#191714]/15 py-7 sm:grid-cols-[1fr_auto] sm:items-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#191714]/64">
+            Feedback from writers using Xvault Studio on active fiction projects
           </p>
-          <div className="flex items-center gap-2">
-            <span className="text-[0.72rem] font-semibold text-[#1A0A3C]/60">{FEATURED_TESTIMONIAL.name}</span>
-            <span className="text-[0.72rem] text-violet-900/25">·</span>
-            <span className="text-[0.72rem] text-violet-900/40">{FEATURED_TESTIMONIAL.genre}</span>
-          </div>
-        </motion.div>
-
-        {/* Google Cloud for Startups */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.95, duration: 0.6, ease }}
-          className="mt-16 flex flex-col items-center gap-3"
-        >
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-violet-900/25">
-            Supported by
-          </p>
-          <div className="inline-flex items-center gap-2.5 rounded-full border border-violet-200/50 bg-white/70 px-5 py-2.5 shadow-sm backdrop-blur-sm">
-            {/* Google G mark */}
-            <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
-              <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
-              <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
-              <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
-              <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
-            </svg>
-            <span className="text-[0.78rem] font-medium text-[#1A0A3C]/60">
-              Google Cloud for Startups
-            </span>
-          </div>
-        </motion.div>
-
+          <p className="font-display text-xl italic tracking-[-0.025em] text-[#A6402D]">The manuscript remembered.</p>
+        </div>
       </div>
     </section>
   );
