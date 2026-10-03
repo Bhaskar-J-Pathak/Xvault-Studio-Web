@@ -31,7 +31,7 @@ type CursorContext = ProseCursorContext & {
   viewportAnchor?: { x: number; top: number; bottom: number };
 };
 import { createClient } from "@/lib/supabase";
-import { Check, ChevronDown, GripHorizontal, Loader2, Wand2, X, PenLine, Settings, MoreHorizontal, Share2 } from "lucide-react";
+import { Check, ChevronDown, Coins, Crown, GripHorizontal, Loader2, Wand2, X, PenLine, Settings, MoreHorizontal, Share2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
 import CoauthorSetup from "@/app/studio/[projectId]/_components/coauthor-setup";
@@ -1400,19 +1400,19 @@ export default function ZenEditor({
           <div className="flex items-center gap-4">
             {/* Credit balance */}
             <button
-              onClick={() => credits <= 0 ? setShowUpgradeModal(true) : undefined}
+              onClick={() => setShowUpgradeModal(true)}
               className={`flex items-center gap-1 text-xs font-medium transition-colors ${
                 credits <= 0
                   ? "text-red-500 cursor-pointer hover:text-red-600"
                   : credits <= 20
                   ? "text-amber-500"
-                  : "xv-chrome-label"
+                  : "xv-chrome-label cursor-pointer hover:opacity-80"
               }`}
               title={isContest ? `Challenge credits: ${credits} of ${initialCreditCap} remaining` : isTrial ? `Trial credits: ${credits} of 100 remaining` : `Credits this month: ${credits} remaining`}
             >
               <span>✦</span>
               <span>
-                {credits <= 0 ? "No credits · Upgrade" : `${credits} credit${credits !== 1 ? "s" : ""}${credits <= 20 ? " · Low" : ""}`}
+                {credits <= 0 ? "No credits · Get more" : `${credits} credit${credits !== 1 ? "s" : ""}${credits <= 20 ? " · Low" : ""}`}
               </span>
             </button>
             <span className="hidden md:inline text-xs xv-chrome-label">
@@ -1488,19 +1488,33 @@ export default function ZenEditor({
             <div className="bg-white rounded-2xl shadow-2xl w-[min(400px,92%)] p-8 text-center">
               <div className="text-3xl mb-3">✦</div>
               <h2 className="text-lg font-semibold text-[#1A1A1A] mb-2">
-                You&apos;ve used all your AI credits
+                Plans and credits
               </h2>
               <p className="text-sm text-[#1A1A1A]/55 mb-6">
-                Your work is safely saved. Choose a plan to keep using Xvault&apos;s AI writing and story tools.
+                Buy a one-time credit pack or change the plan that controls your monthly allowance and studio access.
               </p>
-              <div className="flex flex-col gap-2">
+              <div className="grid gap-3 text-left">
+                <Link
+                  href="/credits"
+                  className="flex items-center gap-3 rounded-xl border border-black/[0.08] px-4 py-3 transition-colors hover:bg-black/[0.03]"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600"><Coins size={16} /></span>
+                  <span>
+                    <span className="block text-sm font-semibold text-[#1A1A1A]">Buy extra credits</span>
+                    <span className="mt-0.5 block text-xs text-[#71717A]">One payment. Credits never expire.</span>
+                  </span>
+                </Link>
                 <Link
                   href="/pricing"
-                  className="w-full py-2.5 rounded-xl bg-[#1A1A1A] text-white text-sm font-semibold hover:bg-[#1A1A1A]/80 transition-colors"
+                  className="flex items-center gap-3 rounded-xl border border-black/[0.08] px-4 py-3 transition-colors hover:bg-black/[0.03]"
                 >
-                  View plans
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600"><Crown size={16} /></span>
+                  <span>
+                    <span className="block text-sm font-semibold text-[#1A1A1A]">View subscription plans</span>
+                    <span className="mt-0.5 block text-xs text-[#71717A]">Compare monthly and lifetime access.</span>
+                  </span>
                 </Link>
-                <button onClick={() => setShowUpgradeModal(false)} className="py-2 text-xs text-[#71717A] hover:text-[#1A1A1A]">
+                <button onClick={() => setShowUpgradeModal(false)} className="py-2 text-center text-xs text-[#71717A] hover:text-[#1A1A1A]">
                   Not now
                 </button>
               </div>

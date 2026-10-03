@@ -2,11 +2,13 @@ import { Metadata } from "next";
 import Pricing from "../../components/landing/Pricing";
 import { getUser } from "@/lib/auth";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import BillingNav from "@/components/billing/BillingNav";
 
 export const metadata: Metadata = {
-  title: "Pricing",
-  description: "Start Xvault Studio free for 14 days with 100 AI credits and no credit card. Upgrade to Hobbyist for $11.99/month, or join the limited Founder's Circle for $59.",
-  alternates: { canonical: "https://xvault.dev/pricing" },
+  title: "Plans and Billing",
+  description: "Manage your Xvault Studio subscription and compare available plans.",
+  robots: { index: false, follow: false },
 };
 
 const pricingSchema = {
@@ -82,14 +84,14 @@ const faqSchema = {
 
 export default async function PricingPage() {
   const user = await getUser();
+  if (!user) redirect("/auth?mode=signup&next=%2Fpricing");
 
   return (
     <div className="min-h-screen bg-[#F8F5FF]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       {/* Top bar for logged-in users */}
-      {user && (
-        <div className="border-b border-violet-200/60 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+      <div className="border-b border-violet-200/60 bg-white/80 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
             <span className="text-sm text-violet-700">
               Signed in as <span className="font-medium">{user.email}</span>
@@ -101,10 +103,13 @@ export default async function PricingPage() {
               ← Back to Dashboard
             </Link>
           </div>
-        </div>
-      )}
+      </div>
 
-      <Pricing signedIn={Boolean(user)} />
+      <div className="mx-auto max-w-3xl px-6 pt-8">
+        <BillingNav active="plans" />
+      </div>
+
+      <Pricing signedIn />
     </div>
   );
 }

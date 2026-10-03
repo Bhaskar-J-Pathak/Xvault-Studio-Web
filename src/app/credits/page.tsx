@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getProfile, getUser } from "@/lib/auth";
 import CreditStore from "./_components/credit-store";
+import BillingNav from "@/components/billing/BillingNav";
 
 export default async function CreditsPage() {
   const user = await getUser();
@@ -22,6 +23,9 @@ export default async function CreditsPage() {
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#71717A] dark:text-white/45">
             Pay once for extra AI credits. Keep your current plan and features exactly as they are.
           </p>
+        </div>
+        <div className="mb-8">
+          <BillingNav active="credits" />
         </div>
         <CreditStore balance={profile.topup_credits ?? 0} />
       </div>

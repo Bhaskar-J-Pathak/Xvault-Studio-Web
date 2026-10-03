@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { X, Check, Map, Crown } from "lucide-react";
+import { X, Check, Map, Crown, Coins } from "lucide-react";
 
 export interface EditorPrefs {
   font:             "serif" | "sans" | "mono";
@@ -238,6 +238,20 @@ export default function StudioSettingsPanel({
                 <p className="mt-0.5 text-[10px] text-[#A1A1AA]">See where each writing tool lives</p>
               </div>
             </button>
+          </div>
+
+          <div className="border-b border-black/[0.06] px-4 py-3">
+            <Link
+              href="/credits"
+              onClick={onClose}
+              className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left transition-colors hover:bg-black/[0.04]"
+            >
+              <Coins size={14} className="shrink-0 text-amber-500" />
+              <div>
+                <p className="text-[11px] font-medium text-[#1A1A1A]">Buy extra credits</p>
+                <p className="mt-0.5 text-[10px] text-[#A1A1AA]">One-time top-ups that do not expire</p>
+              </div>
+            </Link>
           </div>
 
           <div className="px-4 py-3">
