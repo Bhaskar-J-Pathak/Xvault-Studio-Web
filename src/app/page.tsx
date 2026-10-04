@@ -28,6 +28,21 @@ export const metadata: Metadata = {
       "Turn your manuscript into a living Story Bible, World Board, continuity map, and emotional timeline. Map your first chapters free.",
     url: "https://xvault.dev",
     type: "website",
+    images: [
+      {
+        url: "/social/xvault-og-story-remembered.png",
+        width: 1733,
+        height: 907,
+        alt: "Xvault Studio — Your story, remembered",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Xvault Studio | Map Your Entire Novel",
+    description:
+      "Turn your manuscript into a living Story Bible, World Board, continuity map, and emotional timeline.",
+    images: ["/social/xvault-og-story-remembered.png"],
   },
 };
 
