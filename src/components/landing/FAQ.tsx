@@ -54,7 +54,7 @@ export default function FAQ() {
               <div className="mt-10 flex flex-wrap gap-x-7 gap-y-4 border-t border-[#191714]/15 pt-6 text-[10px] font-semibold uppercase tracking-[0.14em]">
                 <HomepageSectionLink targetId="pricing" className="underline decoration-[#A6402D]/45 underline-offset-8 transition-colors hover:text-[#A6402D]">View pricing</HomepageSectionLink>
                 <Link href="/privacy" className="underline decoration-[#A6402D]/45 underline-offset-8 transition-colors hover:text-[#A6402D]">Privacy policy</Link>
-                <a href="mailto:hello@xvaultstudio.com" className="underline decoration-[#A6402D]/45 underline-offset-8 transition-colors hover:text-[#A6402D]">Ask a question</a>
+                <a href="mailto:support@xvault.dev" className="underline decoration-[#A6402D]/45 underline-offset-8 transition-colors hover:text-[#A6402D]">Ask a question</a>
               </div>
             </div>
           </div>

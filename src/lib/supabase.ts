@@ -23,6 +23,10 @@ export interface Profile {
   topup_credits?: number;
   founder_welcome_credits_granted_at?: string | null;
   referral_count: number;
+  affiliate_status?: "not_applied" | "pending" | "approved" | "declined" | "suspended";
+  affiliate_approved_at?: string | null;
+  affiliate_terms_accepted_at?: string | null;
+  affiliate_terms_version?: string | null;
   welcome_email_sent: boolean;
   is_lifetime?: boolean;
   subscription_status?: string | null;

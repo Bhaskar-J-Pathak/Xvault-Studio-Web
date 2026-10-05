@@ -1,15 +1,24 @@
 const notes = [
   {
     subject: "Voice",
-    quote: "The AI matches my voice very well.",
+    copy: "The AI matches my voice very well.",
     name: "Sacha Ken",
     genre: "Fantasy writer",
+    isQuote: true,
   },
   {
     subject: "Long-form memory",
-    quote: "Six months in, 90,000 words, a cast of twenty. It hasn't lost a single character yet.",
+    copy: "Six months in, 90,000 words, a cast of twenty. It hasn't lost a single character yet.",
     name: "Davis",
     genre: "Dark fantasy writer",
+    isQuote: true,
+  },
+  {
+    subject: "Inspired Story Pulse",
+    copy: "Shayon's idea sparked Story Pulse: a way to see whether a character's emotional journey still connects from chapter to chapter.",
+    name: "Shayon",
+    genre: "Founder's Circle",
+    isQuote: false,
   },
 ] as const;
 
@@ -51,9 +60,15 @@ export default function SocialProof() {
             {notes.map((note, index) => (
               <figure key={note.subject} className={`py-10 lg:py-12 ${index > 0 ? "border-t border-[#191714]/15" : ""}`}>
                 <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A6402D]">{note.subject}</p>
-                <blockquote className="mt-7 font-display text-[clamp(2rem,3.3vw,3.6rem)] leading-[1.02] tracking-[-0.04em]">
-                  “{note.quote}”
-                </blockquote>
+                {note.isQuote ? (
+                  <blockquote className="mt-7 font-display text-[clamp(2rem,3.3vw,3.6rem)] leading-[1.02] tracking-[-0.04em]">
+                    “{note.copy}”
+                  </blockquote>
+                ) : (
+                  <p className="mt-7 font-display text-[clamp(2rem,3.3vw,3.6rem)] leading-[1.02] tracking-[-0.04em]">
+                    {note.copy}
+                  </p>
+                )}
                 <figcaption className="mt-7">
                   <span className="text-sm font-semibold">{note.name}</span>
                   <span className="mx-2 text-[#A6402D]">·</span>

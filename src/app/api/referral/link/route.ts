@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json().catch(() => ({})) as { code?: string };
-  const code = (body.code ?? request.cookies.get("xv_affiliate")?.value)?.trim().toUpperCase();
+  const code = body.code?.trim().toUpperCase();
   if (!code || !/^[A-Z0-9]{8}$/.test(code)) {
     return NextResponse.json({ error: "Invalid referral code" }, { status: 400 });
   }
@@ -16,11 +16,11 @@ export async function POST(request: NextRequest) {
   const { data, error } = await service.rpc("claim_affiliate_referral", {
     p_referred_id: user.id,
     p_code: code,
-    p_source: body.code ? "signup_code" : "affiliate_cookie",
+    p_source: "signup_code",
   });
 
   if (error) {
-    console.error("affiliate:claim_failed", { userId: user.id, error: error.message });
+    console.error("referral:claim_failed", { userId: user.id, error: error.message });
     return NextResponse.json({ error: "Could not link referral" }, { status: 500 });
   }
   if (!data?.ok) {
@@ -33,7 +33,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: messages[data?.reason] ?? "Invalid referral" }, { status });
   }
 
-  const response = NextResponse.json({ ok: true, linked: Boolean(data.linked) });
-  response.cookies.delete("xv_affiliate");
-  return response;
+  return NextResponse.json({ ok: true, linked: Boolean(data.linked) });
 }

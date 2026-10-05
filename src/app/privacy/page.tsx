@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = "September 14, 2026";
-const CONTACT_EMAIL = "arthur@xvault.dev";
+const CONTACT_EMAIL = "support@xvault.dev";
 const SITE_URL = "https://xvault.dev";
 
 const promises = [

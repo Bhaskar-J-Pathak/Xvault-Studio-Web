@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = "September 14, 2026";
-const CONTACT_EMAIL = "arthur@xvault.dev";
+const CONTACT_EMAIL = "support@xvault.dev";
 const SITE_URL = "https://xvault.dev";
 
 export default function TermsPage() {
@@ -120,7 +120,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="15. Governing law">
-            <p>These Terms are governed by the laws of England and Wales, without regard to conflict-of-law principles. Courts in England and Wales will have jurisdiction, except where the mandatory law of your home country gives you the right to bring a claim elsewhere.</p>
+            <p>These Terms are governed by the laws of India, without regard to conflict-of-law principles. Courts with jurisdiction over Xvault Studio&apos;s principal place of business in India will have jurisdiction, except where mandatory consumer law gives you the right to bring a claim elsewhere.</p>
           </Section>
 
           <Section title="16. Contact">

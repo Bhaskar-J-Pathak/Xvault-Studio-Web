@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 /**
  * Invisible component that runs once on dashboard mount.
  * Claims either a referral code stored in localStorage or the secure
- * 90-day affiliate cookie, then links it for paid conversion attribution.
+ * stored referral code, then links it for the ordinary credit reward.
  * Refreshes the page on success so account data stays current.
  */
 export default function ReferralLinker() {

@@ -67,11 +67,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     ...comparePages,
     {
-      url: `${BASE}/affiliates`,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
       url: `${BASE}/privacy`,
       changeFrequency: "yearly",
       priority: 0.3,

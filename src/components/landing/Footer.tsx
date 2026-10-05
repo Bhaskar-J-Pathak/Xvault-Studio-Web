@@ -20,7 +20,6 @@ const columns = [
       { label: "Guides", href: "/guides" },
       { label: "Writing articles", href: "/blog" },
       { label: "Comparisons", href: "/compare" },
-      { label: "Affiliates", href: "/affiliates" },
     ],
   },
   {
@@ -60,10 +59,10 @@ export default function Footer() {
             </p>
 
             <a
-              href="mailto:hello@xvaultstudio.com"
+              href="mailto:support@xvault.dev"
               className="mt-8 inline-flex text-[10px] font-semibold uppercase tracking-[0.16em] underline decoration-[#A6402D]/50 underline-offset-8 transition-colors hover:text-[#A6402D]"
             >
-              hello@xvaultstudio.com
+              support@xvault.dev
             </a>
           </div>
 

@@ -17,6 +17,10 @@ export interface DbProfile {
   onboarding_step: number;
   onboarding_done: boolean;
   updated_at: string;
+  affiliate_status?: "not_applied" | "pending" | "approved" | "declined" | "suspended";
+  affiliate_approved_at?: string | null;
+  affiliate_terms_accepted_at?: string | null;
+  affiliate_terms_version?: string | null;
   contest_slug?: string | null;
   contest_credits_remaining?: number;
   contest_credits_used?: number;

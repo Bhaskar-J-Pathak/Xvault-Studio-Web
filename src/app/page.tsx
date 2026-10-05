@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/social/xvault-og-story-remembered.png",
+        url: "/social/xvault-og-story-remembered.png?v=20261005",
         width: 1733,
         height: 907,
         alt: "Xvault Studio — Your story, remembered",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     title: "Xvault Studio | Map Your Entire Novel",
     description:
       "Turn your manuscript into a living Story Bible, World Board, continuity map, and emotional timeline.",
-    images: ["/social/xvault-og-story-remembered.png"],
+    images: ["/social/xvault-og-story-remembered.png?v=20261005"],
   },
 };
 
@@ -74,7 +74,7 @@ const orgSchema = {
     "AI writing studio for fiction novelists. Story Pulse tracks emotional arcs alongside manuscript-aware story memory, an automatic World Board, and voice-aware prose generation.",
   contactPoint: {
     "@type": "ContactPoint",
-    email: "hello@xvaultstudio.com",
+    email: "support@xvault.dev",
     contactType: "customer support",
   },
   sameAs: [],

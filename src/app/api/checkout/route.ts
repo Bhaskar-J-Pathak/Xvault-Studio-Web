@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/lib/auth";
 import { createDodoClient, getCheckoutBaseUrl, getDodoEnvironment } from "@/lib/dodo";
 
 export const runtime = "nodejs";
@@ -89,20 +88,6 @@ export async function POST(req: NextRequest) {
   if (userErr || !user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-
-  const affiliateCode = cookieStore.get("xv_affiliate")?.value;
-  if (affiliateCode) {
-    const service = createServiceClient();
-    const { error: attributionError } = await service.rpc("claim_affiliate_referral", {
-      p_referred_id: user.id,
-      p_code: affiliateCode,
-      p_source: "checkout_cookie",
-    });
-    if (attributionError) {
-      console.error("checkout:affiliate_claim_failed", { userId: user.id, error: attributionError.message });
-    }
-  }
-
 
   // Create a pending order
   const { data: order, error: orderErr } = await supabase

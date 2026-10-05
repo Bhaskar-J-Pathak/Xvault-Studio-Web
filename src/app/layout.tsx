@@ -83,10 +83,10 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/OG.png",
-        width: 1200,
-        height: 630,
-        alt: "Xvault Studio | AI Writing Studio for Novelists",
+        url: "/social/xvault-og-story-remembered.png?v=20261005",
+        width: 1733,
+        height: 907,
+        alt: "Xvault Studio | Your story, remembered",
       },
     ],
   },
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
     title: "Xvault Studio | AI Writing Studio for Novelists",
     description:
       "Write your novel with AI that actually knows your story. Your AI co-author lives alongside your canvas, loaded with your entire manuscript. Free 14-day trial.",
-    images: ["/OG.png"],
+    images: ["/social/xvault-og-story-remembered.png?v=20261005"],
   },
   robots: { index: true, follow: true },
   icons: {
