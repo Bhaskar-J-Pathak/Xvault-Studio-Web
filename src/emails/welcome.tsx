@@ -3,7 +3,6 @@ import {
   Body,
   Button,
   Container,
-  Font,
   Head,
   Hr,
   Html,
@@ -12,308 +11,242 @@ import {
   Text,
 } from "@react-email/components";
 
-// ── Design tokens ──────────────────────────────────────────────────────────
-
-const garamond = "EB Garamond, Georgia, 'Times New Roman', serif";
+const serif = "Georgia, 'Times New Roman', serif";
 const sans =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-const violet = "#7c3aed";
-const dark = "#1a1a1a";
-const muted = "#6b7280";
-const bg = "#f6f4f0";
-const card = "#ffffff";
-const border = "#e8e4df";
+const ink = "#191714";
+const rust = "#a6402d";
+const muted = "#70695f";
+const paper = "#f4f0e8";
+const border = "#ded7cb";
 
-// ──────────────────────────────────────────────────────────────────────────
-
-interface WelcomeEmailProps {
+export interface WelcomeEmailProps {
   name?: string;
   dashboardUrl?: string;
+  referralBonusCredits?: number;
 }
 
-export default function WelcomeEmail({ name = "there", dashboardUrl = "https://xvault.studio/dashboard" }: WelcomeEmailProps) {
+export default function WelcomeEmail({
+  name = "there",
+  dashboardUrl = "https://xvault.dev/dashboard",
+  referralBonusCredits = 0,
+}: WelcomeEmailProps) {
+  const totalCredits = 100 + referralBonusCredits;
+
   return (
     <Html lang="en">
-      <Head>
-        <Font
-          fontFamily="EB Garamond"
-          fallbackFontFamily="Georgia"
-          webFont={{
-            url: "https://fonts.gstatic.com/s/ebgaramond/v29/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-6_RUA4V-e6yHgQ.woff2",
-            format: "woff2",
-          }}
-          fontWeight={700}
-          fontStyle="normal"
-        />
-      </Head>
+      <Head />
+      <Preview>
+        Your Xvault Studio account is ready. Start by mapping one real manuscript problem.
+      </Preview>
 
-      <Preview>Welcome to Xvault Studio. Here's how to get started.</Preview>
-
-      <Body style={{ margin: 0, padding: 0, background: bg }}>
-        <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 20px" }}>
-
-          {/* Brand header */}
-          <Section style={{ textAlign: "center", paddingBottom: "28px" }}>
+      <Body style={{ margin: 0, padding: 0, backgroundColor: paper }}>
+        <Container style={{ maxWidth: "590px", margin: "0 auto", padding: "36px 18px" }}>
+          <Section style={{ padding: "0 4px 22px", textAlign: "center" }}>
             <Text
               style={{
-                margin: 0,
-                fontFamily: garamond,
-                fontSize: "20px",
+                margin: "0 0 5px",
+                color: ink,
+                fontFamily: serif,
+                fontSize: "22px",
                 fontWeight: 700,
-                color: dark,
                 letterSpacing: "-0.3px",
               }}
             >
               Xvault Studio
             </Text>
-          </Section>
-
-          {/* Card */}
-          <Section
-            style={{
-              background: card,
-              borderRadius: "14px",
-              border: `1px solid ${border}`,
-              overflow: "hidden",
-            }}
-          >
-            {/* Top accent bar */}
-            <div style={{ height: "4px", background: violet }} />
-
-            <div style={{ padding: "40px 44px 36px" }}>
-
-              {/* Greeting */}
-              <Text
-                style={{
-                  margin: "0 0 20px 0",
-                  fontFamily: sans,
-                  fontSize: "15px",
-                  color: dark,
-                  lineHeight: "1.7",
-                }}
-              >
-                Hi {name},
-              </Text>
-
-              {/* Intro */}
-              <Text
-                style={{
-                  margin: "0 0 16px 0",
-                  fontFamily: sans,
-                  fontSize: "15px",
-                  color: muted,
-                  lineHeight: "1.7",
-                }}
-              >
-                Thank you for signing up for the Xvault Studio beta. I really
-                appreciate you taking the time to try it out while it's still early.
-              </Text>
-
-              <Text
-                style={{
-                  margin: "0 0 32px 0",
-                  fontFamily: sans,
-                  fontSize: "15px",
-                  color: muted,
-                  lineHeight: "1.7",
-                }}
-              >
-                Xvault is built to feel like having a real co-author who has read your
-                entire story. It automatically builds a living knowledge graph of your
-                manuscript, and can proactively point out continuity issues, dead
-                branches, and inconsistencies as you write, while staying in your voice.
-              </Text>
-
-              {/* Quick start */}
-              <Text
-                style={{
-                  margin: "0 0 14px 0",
-                  fontFamily: sans,
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  color: muted,
-                  letterSpacing: "0.09em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Quick start: takes ~5 minutes
-              </Text>
-
-              <div
-                style={{
-                  background: bg,
-                  borderRadius: "10px",
-                  border: `1px solid ${border}`,
-                  padding: "20px 24px",
-                  marginBottom: "28px",
-                }}
-              >
-                {[
-                  [
-                    "1. Open your studio",
-                    "The guided tour sets up a pre-loaded thriller project with your AI co-author Alex already briefed on every chapter.",
-                  ],
-                  [
-                    "2. Try the co-author",
-                    "Ask Alex anything about your story. Place the cursor and click Write for an inline AI prose suggestion.",
-                  ],
-                  [
-                    "3. Explore the Story Bible & World Board",
-                    "Every character, location, and plot thread is extracted from your manuscript automatically, no tagging needed.",
-                  ],
-                ].map(([step, desc], i, arr) => (
-                  <div
-                    key={step}
-                    style={{ marginBottom: i < arr.length - 1 ? "16px" : 0 }}
-                  >
-                    <Text
-                      style={{
-                        margin: "0 0 3px 0",
-                        fontFamily: sans,
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: dark,
-                      }}
-                    >
-                      {step}
-                    </Text>
-                    <Text
-                      style={{
-                        margin: 0,
-                        fontFamily: sans,
-                        fontSize: "13px",
-                        color: muted,
-                        lineHeight: "1.6",
-                      }}
-                    >
-                      {desc}
-                    </Text>
-                  </div>
-                ))}
-              </div>
-
-              <Text
-                style={{
-                  margin: "0 0 32px 0",
-                  fontFamily: sans,
-                  fontSize: "14px",
-                  color: muted,
-                  lineHeight: "1.7",
-                  fontStyle: "italic",
-                }}
-              >
-                The more you write in it, the smarter it gets.
-              </Text>
-
-              {/* CTA */}
-              <div style={{ marginBottom: "32px" }}>
-                <Button
-                  href={dashboardUrl}
-                  style={{
-                    display: "inline-block",
-                    background: violet,
-                    color: "#ffffff",
-                    fontFamily: sans,
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    borderRadius: "8px",
-                    padding: "13px 28px",
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  Open Your Studio
-                </Button>
-              </div>
-
-              <Hr
-                style={{
-                  border: "none",
-                  borderTop: `1px solid ${border}`,
-                  margin: "0 0 28px 0",
-                }}
-              />
-
-              {/* Feedback ask */}
-              <Text
-                style={{
-                  margin: "0 0 12px 0",
-                  fontFamily: sans,
-                  fontSize: "14px",
-                  color: dark,
-                  lineHeight: "1.7",
-                  fontWeight: 600,
-                }}
-              >
-                Since it's still early, I'd love your honest feedback, especially around:
-              </Text>
-
-              <Text
-                style={{
-                  margin: "0 0 16px 0",
-                  fontFamily: sans,
-                  fontSize: "14px",
-                  color: muted,
-                  lineHeight: "1.9",
-                }}
-              >
-                · How well the co-author understands your story
-                {"\n"}· Whether the suggestions feel helpful or intrusive
-                {"\n"}· Any bugs or confusing parts
-                {"\n"}· Features that would genuinely help your writing
-              </Text>
-
-              <Text
-                style={{
-                  margin: "0 0 28px 0",
-                  fontFamily: sans,
-                  fontSize: "14px",
-                  color: muted,
-                  lineHeight: "1.7",
-                }}
-              >
-                You can reply directly to this email or use the in-app feedback button.
-                I read every message.
-              </Text>
-
-              {/* Sign-off */}
-              <Text
-                style={{
-                  margin: 0,
-                  fontFamily: sans,
-                  fontSize: "14px",
-                  color: muted,
-                  lineHeight: "1.7",
-                }}
-              >
-                Looking forward to seeing what you create.
-                {"\n\n"}Best,
-                {"\n"}
-                <span style={{ color: dark, fontWeight: 600 }}>Bhaskar</span>
-                {"\n"}
-                <span style={{ fontSize: "12px" }}>Founder, Xvault Studio</span>
-              </Text>
-
-            </div>
-          </Section>
-
-          {/* Footer */}
-          <Section style={{ paddingTop: "24px", textAlign: "center" }}>
             <Text
               style={{
                 margin: 0,
+                color: muted,
                 fontFamily: sans,
-                fontSize: "12px",
-                color: "#9ca3af",
-                lineHeight: "1.6",
+                fontSize: "11px",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
               }}
             >
-              You're receiving this because you created an account on xvault.studio.
+              Your story, remembered
             </Text>
           </Section>
 
+          <Section
+            style={{
+              backgroundColor: "#ffffff",
+              border: `1px solid ${border}`,
+              borderTop: `5px solid ${rust}`,
+              borderRadius: "10px",
+              padding: "38px 40px 34px",
+            }}
+          >
+            <Text
+              style={{
+                margin: "0 0 12px",
+                color: rust,
+                fontFamily: sans,
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+              }}
+            >
+              Welcome to your studio
+            </Text>
+
+            <Text
+              style={{
+                margin: "0 0 24px",
+                color: ink,
+                fontFamily: serif,
+                fontSize: "30px",
+                lineHeight: "1.22",
+                letterSpacing: "-0.7px",
+              }}
+            >
+              Your story is easier to revise when you can see it as a whole.
+            </Text>
+
+            <Text style={paragraph}>Hi {name},</Text>
+            <Text style={paragraph}>
+              Thank you for joining Xvault Studio. I built it for the point where a manuscript
+              becomes too large to hold entirely in your head.
+            </Text>
+            <Text style={paragraph}>
+              Xvault helps you inspect the facts your story has established, the ways characters
+              change, and the details that quietly disappear between chapters. It brings the
+              evidence back to the page. You remain the person making every creative decision.
+            </Text>
+
+            <Section
+              style={{
+                margin: "28px 0",
+                padding: "18px 20px",
+                backgroundColor: paper,
+                border: `1px solid ${border}`,
+                borderRadius: "8px",
+              }}
+            >
+              <Text
+                style={{
+                  margin: "0 0 4px",
+                  color: ink,
+                  fontFamily: sans,
+                  fontSize: "15px",
+                  fontWeight: 700,
+                }}
+              >
+                {totalCredits} credits are ready to use
+              </Text>
+              <Text style={{ ...smallText, margin: 0 }}>
+                Your account includes 100 welcome credits
+                {referralBonusCredits > 0
+                  ? ` and ${referralBonusCredits} referral bonus credits`
+                  : ""}
+                . No card is required to begin.
+              </Text>
+            </Section>
+
+            <Text style={label}>A useful first session</Text>
+
+            {[
+              [
+                "1",
+                "Bring in a manuscript",
+                "Import the work you want to understand. Your original file remains untouched.",
+              ],
+              [
+                "2",
+                "Let Xvault map the story",
+                "Review characters, relationships, world details, plot threads, and chapter movement in one place.",
+              ],
+              [
+                "3",
+                "Investigate one real problem",
+                "Start with a continuity doubt, an emotional turn, or a thread you may have left behind.",
+              ],
+            ].map(([number, title, description]) => (
+              <Section key={number} style={{ margin: "0 0 18px" }}>
+                <Text
+                  style={{
+                    margin: "0 0 3px",
+                    color: ink,
+                    fontFamily: sans,
+                    fontSize: "14px",
+                    fontWeight: 700,
+                  }}
+                >
+                  <span style={{ color: rust, marginRight: "8px" }}>{number}.</span>
+                  {title}
+                </Text>
+                <Text style={{ ...smallText, margin: "0 0 0 22px" }}>{description}</Text>
+              </Section>
+            ))}
+
+            <Section style={{ margin: "30px 0 32px" }}>
+              <Button
+                href={dashboardUrl}
+                style={{
+                  backgroundColor: ink,
+                  borderRadius: "6px",
+                  color: "#ffffff",
+                  fontFamily: sans,
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  padding: "13px 22px",
+                  textDecoration: "none",
+                }}
+              >
+                Open Xvault Studio
+              </Button>
+            </Section>
+
+            <Hr style={{ border: 0, borderTop: `1px solid ${border}`, margin: "0 0 26px" }} />
+
+            <Text style={{ ...paragraph, color: ink, fontWeight: 700 }}>
+              If you get stuck, reply to this email.
+            </Text>
+            <Text style={{ ...paragraph, marginBottom: 0 }}>
+              Your reply comes directly to me. Tell me what you are writing or what you hoped
+              Xvault would help you see, and I will point you in the right direction.
+            </Text>
+            <Text style={{ ...paragraph, margin: "22px 0 0", color: ink }}>
+              Bhaskar
+              <br />
+              Founder, Xvault Studio
+            </Text>
+          </Section>
+
+          <Section style={{ padding: "22px 8px 0", textAlign: "center" }}>
+            <Text style={{ ...smallText, margin: 0, fontSize: "11px" }}>
+              xvault.dev&nbsp;&nbsp;·&nbsp;&nbsp;support@xvault.dev
+            </Text>
+          </Section>
         </Container>
       </Body>
     </Html>
   );
 }
+
+const paragraph: React.CSSProperties = {
+  margin: "0 0 15px",
+  color: muted,
+  fontFamily: sans,
+  fontSize: "15px",
+  lineHeight: "1.7",
+};
+
+const smallText: React.CSSProperties = {
+  color: muted,
+  fontFamily: sans,
+  fontSize: "13px",
+  lineHeight: "1.6",
+};
+
+const label: React.CSSProperties = {
+  margin: "0 0 17px",
+  color: rust,
+  fontFamily: sans,
+  fontSize: "11px",
+  fontWeight: 700,
+  letterSpacing: "0.09em",
+  textTransform: "uppercase",
+};

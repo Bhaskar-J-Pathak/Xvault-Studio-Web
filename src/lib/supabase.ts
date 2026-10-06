@@ -28,6 +28,7 @@ export interface Profile {
   affiliate_terms_accepted_at?: string | null;
   affiliate_terms_version?: string | null;
   welcome_email_sent: boolean;
+  signup_notification_sent?: boolean;
   is_lifetime?: boolean;
   subscription_status?: string | null;
   dodo_subscription_id?: string | null;

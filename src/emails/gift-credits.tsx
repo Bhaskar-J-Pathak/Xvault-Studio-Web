@@ -205,7 +205,7 @@ export default function GiftCreditsEmail({
               {/* CTA */}
               <div style={{ marginBottom: "32px" }}>
                 <Button
-                  href="https://xvault.studio/dashboard"
+                  href="https://xvault.dev/dashboard"
                   style={{
                     display: "inline-block",
                     background: violet,
@@ -262,7 +262,7 @@ export default function GiftCreditsEmail({
                 lineHeight: "1.6",
               }}
             >
-              You're receiving this because you created an account on xvault.studio.
+              You're receiving this because you created an account on xvault.dev.
             </Text>
           </Section>
 

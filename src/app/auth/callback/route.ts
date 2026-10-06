@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/auth";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendSignupNotificationOnce, sendWelcomeEmailOnce } from "@/lib/signup-notification";
 
 /**
  * Handles OAuth and magic-link callbacks from Supabase.
@@ -63,21 +63,29 @@ export async function GET(request: NextRequest) {
             { onConflict: "id", ignoreDuplicates: true }
           );
 
-          // Atomically mark email as sent — only succeeds if it hasn't been sent yet.
-          // If the update touches 0 rows (already true), skip the send.
-          const { data: updated } = await service
-            .from("profiles")
-            .update({ welcome_email_sent: true })
-            .eq("id", user.id)
-            .eq("welcome_email_sent", false)
-            .select("id");
-
-          if (updated && updated.length > 0) {
-            const firstName = user.email.split("@")[0];
-            sendWelcomeEmail(user.email, firstName).catch((e) =>
+          await Promise.all([
+            sendWelcomeEmailOnce({
+              id: user.id,
+              email: user.email,
+              name: typeof user.user_metadata?.full_name === "string"
+                ? user.user_metadata.full_name
+                : typeof user.user_metadata?.name === "string"
+                  ? user.user_metadata.name
+                  : null,
+            }).catch((e) =>
               console.error("[callback] welcome email failed:", e)
-            );
-          }
+            ),
+            sendSignupNotificationOnce({
+              id: user.id,
+              email: user.email,
+              createdAt: user.created_at,
+              provider: typeof user.app_metadata?.provider === "string"
+                ? user.app_metadata.provider
+                : "email",
+            }).catch((e) =>
+              console.error("[callback] signup notification failed:", e)
+            ),
+          ]);
         }
       } catch (e) {
         // Email errors must never block the redirect

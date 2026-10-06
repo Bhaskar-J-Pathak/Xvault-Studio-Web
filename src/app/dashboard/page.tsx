@@ -9,9 +9,9 @@ import ReferralLinker from "./_components/referral-linker";
 import UpgradeBanner from "./_components/upgrade-banner";
 import DashboardClient from "./_components/dashboard-client";
 import ContestInvite from "./_components/contest-invite";
-import { getUser, getProfile, createServerSupabaseClient, createServiceClient } from "@/lib/auth";
+import { getUser, getProfile, createServerSupabaseClient } from "@/lib/auth";
 import { CONTEST_ENDS_AT, isInTrial, isInActiveContest, trialDaysLeft, contestDaysLeft, creditsRemaining, creditsCap, TRIAL_CREDITS } from "@/lib/supabase";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendSignupNotificationOnce, sendWelcomeEmailOnce } from "@/lib/signup-notification";
 import type { DbProject } from "@/types/database";
 import { isContestEnabled } from "@/lib/contest";
 
@@ -90,18 +90,34 @@ export default async function DashboardPage({
   if (isLifetime && preview === "trial")    { inTrial = true;  credits = 12; }
   if (isLifetime && preview === "expired")  { inTrial = false; credits = 0; }
 
-  // Welcome email — fires once
-  if (profile && !profile.welcome_email_sent && user.email) {
-    const service = createServiceClient();
-    const { data: updated } = await service
-      .from("profiles")
-      .update({ welcome_email_sent: true })
-      .eq("id", user.id)
-      .eq("welcome_email_sent", false)
-      .select("id");
-    if (updated?.length) {
-      sendWelcomeEmail(user.email, user.email.split("@")[0]).catch(console.error);
-    }
+  if (profile && user.email) {
+    await Promise.all([
+      !profile.welcome_email_sent
+        ? sendWelcomeEmailOnce({
+            id: user.id,
+            email: user.email,
+            name: typeof user.user_metadata?.full_name === "string"
+              ? user.user_metadata.full_name
+              : typeof user.user_metadata?.name === "string"
+                ? user.user_metadata.name
+                : null,
+          }).catch((error) => {
+            console.error("[dashboard] welcome email failed:", error);
+          })
+        : Promise.resolve(false),
+      !profile.signup_notification_sent
+        ? sendSignupNotificationOnce({
+            id: user.id,
+            email: user.email,
+            createdAt: user.created_at,
+            provider: typeof user.app_metadata?.provider === "string"
+              ? user.app_metadata.provider
+              : "email",
+          }).catch((error) => {
+            console.error("[dashboard] signup notification failed:", error);
+          })
+        : Promise.resolve(false),
+    ]);
   }
 
   const hour     = new Date().getHours();

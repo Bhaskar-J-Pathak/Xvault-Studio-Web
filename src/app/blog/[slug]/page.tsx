@@ -11,6 +11,7 @@ import { CharacterDriftLog } from "@/components/blog/CharacterDriftLog";
 import { SubplotWebDiagram } from "@/components/blog/SubplotWebDiagram";
 import { BibleGrowthTimeline } from "@/components/blog/BibleGrowthTimeline";
 import { RevisionModeComparison } from "@/components/blog/RevisionModeComparison";
+import { TwoPassageContinuityMap } from "@/components/blog/TwoPassageContinuityMap";
 
 const mdxComponents = {
   ContradictionDemo,
@@ -21,6 +22,7 @@ const mdxComponents = {
   SubplotWebDiagram,
   BibleGrowthTimeline,
   RevisionModeComparison,
+  TwoPassageContinuityMap,
 };
 
 interface Props {

@@ -13,41 +13,56 @@ const FROM = "support@xvault.dev";
 
 // ── 1. Normal onboarding welcome ──────────────────────────────────────────
 
-export async function sendWelcomeEmail(to: string, name?: string): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xvault.studio";
+export async function sendWelcomeEmail(
+  to: string,
+  name?: string,
+  idempotencyKey?: string,
+): Promise<void> {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xvault.dev";
   const html = await render(React.createElement(WelcomeEmail, { name, dashboardUrl: `${appUrl}/dashboard` }));
-  await resend.emails.send({
-    from: FROM,
-    to,
-    subject: "Welcome to Xvault Studio",
-    replyTo: FROM,
-    html,
-  });
+  const { error } = await resend.emails.send(
+    {
+      from: FROM,
+      to,
+      subject: "Welcome to Xvault Studio",
+      replyTo: FROM,
+      html,
+    },
+    idempotencyKey ? { idempotencyKey } : undefined,
+  );
+  if (error) throw new Error(`Resend rejected the welcome email: ${error.message}`);
 }
 
-// ── 2. Retro tour blast — sent once to users who missed the onboarding bug ──
+// 2. Retro tour blast, sent once to users who missed the onboarding bug
 
 export async function sendRetroTourEmail(to: string): Promise<void> {
   const html = await render(React.createElement(RetroTourEmail));
   await resend.emails.send({
     from: FROM,
     to,
-    subject: "We owe you a tour — it's ready now",
+    subject: "We owe you a tour: it's ready now",
     html,
   });
 }
 
-// ── 3. Welcome for a user who was referred (+15 bonus credits) ────────────
+// ── 3. Welcome for a user who was referred (+30 bonus credits) ────────────
 
 export async function sendReferredWelcomeEmail(to: string, name?: string): Promise<void> {
-  const html = await render(React.createElement(ReferredWelcomeEmail, { name }));
-  await resend.emails.send({
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://xvault.dev";
+  const html = await render(
+    React.createElement(ReferredWelcomeEmail, {
+      name,
+      dashboardUrl: `${appUrl}/dashboard`,
+    }),
+  );
+  const { error } = await resend.emails.send({
     from: FROM,
     to,
-    subject: "Welcome to Xvault Studio — and a little bonus",
+    subject: "Welcome to Xvault Studio: 30 bonus credits included",
     replyTo: FROM,
     html,
   });
+  if (error) throw new Error(`Resend rejected the referred welcome email: ${error.message}`);
 }
 
 // ── 4. Notification to the referrer when their referral completes ─────────
@@ -64,7 +79,7 @@ export async function sendReferralCompleteEmail(
   await resend.emails.send({
     from: FROM,
     to,
-    subject: "+30 credits — your referral just got started",
+    subject: "+50 credits: your referral just got started",
     replyTo: FROM,
     html,
   });
@@ -86,7 +101,7 @@ export async function sendGiftCreditsEmail(
   await resend.emails.send({
     from:    FROM,
     to,
-    subject: `+${opts.credits ?? 100} credits — a thank you from Xvault`,
+    subject: `+${opts.credits ?? 100} credits: a thank you from Xvault`,
     replyTo: FROM,
     html,
   });
@@ -118,6 +133,81 @@ function section(label: string, content: string): string {
         <p style="margin:0;font-size:14px;color:#1a1a1a;line-height:1.7;white-space:pre-wrap;">${safe}</p>
       </td>
     </tr>`;
+}
+
+export async function sendNewSignupNotification({
+  email,
+  userId,
+  provider,
+  createdAt,
+}: {
+  email: string;
+  userId: string;
+  provider?: string | null;
+  createdAt?: string | null;
+}): Promise<void> {
+  const recipient = process.env.SIGNUP_ALERT_EMAIL ?? FROM;
+  const safeEmail = escapeHtml(email);
+  const safeUserId = escapeHtml(userId);
+  const safeProvider = escapeHtml(provider || "email");
+  const safeCreatedAt = escapeHtml(
+    createdAt ? new Date(createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "Just now",
+  );
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background:#f4f0e8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #ded7cb;overflow:hidden;">
+        <tr><td style="height:5px;background:#a6402d;"></td></tr>
+        <tr><td style="padding:32px 36px 28px;">
+          <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#a6402d;letter-spacing:.09em;text-transform:uppercase;">New Xvault signup</p>
+          <h1 style="margin:0 0 24px;font-size:23px;color:#191714;letter-spacing:-.4px;">A new writer created an account</h1>
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e8e4df;border-bottom:1px solid #e8e4df;padding:18px 0;">
+            <tr>
+              <td style="font-size:12px;color:#8b8276;padding-bottom:10px;">Email</td>
+              <td align="right" style="font-size:14px;font-weight:600;color:#191714;padding-bottom:10px;">${safeEmail}</td>
+            </tr>
+            <tr>
+              <td style="font-size:12px;color:#8b8276;padding-bottom:10px;">Signup method</td>
+              <td align="right" style="font-size:13px;color:#4d473f;padding-bottom:10px;">${safeProvider}</td>
+            </tr>
+            <tr>
+              <td style="font-size:12px;color:#8b8276;padding-bottom:10px;">Time</td>
+              <td align="right" style="font-size:13px;color:#4d473f;padding-bottom:10px;">${safeCreatedAt} IST</td>
+            </tr>
+            <tr>
+              <td style="font-size:12px;color:#8b8276;">User ID</td>
+              <td align="right" style="font-size:11px;color:#70695f;">${safeUserId}</td>
+            </tr>
+          </table>
+          <p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#70695f;">Reply directly to this alert to write a personal email to the new user.</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;"><tr>
+            <td><a href="mailto:${safeEmail}" style="display:inline-block;background:#191714;color:#fff;padding:11px 16px;text-decoration:none;font-size:13px;font-weight:600;">Email the new writer</a></td>
+          </tr></table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const { error } = await resend.emails.send(
+    {
+      from: FROM,
+      to: recipient,
+      replyTo: email,
+      subject: `New Xvault signup: ${email}`,
+      html,
+    },
+    { idempotencyKey: `signup-alert-${userId}` },
+  );
+
+  if (error) {
+    throw new Error(`Resend rejected the signup alert: ${error.message}`);
+  }
 }
 
 export async function sendFeedbackNotification({

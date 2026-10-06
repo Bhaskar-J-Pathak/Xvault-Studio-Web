@@ -17,6 +17,7 @@ export interface DbProfile {
   onboarding_step: number;
   onboarding_done: boolean;
   updated_at: string;
+  signup_notification_sent?: boolean;
   affiliate_status?: "not_applied" | "pending" | "approved" | "declined" | "suspended";
   affiliate_approved_at?: string | null;
   affiliate_terms_accepted_at?: string | null;

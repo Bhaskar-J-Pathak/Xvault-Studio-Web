@@ -58,7 +58,7 @@ export default function ReferralCompleteEmail({
       <Preview>
         {isMaxed
           ? `You've hit the referral cap. ${totalBonusCredits} bonus credits total. Well earned.`
-          : `Someone you referred just got started. +30 credits are in your account.`}
+          : `Someone you referred just got started. +50 credits are in your account.`}
       </Preview>
 
       <Body style={{ margin: 0, padding: 0, background: bg }}>
@@ -153,7 +153,7 @@ export default function ReferralCompleteEmail({
                           paddingBottom: "10px",
                         }}
                       >
-                        +30 credits
+                        +50 credits
                       </td>
                     </tr>
                     <tr>
@@ -247,7 +247,7 @@ export default function ReferralCompleteEmail({
               {/* CTA */}
               <div style={{ marginBottom: "32px" }}>
                 <Button
-                  href="https://xvault.studio/dashboard"
+                  href="https://xvault.dev/dashboard"
                   style={{
                     display: "inline-block",
                     background: violet,
@@ -306,7 +306,7 @@ export default function ReferralCompleteEmail({
                 lineHeight: "1.6",
               }}
             >
-              You're receiving this because you have an account on xvault.studio.
+              You're receiving this because you have an account on xvault.dev.
             </Text>
           </Section>
 

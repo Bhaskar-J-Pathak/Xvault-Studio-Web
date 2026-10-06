@@ -187,7 +187,7 @@ export default function RetroTourEmail() {
               {/* CTA */}
               <div style={{ marginTop: "32px" }}>
                 <Button
-                  href="https://xvault.studio/dashboard"
+                  href="https://xvault.dev/dashboard"
                   style={{
                     display: "inline-block",
                     background: violet,
@@ -242,10 +242,10 @@ export default function RetroTourEmail() {
             >
               You're receiving this because you created an account on{" "}
               <Link
-                href="https://xvault.studio"
+                href="https://xvault.dev"
                 style={{ color: "#9ca3af", textDecoration: "underline" }}
               >
-                xvault.studio
+                xvault.dev
               </Link>
               .
             </Text>

@@ -193,7 +193,12 @@ export default function ContinuityChecker({ clinicOpen }: { clinicOpen: boolean 
             <button type="button" onClick={loadSample} className="min-h-12 border border-[#191714]/20 bg-transparent px-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#191714] transition-colors hover:border-[#A6402D] hover:text-[#A6402D]">Use an example</button>
             <p className="flex items-center gap-1.5 text-sm text-[#191714]/58 sm:ml-auto"><LockKeyhole className="size-4" /> Your text never leaves this page.</p>
           </div>
-          {analysis && <div className="mt-8"><ResultPanel analysis={analysis} /></div>}
+          {analysis && (
+            <div className="mt-8">
+              <ResultPanel analysis={analysis} />
+              <WritersRoomInvite onClick={() => posthog?.capture("continuity_discord_cta_clicked")} />
+            </div>
+          )}
         </div>
       </section>
 
@@ -203,6 +208,33 @@ export default function ContinuityChecker({ clinicOpen }: { clinicOpen: boolean 
       </main>
       <Footer />
     </div>
+  );
+}
+
+function WritersRoomInvite({ onClick }: { onClick: () => void }) {
+  return (
+    <aside className="mt-5 grid gap-6 border border-[#191714]/15 bg-[#191714] p-6 text-[#F4F0E8] sm:grid-cols-[1fr_auto] sm:items-end lg:p-8">
+      <div className="max-w-[720px]">
+        <p className="flex items-center gap-2 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-[#D88B75]">
+          <Users className="size-4" /> The Xvault writers&apos; room
+        </p>
+        <h2 className="mt-4 font-display text-3xl leading-[1] tracking-[-0.04em] sm:text-4xl">
+          Want another writer&apos;s perspective?
+        </h2>
+        <p className="mt-4 text-sm leading-7 text-[#F4F0E8]/68">
+          Bring these same two passages to the continuity clinic in our Discord. Ask about timeline, character knowledge, emotional movement, or a detail that no longer fits. No full manuscript or Xvault account is required.
+        </p>
+      </div>
+      <a
+        href="https://discord.gg/wdrhuuTdy"
+        target="_blank"
+        rel="noreferrer"
+        onClick={onClick}
+        className="inline-flex min-h-12 shrink-0 items-center justify-center gap-3 bg-[#F4F0E8] px-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#191714] transition-colors hover:bg-[#D88B75]"
+      >
+        Open the writers&apos; room <ArrowRight className="size-4" />
+      </a>
+    </aside>
   );
 }
 
