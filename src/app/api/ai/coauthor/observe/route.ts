@@ -2,7 +2,7 @@
  * POST /api/ai/coauthor/observe
  *
  * Proactive observation. Called after the writer pauses (15s after a 150+ word burst).
- * Alex reads the recent text and decides whether to say something — or stay quiet.
+ * Alex checks the recent text for continuity issues and decides whether to say something — or stay quiet.
  * Returns { observation: string | null, messageType: string | null }
  *
  * Body: { projectId, chapterId, recentText, wordCountDelta }
@@ -102,9 +102,12 @@ export async function POST(request: NextRequest) {
   const observePrompt = `The writer just paused after writing approximately ${wordCountDelta} new words.
 Read the recent text carefully.
 
-Your job is to stay quiet unless there is a specific craft problem that needs flagging.
+Your job is to stay quiet unless there is a specific story problem that needs flagging.
+
+Check continuity carefully. Compare details in the new passage against the character profiles, story so far, and relevant manuscript passages in your context. Flag clear contradictions in established facts, including physical traits such as eye or hair color, age, scars, abilities, relationships, and who knows what. For example, if a character's established eye color suddenly changes with no explanation, gently point out the mismatch and ask whether the change is intentional. A planned reveal, transformation, disguise, unreliable narration, or other plausible plot explanation is not an error; do not assume a contradiction when the context supports an explanation. Only flag a mismatch when both details are explicit and the new passage gives no connecting explanation.
 
 Only speak up if you notice ONE of these:
+- A clear continuity contradiction with an established fact in the manuscript or Story Bible
 - A character speaking or acting in a way that contradicts their established voice or history
 - An open plot thread from earlier that is being ignored or contradicted here
 - A pacing problem serious enough to hurt the story (e.g. the scene has stalled or is rushing a key moment)
@@ -117,7 +120,7 @@ Do NOT:
 If there is no concrete craft problem — output only the word: QUIET
 QUIET is almost always the right answer.
 
-If there IS a specific problem, describe it directly in 1-2 sentences. No preamble.`;
+If there IS a specific problem, describe the exact conflicting details and where each was established, then ask briefly whether the change is intentional. Keep it to 1-2 sentences. No preamble.`;
 
   let raw: string;
   try {

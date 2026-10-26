@@ -30,11 +30,14 @@ type DirectAction =
 type CursorContext = ProseCursorContext & {
   viewportAnchor?: { x: number; top: number; bottom: number };
 };
+type ContinuityFlagNotice = { id: string; entity: string; attribute: string; established: string; found: string; quote?: string; response: string; choice: "typo" | "intentional" | "explained" | null; updateEarlier: boolean; error?: string; busy?: boolean };
 import { createClient } from "@/lib/supabase";
 import { Check, ChevronDown, Coins, Crown, GripHorizontal, Loader2, Wand2, X, PenLine, Settings, MoreHorizontal, Share2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
 import CoauthorSetup from "@/app/studio/[projectId]/_components/coauthor-setup";
+import GlobalChangePreview from "@/app/studio/[projectId]/_components/global-change-preview";
+import type { ChangePlan } from "@/app/api/ai/coauthor/global-change/route";
 import TutorialOverlay from "@/app/studio/[projectId]/_components/tutorial-overlay";
 import EditPreviewModal from "@/app/studio/[projectId]/_components/edit-preview-modal";
 import SelectionToolbar from "./selection-toolbar";
@@ -676,10 +679,16 @@ export default function ZenEditor({
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [firstInsight, setFirstInsight] = useState<{ entities: number; relationships: number; threads: number } | null>(null);
   const [latestBoardUpdate, setLatestBoardUpdate] = useState<{ entities: number; relationships: number; threads: number } | null>(null);
+  const [continuityFlags, setContinuityFlags] = useState<ContinuityFlagNotice[]>([]);
+  const [continuityPlan, setContinuityPlan] = useState<{ plan: ChangePlan; flagId: string; decision: "typo" | "intentional"; response: string } | null>(null);
   useEffect(() => {
     const report = (event: Event) => setExtractionError(String((event as CustomEvent).detail));
     const celebrate = (event: Event) => {
-      const detail = (event as CustomEvent<{ updateId?: string | null; entitiesProcessed?: number; relationshipsAdded?: number; threadsTracked?: number }>).detail;
+      const detail = (event as CustomEvent<{ updateId?: string | null; entitiesProcessed?: number; relationshipsAdded?: number; threadsTracked?: number; flagged?: Array<{ id?: string; entity: string; attribute: string; established: string; found: string; quote?: string }> }>).detail;
+      if (detail.flagged?.length) setContinuityFlags((current) => {
+        const known = new Set(current.map((flag) => flag.id));
+        return [...current, ...detail.flagged!.filter((flag) => flag.id && !known.has(flag.id)).map((flag) => ({ ...flag, id: flag.id!, response: "", choice: null, updateEarlier: false }))];
+      });
       if (!detail.updateId) return;
       const summary = { entities: detail.entitiesProcessed ?? 0, relationships: detail.relationshipsAdded ?? 0, threads: detail.threadsTracked ?? 0 };
       if (!sessionStorage.getItem(`xv_first_insight_${projectId}`)) {
@@ -774,6 +783,55 @@ export default function ZenEditor({
       // editor stays as-is; change will appear on next page load
     }
   }, [chapterId]);
+
+  async function submitContinuityDecision(flag: ContinuityFlagNotice) {
+    if (!flag.choice) return;
+    const decision = flag.choice;
+    if ((decision === "typo" || (decision === "intentional" && flag.updateEarlier))) {
+      const instruction = decision === "typo"
+        ? `In Chapter ${chapterNumber} only, correct the clearly identified slip-up in ${flag.entity}'s ${flag.attribute.replaceAll("_", " ")}: it should match the established value "${flag.established}", not "${flag.found}". Use this context to locate the exact sentence: ${flag.quote ?? "No quote supplied"}. Writer's note: ${flag.response || "Treat this as an accidental typo."}. Do not change any other chapter or unrelated wording.`
+        : `In chapters before Chapter ${chapterNumber} only, update references to ${flag.entity}'s ${flag.attribute.replaceAll("_", " ")} from "${flag.established}" to "${flag.found}" wherever the reference clearly describes this character. Preserve surrounding prose and do not alter the current chapter or other characters. Writer's note: ${flag.response || "The change is deliberate."}`;
+      try {
+        const res = await fetch("/api/ai/coauthor/global-change", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, instruction }) });
+        const data = await res.json() as { plan?: ChangePlan; error?: string; remaining?: number };
+        if (data.remaining !== undefined) setCredits(data.remaining);
+        if (!res.ok || !data.plan) {
+          setContinuityFlags((items) => items.map((item) => item.id === flag.id ? { ...item, error: data.error ?? "Couldn't prepare the chapter edits. Try again." } : item));
+          return;
+        }
+        let plan = data.plan;
+        if (decision === "typo") plan = { ...plan, changes: plan.changes.filter((change) => change.chapterId === chapterId), flagged: plan.flagged.filter((item) => item.chapterId === chapterId) };
+        setContinuityPlan({ plan, flagId: flag.id, decision, response: flag.response });
+      } catch {
+        setContinuityFlags((items) => items.map((item) => item.id === flag.id ? { ...item, error: "Couldn't connect to prepare the chapter edits. Try again." } : item));
+      }
+      return;
+    }
+    const decisionValue = decision === "explained" ? "explained" : "intentional";
+    const res = await fetch(`/api/studio/worldboard/flags/${flag.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision: decisionValue, response: flag.response }) });
+    if (res.ok) setContinuityFlags((items) => items.filter((item) => item.id !== flag.id));
+    else setContinuityFlags((items) => items.map((item) => item.id === flag.id ? { ...item, error: "Couldn't save your response. Please try again." } : item));
+  }
+
+  async function handleContinuityResponse(flag: ContinuityFlagNotice) {
+    if (!flag.response.trim() || flag.busy) return;
+    setContinuityFlags((items) => items.map((item) => item.id === flag.id ? { ...item, busy: true, error: undefined } : item));
+    try {
+      const res = await fetch(`/api/studio/worldboard/flags/${flag.id}/interpret`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: flag.response }),
+      });
+      const data = await res.json() as { decision?: "typo" | "intentional" | "explained"; updateEarlier?: boolean; error?: string; clarification?: string };
+      if (!res.ok || !data.decision) {
+        setContinuityFlags((items) => items.map((item) => item.id === flag.id ? { ...item, busy: false, error: data.clarification ?? data.error ?? "Could you clarify what you want me to do?" } : item));
+        return;
+      }
+      await submitContinuityDecision({ ...flag, choice: data.decision, updateEarlier: data.updateEarlier === true, busy: false });
+    } catch {
+      setContinuityFlags((items) => items.map((item) => item.id === flag.id ? { ...item, busy: false, error: "Couldn't interpret your response. Please try again." } : item));
+    }
+  }
 
   // Share modal
   const [showShareModal,   setShowShareModal]   = useState(false);
@@ -1578,6 +1636,34 @@ export default function ZenEditor({
       )}
 
       {/* ── Co-author setup modal ──────────────────────────────────────────── */}
+      {continuityFlags.length > 0 && (
+        <div className="fixed bottom-24 right-4 z-[180] w-[min(410px,calc(100vw-2rem))] max-h-[75vh] overflow-y-auto rounded-2xl border p-4 shadow-2xl" style={{ backgroundColor: th.bg, color: th.text, borderColor: th.border }} aria-live="polite">
+          <header className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-full bg-amber-500/10 text-amber-600">!</span><p className="text-sm font-semibold">Continuity check</p></div>
+            <button aria-label="Dismiss continuity checks" title="Dismiss for now" onClick={() => setContinuityFlags([])} className="rounded-lg p-1.5 opacity-60 hover:opacity-100"><X size={15} /></button>
+          </header>
+          <div className="space-y-3">
+            {continuityFlags.map((flag) => (
+              <section key={flag.id} className="rounded-xl border p-3" style={{ borderColor: th.border }}>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs leading-5" style={{ color: th.text }}>
+                    {flag.entity}&apos;s {flag.attribute.replaceAll("_", " ")} was established as <strong>{flag.established}</strong>, but this passage says <strong>{flag.found}</strong>.
+                  </p>
+                  <button aria-label="Dismiss this check" title="Dismiss for now" onClick={() => setContinuityFlags((items) => items.filter((item) => item.id !== flag.id))} className="shrink-0 rounded p-1 opacity-50 hover:opacity-100"><X size={13} /></button>
+                </div>
+                {flag.quote && <p className="mt-1 text-[11px] italic" style={{ color: th.textMuted }}>“{flag.quote}”</p>}
+                <label className="mt-3 block text-[11px] font-medium" style={{ color: th.text }}>What should I do about this change?</label>
+                <p className="mt-0.5 text-[10px] leading-4" style={{ color: th.textMuted }}>Tell me if it was a slip-up, a deliberate change, or explained later. If deliberate, say whether earlier chapters should change too.</p>
+                <textarea value={flag.response} disabled={flag.busy} onChange={(event) => setContinuityFlags((items) => items.map((item) => item.id === flag.id ? { ...item, response: event.target.value, error: undefined } : item))} placeholder="Write your response…" className="mt-1.5 min-h-16 w-full resize-y rounded-lg border px-2.5 py-2 text-xs outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-60" style={{ backgroundColor: th.bg, color: th.text, borderColor: th.border }} />
+                {flag.error && <p role="alert" className="mt-2 text-[11px] text-red-500">{flag.error}</p>}
+                <button disabled={!flag.response.trim() || flag.busy} onClick={() => void handleContinuityResponse(flag)} className="mt-2 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-45">{flag.busy ? "Working…" : "Send response"}</button>
+              </section>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Co-author setup modal ──────────────────────────────────────────── */}
       {showCoauthorSetup && (
         <CoauthorSetup
           onSave={handleCoauthorSave}
@@ -1597,6 +1683,22 @@ export default function ZenEditor({
             console.info("[edit] done:", summary);
           }}
           onCancel={() => setEditPlan(null)}
+        />
+      )}
+
+      {continuityPlan && (
+        <GlobalChangePreview
+          plan={continuityPlan.plan}
+          projectId={projectId}
+          coauthorName={initialCoauthor?.name ?? "Alex"}
+          onCancel={() => setContinuityPlan(null)}
+          onDone={async (summary) => {
+            setContinuityPlan(null);
+            if (!summary.startsWith("Applied ")) return;
+            await fetch(`/api/studio/worldboard/flags/${continuityPlan.flagId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision: continuityPlan.decision, response: continuityPlan.response }) });
+            setContinuityFlags((items) => items.filter((item) => item.id !== continuityPlan.flagId));
+            await handleGlobalChangeDone();
+          }}
         />
       )}
 
