@@ -5,6 +5,8 @@ import type { Chapter } from "./_components/world-board-view";
 import type { WorldBoardUpdate } from "./_components/world-board-changes";
 import TutorialOverlay from "../_components/tutorial-overlay";
 
+export const dynamic = "force-dynamic";
+
 export default async function WorldBoardPage({
   params,
 }: {

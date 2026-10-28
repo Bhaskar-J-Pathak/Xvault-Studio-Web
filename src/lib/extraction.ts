@@ -34,6 +34,7 @@ export interface ExtractedThread {
 }
 
 export interface ExtractedInconsistency {
+  id?:         string;
   entity:      string;
   attribute:   string;
   established: string;
@@ -218,7 +219,7 @@ One sentence per unresolved plot element that will drive future chapters. Skip s
 Compare every thread against OpenThreads in the existing graph. If it continues or resolves an existing thread, copy that existing description exactly, set is_new=false, and set existing_thread_index to its [number]. For a genuinely new thread, set is_new=true and existing_thread_index=null.
 
 ━━━ INCONSISTENCY RULES ━━━
-Only flag direct contradictions of established facts from the knowledge graph that appear to be author errors. Never flag intentional character changes.`;
+Only flag direct contradictions of established facts from the knowledge graph that appear to be author errors. Compare the meaning of both values, not just their wording. A new detail that adds to or narrows an established description is compatible: for example, "protagonist" and "protagonist, Prince of Draemon" can both be true, as can "Emperor of Draemon" and "Emperor of Draemon, biological father of Arthur". Do not flag compatible additions, more specific descriptions, synonyms, or facts about different aspects of an entity. Flag only when the two facts cannot both be true in this scene and no explanation appears in the manuscript. If an established eye, hair, or skin color is directly contradicted, always include an inconsistency entry with the exact established value, new value, and a short quote from the passage. Never flag intentional character changes.`;
 }
 
 // ── Response parser ───────────────────────────────────────────────────────────
@@ -356,6 +357,20 @@ function normalizedFullName(name: string): string {
   return name.toLowerCase().replace(/[’']s\b/gi, "").replace(/[’']/g, "").split(/[^a-z0-9]+/).filter(Boolean).join(" ");
 }
 
+/** Role and alias fields commonly gain detail as a story develops. A new value
+ * that retains the established wording is an addition, not a contradiction. */
+function isCompatibleExpansion(attribute: string, established: string, found: string): boolean {
+  const additiveFields = new Set(["role", "aliases"]);
+  if (!additiveFields.has(attribute.toLowerCase())) return false;
+  const oldValue = normalizedFullName(established);
+  const newValue = normalizedFullName(found);
+  return Boolean(oldValue && newValue && (newValue.includes(oldValue) || oldValue.includes(newValue)));
+}
+
+function isSameFact(established: string, found: string): boolean {
+  return normalizedFullName(established) === normalizedFullName(found);
+}
+
 function startsWithTitle(name: string): boolean {
   const first = name.toLowerCase().split(/[^a-z0-9]+/).find(Boolean);
   return Boolean(first && TITLES.has(first));
@@ -457,7 +472,7 @@ export async function mergeExtractionIntoGraph(
   const throwIfError = (error: { message: string } | null, operation: string) => {
     if (error) throw new Error(`${operation}: ${error.message}`);
   };
-  // Use existId as the sole authority — model's is_update flag is unreliable
+
   const nameEntries = buildNameEntries(existingEntities);
   const changes: WorldBoardChangeSet = {
     addedEntities: [],
@@ -468,7 +483,12 @@ export async function mergeExtractionIntoGraph(
     inconsistencies: [],
   };
 
-  // ── Layout tracking: 2×3 zone grid matching world-board-canvas.tsx ──────────
+  // Discard additive updates
+  result.inconsistencies = result.inconsistencies.filter(
+    (inc) => !isSameFact(inc.established, inc.found) && !isCompatibleExpansion(inc.attribute, inc.established, inc.found)
+  );
+
+  // ── Layout tracking ───────────────────────────────────────────────────────────
   const ZONE_ORIGINS: Record<string, { x: number; y: number }> = {
     character: { x:  80, y:   80 },
     location:  { x: 960, y:   80 },
@@ -486,37 +506,25 @@ export async function mergeExtractionIntoGraph(
     typeCountForLayout[ex.type] = (typeCountForLayout[ex.type] ?? 0) + 1;
   }
 
+  // Helper to build conflict keys from inconsistencies
+  const getConflictKeysFor = (entityName: string) => {
+    return new Set(
+      result.inconsistencies
+        .filter((inc) => 
+          normalizedFullName(inc.entity) === normalizedFullName(entityName) ||
+          significantTokens(inc.entity).some((t) => significantTokens(entityName).includes(t))
+        )
+        .map((inc) => inc.attribute.toLowerCase())
+    );
+  };
+
   // ── Entities ────────────────────────────────────────────────
   for (const e of result.entities) {
-    const existId = lookupId(e.name, nameEntries);
+    let existId = lookupId(e.name, nameEntries);
+    let existingEntity = existingEntities.find((entity) => entity.id === existId);
 
-    if (existId) {
-      nameEntries.push({ name: e.name, id: existId });
-      const existingEntity = existingEntities.find((entity) => entity.id === existId);
-      const attributeChanges = Object.entries(e.attributes).flatMap(([key, value]) => {
-        const previous = existingEntity?.attributes?.[key];
-        return String(previous ?? "") === String(value)
-          ? []
-          : [{ key, from: previous == null ? null : String(previous), to: String(value) }];
-      });
-      // Entity already exists — always merge new attributes, never duplicate
-      if (Object.keys(e.attributes).length > 0) {
-        const { error } = await client.rpc("merge_entity_attributes", {
-          p_entity_id: existId,
-          p_attributes: e.attributes,
-        });
-        throwIfError(error, "Could not update entity attributes");
-      }
-      const { error } = await client
-        .from("entities")
-        .update({ last_seen_word: chapterNumber, confidence: e.confidence })
-        .eq("id", existId);
-      throwIfError(error, "Could not update entity");
-      if (attributeChanges.length > 0) {
-        changes.updatedEntities.push({ id: existId, name: existingEntity?.name ?? e.name, attributes: attributeChanges });
-      }
-    } else {
-      // DB safety check: prevent concurrent-extraction duplicates
+    // If not found in memory, check DB
+    if (!existId) {
       const { data: dbDupe, error: dupeError } = await client
         .from("entities")
         .select("id, name, attributes")
@@ -526,27 +534,69 @@ export async function mergeExtractionIntoGraph(
       throwIfError(dupeError, "Could not check for duplicate entity");
 
       if (dbDupe) {
-        const attributeChanges = Object.entries(e.attributes).flatMap(([key, value]) => {
-          const previous = (dbDupe.attributes as Record<string, unknown> | null)?.[key];
-          return String(previous ?? "") === String(value)
-            ? []
-            : [{ key, from: previous == null ? null : String(previous), to: String(value) }];
+        existId = dbDupe.id;
+        existingEntity = {
+          id: dbDupe.id,
+          name: dbDupe.name,
+          type: e.type,
+          attributes: (dbDupe.attributes as Record<string, unknown>) ?? {},
+        };
+      }
+    }
+
+    if (existId) {
+      nameEntries.push({ name: e.name, id: existId });
+
+      // Detect auto-inconsistencies for physical attributes
+      const alreadyFlagged = getConflictKeysFor(e.name);
+      const physicalColorFields = new Set(["eye_color", "eye_colour", "hair_color", "hair_colour", "skin_tone", "hand"]);
+      const automaticFlags = e.type === "character"
+        ? Object.entries(e.attributes).flatMap(([key, value]) => {
+            const previous = existingEntity?.attributes?.[key];
+            if (previous == null || isSameFact(String(previous), value) || alreadyFlagged.has(key.toLowerCase()) || isCompatibleExpansion(key, String(previous), value)) return [];
+            if (e.confidence !== "explicit" && !physicalColorFields.has(key.toLowerCase())) return [];
+            return [{ entity: e.name, attribute: key, established: String(previous), found: value, quote: "" }];
+          })
+        : [];
+
+      result.inconsistencies.push(...automaticFlags);
+
+      const allFlaggedAttributes = new Set([
+        ...alreadyFlagged,
+        ...automaticFlags.map((flag) => flag.attribute.toLowerCase())
+      ]);
+
+      // FILTER OUT conflicting attributes so the established DB value is preserved!
+      const safeAttributes = Object.fromEntries(
+        Object.entries(e.attributes).filter(([key]) => !allFlaggedAttributes.has(key.toLowerCase()))
+      );
+
+      const attributeChanges = Object.entries(safeAttributes).flatMap(([key, value]) => {
+        const previous = existingEntity?.attributes?.[key];
+        return isSameFact(String(previous ?? ""), String(value))
+          ? []
+          : [{ key, from: previous == null ? null : String(previous), to: String(value) }];
+      });
+
+      if (Object.keys(safeAttributes).length > 0) {
+        const { error } = await client.rpc("merge_entity_attributes", {
+          p_entity_id: existId,
+          p_attributes: safeAttributes,
         });
-        if (Object.keys(e.attributes).length > 0) {
-          const { error } = await client.rpc("merge_entity_attributes", {
-            p_entity_id: dbDupe.id,
-            p_attributes: e.attributes,
-          });
-          throwIfError(error, "Could not update duplicate entity attributes");
-        }
-        nameEntries.push({ name: e.name, id: dbDupe.id });
-        if (attributeChanges.length > 0) {
-          changes.updatedEntities.push({ id: dbDupe.id, name: dbDupe.name ?? e.name, attributes: attributeChanges });
-        }
-        continue;
+        throwIfError(error, "Could not update entity attributes");
       }
 
-      // New entity — place in type's canvas zone (matches world-board-canvas layout)
+      const { error } = await client
+        .from("entities")
+        .update({ last_seen_word: chapterNumber, confidence: e.confidence })
+        .eq("id", existId);
+      throwIfError(error, "Could not update entity");
+
+      if (attributeChanges.length > 0) {
+        changes.updatedEntities.push({ id: existId, name: existingEntity?.name ?? e.name, attributes: attributeChanges });
+      }
+    } else {
+      // Truly new entity
       const origin = ZONE_ORIGINS[e.type] ?? ZONE_ORIGINS.lore;
       const i      = typeCountForLayout[e.type] ?? 0;
       typeCountForLayout[e.type] = i + 1;
@@ -585,11 +635,9 @@ export async function mergeExtractionIntoGraph(
     const targetId = lookupId(rel.target, nameEntries);
     const label = cleanRelationshipLabel(rel.label);
     if (!sourceId || !targetId || sourceId === targetId || !isPersistentRelationshipLabel(label)) {
-      console.warn(`[worldboard] Skipped unresolved relationship: ${rel.source} | ${rel.label} | ${rel.target}`);
       continue;
     }
 
-    // Avoid duplicates — check if this relationship already exists
     const { data: existing, error: relationshipLookupError } = await client
       .from("relationships")
       .select("id")
@@ -666,27 +714,40 @@ export async function mergeExtractionIntoGraph(
   const flagsCreated: ExtractedInconsistency[] = [];
 
   for (const inc of result.inconsistencies) {
-    // A first extraction has no established facts to contradict. Also refuse
-    // to attach a flag to an entity the existing graph cannot identify.
-    if (existingEntities.length === 0) continue;
-    const entityId = lookupId(inc.entity, buildNameEntries(existingEntities));
-    if (!entityId) continue;
+    if (isSameFact(inc.established, inc.found) || isCompatibleExpansion(inc.attribute, inc.established, inc.found)) continue;
 
-    const { error } = await client.from("inconsistency_flags").insert({
-      project_id:        projectId,
-      entity_id:         entityId,
-      entity_name:       inc.entity,
-      attribute:         inc.attribute,
-      established_value: inc.established,
-      found_value:       inc.found,
-      context_quote:     inc.quote,
-      chapter_id:        chapterId,
-      status:            "pending",
-    });
-    throwIfError(error, "Could not create inconsistency flag");
+    // Resolve entityId from memory nameEntries first, then fall back to DB lookup
+    let entityId = lookupId(inc.entity, nameEntries);
+    if (!entityId) {
+      const { data: dbEntity } = await client
+        .from("entities")
+        .select("id")
+        .eq("project_id", projectId)
+        .ilike("name", `%${inc.entity.trim()}%`)
+        .maybeSingle();
+      if (dbEntity) entityId = dbEntity.id;
+    }
 
-    flagsCreated.push(inc);
+    // Always push to changes so the card displays on the Changes tab!
     changes.inconsistencies.push(inc);
+
+    if (entityId) {
+      const { data: flag, error } = await client.from("inconsistency_flags").insert({
+        project_id:        projectId,
+        entity_id:         entityId,
+        entity_name:       inc.entity,
+        attribute:         inc.attribute,
+        established_value: inc.established,
+        found_value:       inc.found,
+        context_quote:     inc.quote,
+        chapter_id:        chapterId,
+        status:            "pending",
+      }).select("id").maybeSingle();
+
+      if (!error && flag) {
+        flagsCreated.push({ ...inc, id: flag.id });
+      }
+    }
   }
 
   return { inconsistencies: flagsCreated, changes };
