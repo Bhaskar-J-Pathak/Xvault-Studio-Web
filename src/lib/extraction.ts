@@ -3,8 +3,7 @@
  *
  * Cost strategy:
  * - Only the delta text (new words since last extraction) is sent to the AI.
- * - Existing entities are summarised in a compact ~200-token format, not full JSON.
- * - Production extraction currently uses Gemini 2.5 Pro through Vertex AI.
+ * - Existing entities are summarised in a compact format with prior chapter summaries.
  * - Each extraction chunk counts against the user's AI credit allowance.
  */
 
@@ -55,6 +54,7 @@ export interface ExtractionResult {
   threads: ExtractedThread[];
   inconsistencies: ExtractedInconsistency[];
   continuity_issues?: ExtractedContinuityIssue[];
+  coauthor_continuity_note?: string | null;
 }
 
 export interface WorldBoardAttributeChange {
@@ -103,47 +103,80 @@ export function hasWorldBoardChanges(changes: WorldBoardChangeSet): boolean {
   );
 }
 
-interface ExistingEntity {
+export interface ExistingEntity {
   id: string;
   name: string;
   type: string;
   attributes: Record<string, unknown>;
 }
 
-interface ExistingThread {
+export interface ExistingThread {
   id: string;
   description: string;
   status: string;
   last_seen_chapter_number: number;
 }
 
+export interface ExistingRelationship {
+  source: string;
+  target: string;
+  label: string;
+}
+
+// ── Typo & Distance Helpers ───────────────────────────────────────────────────
+
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+  const s1 = a.toLowerCase().trim();
+  const s2 = b.toLowerCase().trim();
+
+  for (let i = 0; i <= s1.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= s2.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= s1.length; i++) {
+    for (let j = 1; j <= s2.length; j++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
+      );
+    }
+  }
+  return matrix[s1.length][s2.length];
+}
+
+export function isLikelyTypo(established: string, found: string): boolean {
+  const s1 = established.trim().toLowerCase();
+  const s2 = found.trim().toLowerCase();
+
+  if (s1 === s2) return true;
+
+  const dist = levenshteinDistance(s1, s2);
+  const minLength = Math.min(s1.length, s2.length);
+
+  if (dist === 1 && minLength >= 4) return true;
+  if (dist === 2 && minLength >= 7) return true;
+
+  return false;
+}
+
 // ── Compact summary (context sent to AI) ─────────────────────────────────────
 
-/**
- * Converts existing entities + threads into a compact string (~20 tokens/entity).
- * This is the "what we already know" context given to the extraction model.
- *
- * Example output:
- *   Characters: Kira[eye_color=blue,orphan=true], Marcus[rank=guard]
- *   Locations: The_Hollow[type=forest,cursed=true]
- *   Threads: [1]Brass_key_mystery(open,ch3) [2]Kira_father(open,ch1)
- */
 export function buildEntitySummary(
   entities: ExistingEntity[],
   threads: ExistingThread[],
+  relationships: ExistingRelationship[] = [],
+  priorChapterSummaries: string = "",
 ): string {
-  if (entities.length === 0 && threads.length === 0) {
+  if (entities.length === 0 && threads.length === 0 && !priorChapterSummaries) {
     return "EMPTY — this is the first extraction for this project.";
   }
 
-  // ── Name registry (first line — model must copy these exactly) ──────────────
-  // Listed prominently so the model uses the canonical name, not a variant.
   const nameRegistry = entities.map((e) => `"${e.name}"`).join(", ");
-  const registryLine = `REGISTERED NAMES (copy exactly for is_update=true): ${nameRegistry}`;
+  const registryLine = `REGISTERED NAMES (copy exactly for is_update=true): ${nameRegistry || "None yet"}`;
 
-  // ── Compact per-type summary ─────────────────────────────────────────────────
   const byType: Record<string, string[]> = {};
-
   for (const e of entities) {
     const attrs = Object.entries(e.attributes ?? {})
       .slice(0, 10)
@@ -161,6 +194,14 @@ export function buildEntitySummary(
     ),
   ];
 
+  if (relationships.length > 0) {
+    const relStr = relationships
+      .slice(0, 20)
+      .map((r) => `${r.source} (${r.label}) ${r.target}`)
+      .join(" | ");
+    lines.push(`KnownRelationships: ${relStr}`);
+  }
+
   if (threads.length > 0) {
     const threadStr = threads
       .map(
@@ -169,6 +210,10 @@ export function buildEntitySummary(
       )
       .join(" ");
     lines.push(`OpenThreads: ${threadStr}`);
+  }
+
+  if (priorChapterSummaries.trim()) {
+    lines.push(`\nPRIOR ESTABLISHED STORY EVENTS & TIMELINE:\n${priorChapterSummaries.trim()}`);
   }
 
   return lines.join("\n");
@@ -180,116 +225,65 @@ export function buildExtractionPrompt(
   deltaText: string,
   existingSummary: string,
 ): string {
-  return `EXISTING KNOWLEDGE GRAPH:
+  return `EXISTING KNOWLEDGE GRAPH & STORY MEMORY:
 ${existingSummary}
 
-MANUSCRIPT TEXT:
+CURRENT CHAPTER TEXT:
 """
 ${deltaText.trim().split(/\s+/).slice(0, 5000).join(" ")}
 """
 
-You are building a knowledge graph for a long-running fiction story. Read the ENTIRE text above, then output ONLY valid JSON — no markdown, no explanation.
+You are Alex, an insightful fiction co-author and manuscript continuity specialist. Read the ENTIRE text above, analyze it against the knowledge graph, prior chapter events, and internal scene logic. Output valid JSON only.
 
 OUTPUT FORMAT:
 {
   "entities": [{ "name": "ExactName", "type": "character|location|faction|item|event|lore", "is_update": false, "attributes": { "key": "value" }, "confidence": "explicit|inferred" }],
   "relationships": [{ "source": "Name", "target": "Name", "label": "short verb phrase" }],
   "threads": [{ "description": "one clear sentence", "status": "open|resolved", "is_new": true, "existing_thread_index": null }],
-  "inconsistencies": [{ "entity": "Name", "attribute": "key", "established": "old value", "found": "new value", "quote": "exact short quote" }], 
-  "continuity_issues": [{ "character": "Name", "issue": "one conversational sentence describing the narrative or situational discontinuity", "severity": "notice|warning", "quote": "short excerpt" }]
+  "inconsistencies": [{ "entity": "Name", "attribute": "key", "established": "old value", "found": "new value", "quote": "exact short quote" }],
+  "coauthor_continuity_note": "A natural, conversational critique note from Alex to the author pointing out continuity and blocking breaks, or null if consistent."
 }
 
-━━━ STEP 1: NAMED CHARACTERS (mandatory — do this first) ━━━
-Scan the full text. Every person referred to by a proper name MUST become a character entity.
-Not finding a named character is the worst possible error — it is always better to include a minor character than to skip them.
+━━━ 1. HARD INCONSISTENCY RULES (FOR WORLD BOARD AUDIT) ━━━
+Flag direct physical or factual attribute contradictions (e.g. eye color was blue, now red; left hand severed, now right hand).
+DO NOT flag typos, spelling variants ("greeen" vs "green"), synonyms, or additive details ("captain" vs "captain of the guard").
 
-PHYSICAL APPEARANCE — capture ALL of these that are mentioned (these are REQUIRED if present in the text):
-  hair_color, eye_color, skin_tone, build, height, distinctive_features, age
+━━━ 2. DEEP NARRATIVE CONTINUITY AUDIT (FOR ALEX'S CONVERSATION NOTE) ━━━
+Carefully review the scene for logical and spatial breaks:
+1. SPATIAL & BLOCKING: A character being in two places at once (e.g., standing by the doorway watching the scene, then moments later opening the front door arriving home), or impossible physical positions.
+2. AWARENESS & RECOGNITION: A character acting like they don't know someone they have already met or have significant history with in prior chapters.
+3. SITUATIONAL DISCONNECT & CONFLICTING ACTIONS: A character talking about someone being gone/upstairs when that person is sitting right next to them holding their hand; emergency panic evaporating into casual chit-chat with no transition.
+4. TIMELINE DISRUPTIONS: Events happening out of chronological order without a flashback marker.
 
-CHARACTER PROFILE — capture if significant:
-  abilities, aliases, role, origin (2-3 words)
+HOW TO WRITE "coauthor_continuity_note":
+- Speak naturally as 'Alex' — like a trusted, attentive friend and beta reader giving honest feedback.
+- Synthesize all continuity/blocking problems into ONE cohesive, friendly, and direct observation.
+- Cite the contradictory moments directly.
+- Keep it constructive and warm. If there are no narrative continuity errors, output null.
 
-MAX 15 attributes per character. Physical appearance attributes are NEVER optional — if the text mentions a hair colour, eye colour, or any physical trait, it MUST be captured.
-DO NOT capture: emotions, expressions, reactions, mood, what they said or did in this scene.
-
-BODY-SWAP / TRANSMIGRATION / POSSESSION: If a character's soul, mind, or consciousness has entered another person's body, they are ONE entity — not two. Use the name that other characters call them (the body's name). Store the original identity as an alias attribute. Example: a soul named "[Soul]" waking in "[Body]"s body → one entity named "[Body]" with aliases="[Soul]".
-
-━━━ STEP 2: NAMED LOCATIONS (only these — not rooms) ━━━
-Named estates, cities, towns, schools, regions, or significant magical places only.
-NEVER extract individual rooms (bedroom, wardrobe, kitchen, balcony) — they are part of a location, not separate entities.
-Attributes: type (manor/city/school), region, notable_feature.
-
-━━━ STEP 3: PLOT-CRITICAL ITEMS ONLY ━━━
-Only unique magical artifacts, weapons, or objects that are central to the plot and will recur.
-NEVER extract: vehicles, watches, luxury brands, furniture (beds, tables, chairs), mirrors, clothing, glasses, everyday objects, room contents, or possessions mentioned only to characterize wealth/status.
-
-━━━ ENTITY RULES ━━━
-- MAX 12 entities total. Fill slots: characters first → locations → factions → plot-critical items → other.
-- is_update: Set to true ONLY if that exact name already appears in EXISTING KNOWLEDGE GRAPH above.
-  If EXISTING KNOWLEDGE GRAPH says "EMPTY" → every entity gets is_update=false, no exceptions.
-  Common mistake to avoid: if you are extracting a character for the first time, is_update MUST be false even if they are a main character.
-- ALIAS DEDUPLICATION: Same person with different names = one entity using the primary name with others as aliases attribute.
-- MAX 15 attributes per character entity. MAX 6 attributes for non-character entities. Attribute values MAX 6 words. Keys in snake_case.
-
-━━━ RELATIONSHIP RULES (MAX 10) ━━━
-CAPTURE permanent bonds: family ties (aunt of, younger sister of, adoptive father of), social roles (best friend of, mentor of, arch-enemy of), power dynamics (guardian of, leader of).
-Labels are predicates placed between source and target. Write "mother of", not "is mother of"; "guardian of", not "is guardian of".
-Every source and target MUST use the exact name of an entity in the entity list above or the REGISTERED NAMES list. Never invent a relationship endpoint that is absent from both lists.
-Do not emit both directions of the same bond. For example, choose either "Azoth | husband of | Nyx" or "Nyx | wife of | Azoth", never both.
-SKIP: spatial relations (room contains table, estate has balcony), single-scene actions, emotional reactions, anything not true 50 chapters later.
-
-━━━ THREAD RULES (MAX 4) ━━━
-One sentence per unresolved plot element that will drive future chapters. Skip scene-level observations.
-Compare every thread against OpenThreads in the existing graph. If it continues or resolves an existing thread, copy that existing description exactly, set is_new=false, and set existing_thread_index to its [number]. For a genuinely new thread, set is_new=true and existing_thread_index=null.
-
-━━━ INCONSISTENCY RULES ━━━
-Only flag direct contradictions of established facts from the knowledge graph that appear to be author errors. Compare the meaning of both values, not just their wording. A new detail that adds to or narrows an established description is compatible: for example, "protagonist" and "protagonist, Prince of Draemon" can both be true, as can "Emperor of Draemon" and "Emperor of Draemon, biological father of Arthur". Do not flag compatible additions, more specific descriptions, synonyms, or facts about different aspects of an entity. Flag only when the two facts cannot both be true in this scene and no explanation appears in the manuscript. If an established eye, hair, or skin color is directly contradicted, always include an inconsistency entry with the exact established value, new value, and a short quote from the passage. Never flag intentional character changes. DO NOT flag:
-- Typos, minor spelling variants, or missing letters (e.g., "greeen" vs "green", "grey" vs "gray"). Treat these as identical values.
-- Synonyms or compatible descriptors (e.g., "dark blue" vs "navy", "tall" vs "six feet tall").
-- Additional specifics that add detail without contradicting (e.g., "captain" vs "captain of the guard").
-
-━━━ CONTINUITY ISSUES (NARRATIVE FLOW / SITUATIONAL JUMPS) ━━━
-Flag narrative or situational jumps that are NOT physical attribute mistakes, but logical or knowledge gaps:
-- A character knowing something they were never told or witnessed.
-- A character treating another character as a trusted friend when their relationship was established as hostile or unknown.
-- A location, object, or character appearing somewhere without traveling or explanation.
-Keep the description natural and helpful, like an editor's note.
-
-`;
+━━━ 3. STANDARD ENTITY EXTRACTION RULES ━━━
+- Scan full text for all named characters. Physical appearance traits (hair_color, eye_color, build, height, age) are mandatory if present.
+- Relationships: durable, lasting bonds only. Skip one-scene transient actions.
+- Threads: significant unresolved plot questions.`;
 }
 
 // ── Response parser ───────────────────────────────────────────────────────────
 
 export function parseExtractionResponse(raw: string): ExtractionResult | null {
   try {
-    // Extract the JSON object between the first { and last }
-    // This handles markdown fences, preamble text, and trailing commentary
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
 
     if (start === -1 || end === -1 || end <= start) return null;
 
-    const parsed = JSON.parse(raw.slice(start, end + 1)) as Record<
-      string,
-      unknown
-    >;
+    const parsed = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
     const objectArray = (value: unknown): Record<string, unknown>[] =>
       Array.isArray(value)
-        ? value.filter(
-            (item): item is Record<string, unknown> =>
-              Boolean(item) && typeof item === "object",
-          )
+        ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
         : [];
     const text = (value: unknown, max = 500): string =>
       typeof value === "string" ? value.trim().slice(0, max) : "";
-    const entityTypes = new Set([
-      "character",
-      "location",
-      "faction",
-      "item",
-      "event",
-      "lore",
-    ]);
+    const entityTypes = new Set(["character", "location", "faction", "item", "event", "lore"]);
 
     const entities: ExtractedEntity[] = objectArray(parsed.entities)
       .slice(0, 12)
@@ -298,9 +292,7 @@ export function parseExtractionResponse(raw: string): ExtractionResult | null {
         const type = text(item.type, 20);
         if (!name || !entityTypes.has(type)) return [];
         const rawAttributes =
-          item.attributes &&
-          typeof item.attributes === "object" &&
-          !Array.isArray(item.attributes)
+          item.attributes && typeof item.attributes === "object" && !Array.isArray(item.attributes)
             ? (item.attributes as Record<string, unknown>)
             : {};
         const attributeLimit = type === "character" ? 15 : 6;
@@ -308,15 +300,9 @@ export function parseExtractionResponse(raw: string): ExtractionResult | null {
           Object.entries(rawAttributes)
             .slice(0, attributeLimit)
             .flatMap(([key, value]) => {
-              const cleanKey = key
-                .trim()
-                .replace(/[^a-z0-9_]/gi, "_")
-                .toLowerCase()
-                .slice(0, 50);
+              const cleanKey = key.trim().replace(/[^a-z0-9_]/gi, "_").toLowerCase().slice(0, 50);
               const cleanValue =
-                typeof value === "string" ||
-                typeof value === "number" ||
-                typeof value === "boolean"
+                typeof value === "string" || typeof value === "number" || typeof value === "boolean"
                   ? text(String(value), 160)
                   : "";
               return cleanKey && cleanValue ? [[cleanKey, cleanValue]] : [];
@@ -328,15 +314,12 @@ export function parseExtractionResponse(raw: string): ExtractionResult | null {
             type: type as ExtractedEntity["type"],
             is_update: item.is_update === true,
             attributes,
-            confidence:
-              item.confidence === "explicit" ? "explicit" : "inferred",
+            confidence: item.confidence === "explicit" ? "explicit" : "inferred",
           },
         ];
       });
 
-    const relationships: ExtractedRelationship[] = objectArray(
-      parsed.relationships,
-    )
+    const relationships: ExtractedRelationship[] = objectArray(parsed.relationships)
       .slice(0, 10)
       .flatMap((item) => {
         const source = text(item.source, 120);
@@ -357,16 +340,12 @@ export function parseExtractionResponse(raw: string): ExtractionResult | null {
             status: item.status === "resolved" ? "resolved" : "open",
             is_new: item.is_new !== false,
             existing_thread_index:
-              Number.isInteger(existingIndex) && existingIndex > 0
-                ? existingIndex
-                : null,
+              Number.isInteger(existingIndex) && existingIndex > 0 ? existingIndex : null,
           },
         ];
       });
 
-    const inconsistencies: ExtractedInconsistency[] = objectArray(
-      parsed.inconsistencies,
-    )
+    const inconsistencies: ExtractedInconsistency[] = objectArray(parsed.inconsistencies)
       .slice(0, 10)
       .flatMap((item) => {
         const entity = text(item.entity, 120);
@@ -385,30 +364,18 @@ export function parseExtractionResponse(raw: string): ExtractionResult | null {
         ];
       });
 
-    const continuity_issues: ExtractedContinuityIssue[] = objectArray(
-      parsed.continuity_issues,
-    )
-      .slice(0, 3)
-      .flatMap((item) => {
-        const character = text(item.character, 120);
-        const issue = text(item.issue, 300);
-        if (!character || !issue) return [];
-        return [
-          {
-            character,
-            issue,
-            severity: item.severity === "warning" ? "warning" : "notice",
-            quote: text(item.quote, 200),
-          },
-        ];
-      });
+    const coauthor_continuity_note =
+      typeof parsed.coauthor_continuity_note === "string" &&
+      parsed.coauthor_continuity_note.trim().length > 15
+        ? parsed.coauthor_continuity_note.trim()
+        : null;
 
     return {
       entities,
       relationships,
       threads,
       inconsistencies,
-      continuity_issues,
+      coauthor_continuity_note,
     };
   } catch {
     return null;
@@ -417,31 +384,16 @@ export function parseExtractionResponse(raw: string): ExtractionResult | null {
 
 // ── Diff + merge engine ───────────────────────────────────────────────────────
 
-/**
- * Merges extraction results into the Supabase knowledge graph.
- * - New entities → INSERT
- * - Updated entities → PATCH attributes (merge, not replace)
- * - New relationships → UPSERT
- * - New threads → INSERT; existing threads → UPDATE last_seen
- * - Inconsistencies → INSERT into inconsistency_flags
- *
- * Returns the list of inconsistency flags created (for the co-author queue).
- */
-// ── Name lookup helpers ───────────────────────────────────────────────────────
-
 interface NameEntry {
   name: string;
   id: string;
 }
 
-/** Build canonical-name and alias entries without collapsing ambiguous names. */
 function buildNameEntries(entities: ExistingEntity[]): NameEntry[] {
   const entries: NameEntry[] = [];
   for (const entity of entities) {
     entries.push({ name: entity.name, id: entity.id });
-    const aliasRaw = String(
-      (entity.attributes as Record<string, unknown>)?.aliases ?? "",
-    );
+    const aliasRaw = String((entity.attributes as Record<string, unknown>)?.aliases ?? "");
     for (const alias of aliasRaw
       .split(",")
       .map((value) => value.trim())
@@ -452,49 +404,15 @@ function buildNameEntries(entities: ExistingEntity[]): NameEntry[] {
   return entries;
 }
 
-// Common honorifics/titles to strip before name comparison — generic across all fiction genres
 const TITLES = new Set([
-  "mr",
-  "mrs",
-  "ms",
-  "miss",
-  "dr",
-  "prof",
-  "professor",
-  "lord",
-  "lady",
-  "sir",
-  "dame",
-  "master",
-  "mistress",
-  "captain",
-  "general",
-  "colonel",
-  "sergeant",
-  "officer",
-  "king",
-  "queen",
-  "emperor",
-  "empress",
-  "prince",
-  "princess",
-  "duke",
-  "duchess",
-  "count",
-  "countess",
-  "baron",
-  "baroness",
-  "elder",
-  "healer",
-  "auror",
-  "wizard",
-  "witch",
-  "the",
-  "a",
-  "an",
+  "mr", "mrs", "ms", "miss", "dr", "prof", "professor",
+  "lord", "lady", "sir", "dame", "master", "mistress",
+  "captain", "general", "colonel", "sergeant", "officer",
+  "king", "queen", "emperor", "empress", "prince", "princess",
+  "duke", "duchess", "count", "countess", "baron", "baroness",
+  "the", "a", "an",
 ]);
 
-/** Strip titles and return significant tokens (3+ chars, not a title). */
 function significantTokens(name: string): string[] {
   return name
     .toLowerCase()
@@ -515,22 +433,12 @@ function normalizedFullName(name: string): string {
     .join(" ");
 }
 
-/** Role and alias fields commonly gain detail as a story develops. A new value
- * that retains the established wording is an addition, not a contradiction. */
-function isCompatibleExpansion(
-  attribute: string,
-  established: string,
-  found: string,
-): boolean {
+function isCompatibleExpansion(attribute: string, established: string, found: string): boolean {
   const additiveFields = new Set(["role", "aliases"]);
   if (!additiveFields.has(attribute.toLowerCase())) return false;
   const oldValue = normalizedFullName(established);
   const newValue = normalizedFullName(found);
-  return Boolean(
-    oldValue &&
-    newValue &&
-    (newValue.includes(oldValue) || oldValue.includes(newValue)),
-  );
+  return Boolean(oldValue && newValue && (newValue.includes(oldValue) || oldValue.includes(newValue)));
 }
 
 function isSameFact(established: string, found: string): boolean {
@@ -538,18 +446,10 @@ function isSameFact(established: string, found: string): boolean {
 }
 
 function startsWithTitle(name: string): boolean {
-  const first = name
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .find(Boolean);
+  const first = name.toLowerCase().split(/[^a-z0-9]+/).find(Boolean);
   return Boolean(first && TITLES.has(first));
 }
 
-/**
- * Resolve an entity without ever guessing from one shared word between two
- * multi-word names. That old fallback turned "Black Cloaked Figures" into
- * "Black Obsidian Ring" and persisted a corrupt relationship.
- */
 function lookupId(name: string, entries: NameEntry[]): string | undefined {
   const fullKey = normalizedFullName(name);
   if (!fullKey) return undefined;
@@ -564,66 +464,37 @@ function lookupId(name: string, entries: NameEntry[]): string | undefined {
 
   const incomingTokens = significantTokens(name);
   if (incomingTokens.length === 0) return undefined;
-  const incomingIsBareSingle =
-    incomingTokens.length === 1 && !startsWithTitle(name);
+  const incomingIsBareSingle = incomingTokens.length === 1 && !startsWithTitle(name);
   const candidateIds = new Set<string>();
   for (const entry of entries) {
     const existingTokens = significantTokens(entry.name);
     if (existingTokens.length === 0) continue;
-    const shared = existingTokens.filter((token) =>
-      incomingTokens.includes(token),
-    );
-    const existingIsBareSingle =
-      existingTokens.length === 1 && !startsWithTitle(entry.name);
+    const shared = existingTokens.filter((token) => incomingTokens.includes(token));
+    const existingIsBareSingle = existingTokens.length === 1 && !startsWithTitle(entry.name);
     const oneSideIsSingleToken = incomingIsBareSingle || existingIsBareSingle;
     const strongMultiwordMatch = shared.length >= 2;
-    if ((oneSideIsSingleToken && shared.length === 1) || strongMultiwordMatch)
+    if ((oneSideIsSingleToken && shared.length === 1) || strongMultiwordMatch) {
       candidateIds.add(entry.id);
+    }
   }
   return candidateIds.size === 1 ? [...candidateIds][0] : undefined;
 }
 
-/** Pure wrapper used by regression tests and diagnostics. */
 export function resolveEntityId(
   name: string,
-  entities: Array<{
-    id: string;
-    name: string;
-    attributes?: Record<string, unknown>;
-  }>,
+  entities: Array<{ id: string; name: string; attributes?: Record<string, unknown> }>,
 ): string | undefined {
   return lookupId(name, buildNameEntries(entities as ExistingEntity[]));
 }
 
 const THREAD_STOP_WORDS = new Set([
-  "about",
-  "after",
-  "again",
-  "against",
-  "being",
-  "from",
-  "have",
-  "into",
-  "must",
-  "their",
-  "there",
-  "they",
-  "this",
-  "through",
-  "while",
-  "will",
-  "with",
-  "that",
-  "the",
-  "and",
-  "for",
+  "about", "after", "again", "against", "being", "from", "have", "into", "must", "their",
+  "there", "they", "this", "through", "while", "will", "with", "that", "the", "and", "for",
 ]);
 
 function threadTokens(description: string): Set<string> {
   return new Set(
-    significantTokens(description).filter(
-      (token) => !THREAD_STOP_WORDS.has(token),
-    ),
+    significantTokens(description).filter((token) => !THREAD_STOP_WORDS.has(token)),
   );
 }
 
@@ -638,7 +509,6 @@ function threadSimilarity(left: string, right: string): number {
   return Math.max(jaccard, containment * 0.8);
 }
 
-/** Return a unique, high-confidence matching thread index, or -1. */
 export function findMatchingThreadIndex(
   description: string,
   threads: Array<{ description: string }>,
@@ -655,16 +525,12 @@ export function findMatchingThreadIndex(
 }
 
 function cleanRelationshipLabel(label: string): string {
-  return label
-    .trim()
-    .replace(/^(?:is|are|was|were)\s+/i, "")
-    .slice(0, 80);
+  return label.trim().replace(/^(?:is|are|was|were)\s+/i, "").slice(0, 80);
 }
 
 const TRANSIENT_RELATIONSHIP =
   /^(?:attacked?|attracted to|captured?|connected by|fought|injured|killed|met|passenger of|resents?|resides? in|visited|entered|left|saw|spoke|talked|gave|handed|inhabits?|inhabited by|contains?|located in|warned|wears?)\b/i;
 
-/** World Board edges describe durable bonds, not scene actions or containment. */
 export function isPersistentRelationshipLabel(label: string): boolean {
   const cleaned = cleanRelationshipLabel(label);
   return Boolean(cleaned) && !TRANSIENT_RELATIONSHIP.test(cleaned);
@@ -679,10 +545,7 @@ export async function mergeExtractionIntoGraph(
   client: SupabaseClient,
   existingThreads: ExistingThread[] = [],
 ): Promise<WorldBoardMergeResult> {
-  const throwIfError = (
-    error: { message: string } | null,
-    operation: string,
-  ) => {
+  const throwIfError = (error: { message: string } | null, operation: string) => {
     if (error) throw new Error(`${operation}: ${error.message}`);
   };
 
@@ -696,7 +559,6 @@ export async function mergeExtractionIntoGraph(
     inconsistencies: [],
   };
 
-  // Discard additive updates
   result.inconsistencies = result.inconsistencies.filter(
     (inc) =>
       !isSameFact(inc.established, inc.found) &&
@@ -704,7 +566,6 @@ export async function mergeExtractionIntoGraph(
       !isLikelyTypo(inc.established, inc.found),
   );
 
-  // ── Layout tracking ───────────────────────────────────────────────────────────
   const ZONE_ORIGINS: Record<string, { x: number; y: number }> = {
     character: { x: 80, y: 80 },
     location: { x: 960, y: 80 },
@@ -722,7 +583,6 @@ export async function mergeExtractionIntoGraph(
     typeCountForLayout[ex.type] = (typeCountForLayout[ex.type] ?? 0) + 1;
   }
 
-  // Helper to build conflict keys from inconsistencies
   const getConflictKeysFor = (entityName: string) => {
     return new Set(
       result.inconsistencies
@@ -740,11 +600,8 @@ export async function mergeExtractionIntoGraph(
   // ── Entities ────────────────────────────────────────────────
   for (const e of result.entities) {
     let existId = lookupId(e.name, nameEntries);
-    let existingEntity = existingEntities.find(
-      (entity) => entity.id === existId,
-    );
+    let existingEntity = existingEntities.find((entity) => entity.id === existId);
 
-    // If not found in memory, check DB
     if (!existId) {
       const { data: dbDupe, error: dupeError } = await client
         .from("entities")
@@ -768,15 +625,9 @@ export async function mergeExtractionIntoGraph(
     if (existId) {
       nameEntries.push({ name: e.name, id: existId });
 
-      // Detect auto-inconsistencies for physical attributes
       const alreadyFlagged = getConflictKeysFor(e.name);
       const physicalColorFields = new Set([
-        "eye_color",
-        "eye_colour",
-        "hair_color",
-        "hair_colour",
-        "skin_tone",
-        "hand",
+        "eye_color", "eye_colour", "hair_color", "hair_colour", "skin_tone", "hand",
       ]);
       const automaticFlags =
         e.type === "character"
@@ -788,13 +639,12 @@ export async function mergeExtractionIntoGraph(
                 isLikelyTypo(String(previous), value) ||
                 alreadyFlagged.has(key.toLowerCase()) ||
                 isCompatibleExpansion(key, String(previous), value)
-              )
+              ) {
                 return [];
-              if (
-                e.confidence !== "explicit" &&
-                !physicalColorFields.has(key.toLowerCase())
-              )
+              }
+              if (e.confidence !== "explicit" && !physicalColorFields.has(key.toLowerCase())) {
                 return [];
+              }
               return [
                 {
                   entity: e.name,
@@ -814,27 +664,24 @@ export async function mergeExtractionIntoGraph(
         ...automaticFlags.map((flag) => flag.attribute.toLowerCase()),
       ]);
 
-      // FILTER OUT conflicting attributes so the established DB value is preserved!
       const safeAttributes = Object.fromEntries(
         Object.entries(e.attributes).filter(
           ([key]) => !allFlaggedAttributes.has(key.toLowerCase()),
         ),
       );
 
-      const attributeChanges = Object.entries(safeAttributes).flatMap(
-        ([key, value]) => {
-          const previous = existingEntity?.attributes?.[key];
-          return isSameFact(String(previous ?? ""), String(value))
-            ? []
-            : [
-                {
-                  key,
-                  from: previous == null ? null : String(previous),
-                  to: String(value),
-                },
-              ];
-        },
-      );
+      const attributeChanges = Object.entries(safeAttributes).flatMap(([key, value]) => {
+        const previous = existingEntity?.attributes?.[key];
+        return isSameFact(String(previous ?? ""), String(value))
+          ? []
+          : [
+              {
+                key,
+                from: previous == null ? null : String(previous),
+                to: String(value),
+              },
+            ];
+      });
 
       if (Object.keys(safeAttributes).length > 0) {
         const { error } = await client.rpc("merge_entity_attributes", {
@@ -858,7 +705,6 @@ export async function mergeExtractionIntoGraph(
         });
       }
     } else {
-      // Truly new entity
       const origin = ZONE_ORIGINS[e.type] ?? ZONE_ORIGINS.lore;
       const i = typeCountForLayout[e.type] ?? 0;
       typeCountForLayout[e.type] = i + 1;
@@ -895,8 +741,9 @@ export async function mergeExtractionIntoGraph(
         .split(",")
         .map((value) => value.trim())
         .filter(Boolean);
-      for (const alias of aliases)
+      for (const alias of aliases) {
         nameEntries.push({ name: alias, id: inserted.id });
+      }
     }
   }
 
@@ -905,12 +752,7 @@ export async function mergeExtractionIntoGraph(
     const sourceId = lookupId(rel.source, nameEntries);
     const targetId = lookupId(rel.target, nameEntries);
     const label = cleanRelationshipLabel(rel.label);
-    if (
-      !sourceId ||
-      !targetId ||
-      sourceId === targetId ||
-      !isPersistentRelationshipLabel(label)
-    ) {
+    if (!sourceId || !targetId || sourceId === targetId || !isPersistentRelationshipLabel(label)) {
       continue;
     }
 
@@ -921,10 +763,7 @@ export async function mergeExtractionIntoGraph(
       .eq("source_id", sourceId)
       .eq("target_id", targetId)
       .maybeSingle();
-    throwIfError(
-      relationshipLookupError,
-      "Could not check for duplicate relationship",
-    );
+    throwIfError(relationshipLookupError, "Could not check for duplicate relationship");
 
     if (!existing) {
       const { error } = await client.from("relationships").insert({
@@ -954,16 +793,10 @@ export async function mergeExtractionIntoGraph(
       Number.isInteger(requestedIndex) &&
       requestedIndex >= 1 &&
       requestedIndex <= knownThreads.length &&
-      threadSimilarity(
-        thread.description,
-        knownThreads[requestedIndex - 1].description,
-      ) >= 0.35
+      threadSimilarity(thread.description, knownThreads[requestedIndex - 1].description) >= 0.35
         ? requestedIndex - 1
         : -1;
-    const similarMatch = findMatchingThreadIndex(
-      thread.description,
-      knownThreads,
-    );
+    const similarMatch = findMatchingThreadIndex(thread.description, knownThreads);
     const matchIndex = indexedMatch >= 0 ? indexedMatch : similarMatch;
 
     if (matchIndex >= 0) {
@@ -1022,10 +855,10 @@ export async function mergeExtractionIntoGraph(
     if (
       isSameFact(inc.established, inc.found) ||
       isCompatibleExpansion(inc.attribute, inc.established, inc.found)
-    )
+    ) {
       continue;
+    }
 
-    // Resolve entityId from memory nameEntries first, then fall back to DB lookup
     let entityId = lookupId(inc.entity, nameEntries);
     if (!entityId) {
       const { data: dbEntity } = await client
@@ -1037,7 +870,6 @@ export async function mergeExtractionIntoGraph(
       if (dbEntity) entityId = dbEntity.id;
     }
 
-    // Always push to changes so the card displays on the Changes tab!
     changes.inconsistencies.push(inc);
 
     if (entityId) {
@@ -1064,43 +896,4 @@ export async function mergeExtractionIntoGraph(
   }
 
   return { inconsistencies: flagsCreated, changes };
-}
-
-function levenshteinDistance(a: string, b: string): number {
-  const matrix: number[][] = [];
-  const s1 = a.toLowerCase().trim();
-  const s2 = b.toLowerCase().trim();
-
-  for (let i = 0; i <= s1.length; i++) matrix[i] = [i];
-  for (let j = 0; j <= s2.length; j++) matrix[0][j] = j;
-
-  for (let i = 1; i <= s1.length; i++) {
-    for (let j = 1; j <= s2.length; j++) {
-      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1, // deletion
-        matrix[i][j - 1] + 1, // insertion
-        matrix[i - 1][j - 1] + cost, // substitution
-      );
-    }
-  }
-  return matrix[s1.length][s2.length];
-}
-
-function isLikelyTypo(established: string, found: string): boolean {
-  const s1 = established.trim().toLowerCase();
-  const s2 = found.trim().toLowerCase();
-
-  if (s1 === s2) return true;
-
-  const dist = levenshteinDistance(s1, s2);
-  const minLength = Math.min(s1.length, s2.length);
-
-  // 1-character typo on words with 4+ characters (e.g. "greeen" vs "green", "browm" vs "brown")
-  if (dist === 1 && minLength >= 4) return true;
-
-  // 2-character transposition or typo on longer words (e.g. "platnum" vs "platinum")
-  if (dist === 2 && minLength >= 7) return true;
-
-  return false;
 }

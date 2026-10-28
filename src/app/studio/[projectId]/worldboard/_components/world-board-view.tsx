@@ -468,7 +468,6 @@ export default function WorldBoardView({
                 <span className="font-semibold">~{estimatedCredits} credits</span>
                 {" "}·{" "}
                 {estimatedCredits / 4} AI {estimatedCredits / 4 === 1 ? "call" : "calls"} × 4 credits each
-                {" "}(Gemini Pro)
               </p>
             </div>
             <div className="flex gap-2 justify-end">

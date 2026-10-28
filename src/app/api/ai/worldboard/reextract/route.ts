@@ -12,7 +12,6 @@
  * Later chunks see entities inserted by earlier chunks, so context accumulates.
  */
 
-// Allow up to 5 minutes — processing all chapters sequentially can take 60-90s+
 export const maxDuration = 300;
 
 import { NextRequest } from "next/server";
@@ -25,6 +24,7 @@ import {
   mergeExtractionIntoGraph,
   hasWorldBoardChanges,
   type WorldBoardMergeResult,
+  type ExistingRelationship,
 } from "@/lib/extraction";
 import {
   checkRateLimit,
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
   // Fetch chapters to process
   let query = supabase
     .from("chapters")
-    .select("id, title, position, content, word_count")
+    .select("id, title, position, content, word_count, summary")
     .eq("project_id", projectId)
     .order("position");
 
@@ -111,7 +111,6 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Count total chunks so we can deduct the correct number of credits ────────
-  // (4 credits per Gemini 2.5 Pro call = per 5000-word chunk)
   const CREDITS_PER_CHUNK = 4;
   let totalChunks = 0;
   const chapterTexts: Map<string, string> = new Map();
@@ -167,15 +166,15 @@ export async function POST(request: NextRequest) {
     const chapterNum = (chapter.position ?? 0) + 1;
     let wordOffset = 0;
 
-    // Process chapter in chunks
     let chapterFailure: string | null = null;
     while (wordOffset < words.length) {
       const chunk = words.slice(wordOffset, wordOffset + CHUNK_SIZE).join(" ");
 
-      // Fetch current graph state (updated by each chunk so context accumulates)
       const [
         { data: existingEntities, error: entityError },
         { data: openThreads, error: threadError },
+        { data: rawRels },
+        { data: allChapters },
       ] = await Promise.all([
         supabase
           .from("entities")
@@ -186,7 +185,17 @@ export async function POST(request: NextRequest) {
           .select("id, description, status, last_seen_chapter_number")
           .eq("project_id", projectId)
           .neq("status", "resolved"),
+        supabase
+          .from("relationships")
+          .select("label, source:entities!source_id(name), target:entities!target_id(name)")
+          .eq("project_id", projectId),
+        supabase
+          .from("chapters")
+          .select("position, title, summary")
+          .eq("project_id", projectId)
+          .order("position"),
       ]);
+
       if (entityError || threadError) {
         await recordCreditFailure(
           user.id,
@@ -204,9 +213,24 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const cleanRels: ExistingRelationship[] = (rawRels ?? [])
+        .map((r: any) => ({
+          source: r.source?.name,
+          target: r.target?.name,
+          label: r.label,
+        }))
+        .filter((r: any) => r.source && r.target && r.label);
+
+      const priorSummaries = (allChapters ?? [])
+        .filter((c: any) => c.position < chapter.position && c.summary)
+        .map((c: any) => `Chapter ${c.position + 1} (${c.title}): ${c.summary}`)
+        .join("\n");
+
       const summary = buildEntitySummary(
         existingEntities ?? [],
         openThreads ?? [],
+        cleanRels,
+        priorSummaries,
       );
       const prompt = buildExtractionPrompt(chunk, summary);
 
@@ -214,7 +238,7 @@ export async function POST(request: NextRequest) {
       try {
         rawResponse = await geminiGenerate(
           prompt,
-          "You are a JSON extraction API for fiction manuscript analysis. Output valid JSON only.",
+          "You are Alex, an expert fiction co-author and manuscript consistency engine. Output valid JSON only.",
           8192,
           true,
           WORLDBOARD_MODEL,
@@ -263,6 +287,7 @@ export async function POST(request: NextRequest) {
           supabase,
           openThreads ?? [],
         );
+
         if (hasWorldBoardChanges(mergeResult.changes)) {
           const { error: historyError } = await supabase
             .from("worldboard_updates")
@@ -278,29 +303,24 @@ export async function POST(request: NextRequest) {
               historyError.message,
             );
           }
-          if (
-            extracted.continuity_issues &&
-            extracted.continuity_issues.length > 0
-          ) {
-            for (const issue of extracted.continuity_issues) {
-              const coauthorNote = `Hey, I noticed a potential continuity detail in Chapter ${chapterNum}: ${issue.issue}${issue.quote ? ` ("${issue.quote}")` : ""}. Did you want to bridge this scene or leave it as is?`;
+        }
 
-              const { error: coauthorError } = await supabase
-                .from("coauthor_messages")
-                .insert({
-                  project_id: projectId,
-                  role: "assistant",
-                  content: coauthorNote,
-                  message_type: "observation",
-                });
+        // Send Alex's natural continuity critique directly into chat
+        if (extracted.coauthor_continuity_note) {
+          const { error: coauthorError } = await supabase
+            .from("coauthor_messages")
+            .insert({
+              project_id: projectId,
+              role: "assistant",
+              content: extracted.coauthor_continuity_note,
+              message_type: "observation",
+            });
 
-              if (coauthorError) {
-                console.warn(
-                  "[reextract] Could not save coauthor observation:",
-                  coauthorError.message,
-                );
-              }
-            }
+          if (coauthorError) {
+            console.warn(
+              "[reextract] Could not save coauthor continuity note:",
+              coauthorError.message,
+            );
           }
         }
       } catch (err) {
@@ -354,9 +374,6 @@ export async function POST(request: NextRequest) {
       wordOffset = completedWords;
     }
 
-    // Never mark a failed chapter as extracted. Previously this advanced the
-    // watermark even after an AI/parse/database failure, leaving a blank board
-    // that could not recover automatically.
     if (chapterFailure) {
       return Response.json(
         {
