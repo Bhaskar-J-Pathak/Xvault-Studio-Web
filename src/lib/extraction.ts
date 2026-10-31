@@ -237,11 +237,18 @@ You are Alex, an insightful fiction co-author and manuscript continuity speciali
 
 OUTPUT FORMAT:
 {
-  "entities": [{ "name": "ExactName", "type": "character|location|faction|item|event|lore", "is_update": false, "attributes": { "key": "value" }, "confidence": "explicit|inferred" }],
-  "relationships": [{ "source": "Name", "target": "Name", "label": "short verb phrase" }],
-  "threads": [{ "description": "one clear sentence", "status": "open|resolved", "is_new": true, "existing_thread_index": null }],
-  "inconsistencies": [{ "entity": "Name", "attribute": "key", "established": "old value", "found": "new value", "quote": "exact short quote" }],
-  "coauthor_continuity_note": "A natural, conversational critique note from Alex to the author pointing out continuity and blocking breaks, or null if consistent."
+  "entities": [...],
+  "relationships": [...],
+  "threads": [...],
+  "inconsistencies": [...],
+  "continuity_issues": [
+    {
+      "character": "Name",
+      "issue": "concise description of the continuity problem",
+      "conversational_hook": "How would you bring this up casually as a single opening observation",
+      "severity": "warning|notice"
+    }
+  ]
 }
 
 ━━━ 1. HARD INCONSISTENCY RULES (FOR WORLD BOARD AUDIT) ━━━
@@ -264,7 +271,14 @@ HOW TO WRITE "coauthor_continuity_note":
 ━━━ 3. STANDARD ENTITY EXTRACTION RULES ━━━
 - Scan full text for all named characters. Physical appearance traits (hair_color, eye_color, build, height, age) are mandatory if present.
 - Relationships: durable, lasting bonds only. Skip one-scene transient actions.
-- Threads: significant unresolved plot questions.`;
+- Threads: significant unresolved plot questions.
+
+━━━ CONTINUITY OBSERVATIONS ━━━
+If you detect continuity or blocking errors:
+1. Provide a list in "continuity_issues".
+2. In "conversational_hook", write ONLY the first issue as a casual, friendly opener (e.g. "Hey, just noticed something in the living room scene—Michael is standing near the door reacting to Keya, but then a few paragraphs down he opens the front door arriving with takeout. Did you want to smooth that out?").
+3. Keep it brief. Do not list all issues in the hook; the remaining items will be brought up as the conversation progresses.
+`;
 }
 
 // ── Response parser ───────────────────────────────────────────────────────────

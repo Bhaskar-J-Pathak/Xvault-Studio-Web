@@ -3,6 +3,7 @@
  *
  * Main chat endpoint. Writer sends a message to their co-author.
  * Detects global change requests and routes them accordingly.
+ * Dynamically paces queued continuity observations across turns.
  *
  * Body: { projectId, chapterId, message, recentText, history }
  * Returns: { reply, messageType } or { reply, messageType: "global_change", instruction }
@@ -82,11 +83,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  // Verify ownership + fetch co-author settings
+  // Verify ownership + fetch co-author settings & project metadata
   const [{ data: project }, { data: coauthor }] = await Promise.all([
     supabase
       .from("projects")
-      .select("id")
+      .select("id, metadata")
       .eq("id", projectId)
       .eq("user_id", user.id)
       .single(),
@@ -112,9 +113,7 @@ export async function POST(request: NextRequest) {
   const coauthorPersonality = coauthor?.personality ?? null;
 
   // ── Global change detection ────────────────────────────────────────────────
-  // Pattern-match first (fast). If matched, return a special messageType so
-  // the panel can trigger the global-change analysis flow.
-    if (isLikelyGlobalChange(message.trim())) {
+  if (isLikelyGlobalChange(message.trim())) {
     const ackReply = `On it — scanning the manuscript for every instance. Give me a moment, I'll show you exactly what I'll change before touching anything.`;
 
     await saveCoauthorMessages(supabase, projectId, message.trim(), ackReply, "chat").catch(
@@ -130,10 +129,6 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Prose request redirect ─────────────────────────────────────────────────
-  // If the writer is asking for prose in chat, redirect them to the editor's
-  // cursor-aware Write workflow.
-  // Prose in chat history clogs the co-author's memory with text instead of
-  // useful story context, which degrades the quality of feedback over time.
   if (isLikelyProseRequest(message.trim())) {
     const redirectReply = `Quick heads up before I do this. If I write prose here in our chat, it fills up my memory with text that crowds out the important stuff: your story decisions, character choices, things you have told me to track. Over time that starts to hurt the quality of my feedback.
 
@@ -153,6 +148,38 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
     });
   }
 
+  // ── Continuity Observation Queue Check ─────────────────────────────────────
+  const projectMetadata = (project.metadata && typeof project.metadata === "object")
+    ? (project.metadata as Record<string, unknown>)
+    : {};
+
+  const pendingQueue: Array<{
+    chapterNumber: number;
+    character: string;
+    issue: string;
+    conversational_hook?: string;
+  }> = Array.isArray(projectMetadata.pending_continuity_queue)
+    ? (projectMetadata.pending_continuity_queue as any)
+    : [];
+
+  let nextIssuePromptDirective = "";
+  let updatedQueue = [...pendingQueue];
+
+  // If there's an observation in the queue, pull the next one for this turn
+  if (pendingQueue.length > 0) {
+    const nextIssue = pendingQueue[0];
+    updatedQueue = pendingQueue.slice(1);
+
+    nextIssuePromptDirective = `
+ACTIVE CO-AUTHOR CONTINUITY TASK:
+The author has replied to your previous message.
+1. Respond to and address their input naturally first.
+2. Then, segue conversationally into the next continuity item you noticed:
+   - Detail: In Chapter ${nextIssue.chapterNumber}, regarding ${nextIssue.character}: ${nextIssue.issue}.
+3. Keep the tone friendly, brief, and supportive. Do not overwhelm the author with a lecture; bring it up naturally like discussing the scene over coffee.
+`;
+  }
+
   // ── Regular chat ───────────────────────────────────────────────────────────
   let systemPrompt: string;
   try {
@@ -166,6 +193,11 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
       "conversation",
       `${message.trim()}\n${recentText.slice(-1600)}`
     ));
+
+    // Append the queued observation directive if active
+    if (nextIssuePromptDirective) {
+      systemPrompt += `\n\n${nextIssuePromptDirective}`;
+    }
   } catch (err) {
     await recordCreditFailure(user.id, "coauthor_chat", 1, "context_assembly", err);
     const detail = err instanceof Error ? err.message : String(err);
@@ -208,9 +240,21 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
       ? "nudge"
       : "chat";
 
-  await saveCoauthorMessages(supabase, projectId, message.trim(), reply, messageType).catch(
-    (e) => console.error("[coauthor/chat] Save failed:", e)
-  );
+  // Persist messages and update remaining queue
+  await Promise.all([
+    saveCoauthorMessages(supabase, projectId, message.trim(), reply, messageType).catch(
+      (e) => console.error("[coauthor/chat] Save failed:", e)
+    ),
+    supabase
+      .from("projects")
+      .update({
+        metadata: {
+          ...projectMetadata,
+          pending_continuity_queue: updatedQueue,
+        },
+      })
+      .eq("id", projectId),
+  ]);
 
   return Response.json({ ok: true, reply, messageType, remaining });
 }
