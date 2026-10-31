@@ -44,10 +44,10 @@ export async function DELETE(request: NextRequest) {
   const messageId  = request.nextUrl.searchParams.get("id");
   if (!projectId) return Response.json({ error: "Missing projectId" }, { status: 400 });
 
-  // Verify ownership
+  // Verify ownership & fetch metadata
   const { data: project } = await supabase
     .from("projects")
-    .select("id")
+    .select("id, metadata")
     .eq("id", projectId)
     .eq("user_id", user.id)
     .single();
@@ -61,11 +61,46 @@ export async function DELETE(request: NextRequest) {
       .eq("id", messageId)
       .eq("project_id", projectId);
   } else {
-    // Clear all messages for this project
-    await supabase
-      .from("coauthor_messages")
-      .delete()
-      .eq("project_id", projectId);
+    // Clear all messages for this project + reset co-author continuity state
+    const currentMetadata = (project.metadata && typeof project.metadata === "object")
+      ? (project.metadata as Record<string, unknown>)
+      : {};
+
+    await Promise.all([
+      // 1. Delete all messages
+      supabase
+        .from("coauthor_messages")
+        .delete()
+        .eq("project_id", projectId),
+
+      // 2. Clear any queued continuity issues from project metadata
+      supabase
+        .from("projects")
+        .update({
+          metadata: {
+            ...currentMetadata,
+            pending_continuity_queue: [],
+          },
+        })
+        .eq("id", projectId),
+
+      // 3. Reset watermark so extraction evaluates from word 0
+      supabase
+        .from("chapters")
+        .update({ last_extracted_word: 0 })
+        .eq("project_id", projectId),
+    ]);
+
+    // 4. Trigger re-extraction in the background to re-analyze and post the opening observation
+    const origin = request.nextUrl.origin;
+    fetch(`${origin}/api/ai/worldboard/reextract`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        cookie: request.headers.get("cookie") ?? "",
+      },
+      body: JSON.stringify({ projectId }),
+    }).catch((err) => console.error("[coauthor/messages] Background reextract trigger failed:", err));
   }
 
   return Response.json({ ok: true });
