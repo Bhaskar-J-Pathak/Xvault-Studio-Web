@@ -7,6 +7,9 @@
  * Body: { projectId: string, chapterId?: string }
  *   - chapterId provided → re-extract that chapter only
  *   - chapterId omitted  → re-extract all chapters (ordered by position)
+ *
+ * Each chapter is processed in 5000-word chunks sequentially.
+ * Later chunks see entities inserted by earlier chunks, so context accumulates.
  */
 
 export const maxDuration = 300;
@@ -70,35 +73,18 @@ export async function POST(request: NextRequest) {
   }
 
   const { projectId, chapterId } = body;
-  if (!projectId) {
+  if (!projectId)
     return Response.json({ error: "Missing projectId" }, { status: 400 });
-  }
 
-  // Verify ownership & retrieve custom co-author metadata
+  // Verify ownership
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, metadata")
+    .select("id")
     .eq("id", projectId)
     .eq("user_id", user.id)
     .single();
 
   if (!project) return Response.json({ error: "Not found" }, { status: 404 });
-
-  const projectMetadata = (project.metadata && typeof project.metadata === "object")
-    ? (project.metadata as Record<string, unknown>)
-    : {};
-
-  // Fetch optional profile-level coauthor name fallback
-  const { data: userProfile } = await supabase
-    .from("profiles")
-    .select("coauthor_name")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const coauthorName =
-    (projectMetadata.coauthor_name as string) ||
-    userProfile?.coauthor_name ||
-    "your co-author";
 
   // Fetch chapters to process
   let query = supabase
@@ -112,14 +98,19 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: chapters, error: chapterError } = await query;
-  if (chapterError) {
-    return Response.json({ error: "Could not load saved chapters." }, { status: 500 });
-  }
+  if (chapterError)
+    return Response.json(
+      { error: "Could not load saved chapters." },
+      { status: 500 },
+    );
   if (!chapters?.length) {
-    return Response.json({ error: "No chapters found to extract." }, { status: 400 });
+    return Response.json(
+      { error: "No chapters found to extract." },
+      { status: 400 },
+    );
   }
 
-  // ── Count total chunks ──────────────────────────────────────────────────────
+  // ── Count total chunks so we can deduct the correct number of credits ────────
   const CREDITS_PER_CHUNK = 4;
   let totalChunks = 0;
   const chapterTexts: Map<string, string> = new Map();
@@ -133,8 +124,11 @@ export async function POST(request: NextRequest) {
 
   if (totalChunks === 0) {
     return Response.json(
-      { error: "Extraction needs at least one chapter with 50 words of saved text." },
-      { status: 400 }
+      {
+        error:
+          "Extraction needs at least one chapter with 50 words of saved text.",
+      },
+      { status: 400 },
     );
   }
 
@@ -147,16 +141,19 @@ export async function POST(request: NextRequest) {
       createServiceClient(),
       totalCredits,
       projectId,
-      "worldboard_reextract"
+      "worldboard_reextract",
     );
   } catch (err) {
     console.error("[reextract] Rate limit check failed:", err);
-    return Response.json({ error: "Service temporarily unavailable" }, { status: 503 });
+    return Response.json(
+      { error: "Service temporarily unavailable" },
+      { status: 503 },
+    );
   }
   const { block, remaining } = rateLimitResult;
   if (block) return block;
 
-  // ── Reset watermark so clean runs & demos always process from start ──────────
+  // ── Reset progress watermark so re-extract / demos always start from word 0 ──
   if (chapterId) {
     await supabase.from("chapters").update({ last_extracted_word: 0 }).eq("id", chapterId);
   } else {
@@ -167,14 +164,10 @@ export async function POST(request: NextRequest) {
   let totalEntities = 0;
   let totalRelationships = 0;
 
-  // Collected continuity findings to queue across chunks
-  const gatheredContinuityIssues: Array<{
-    chapterNumber: number;
-    character: string;
-    issue: string;
-    conversational_hook?: string;
-  }> = [];
+  // Collect notes across all chunks to combine into one single co-author message
+  const collectedNotes: string[] = [];
 
+  // Process each chapter sequentially
   for (const chapter of chapters) {
     const text = chapterTexts.get(chapter.id);
     if (!text) continue;
@@ -219,9 +212,15 @@ export async function POST(request: NextRequest) {
           "worldboard_reextract",
           CREDITS_PER_CHUNK,
           "persistence",
-          entityError || threadError
+          entityError || threadError,
         );
-        return Response.json({ error: "Could not load World Board data." }, { status: 500 });
+        return Response.json(
+          {
+            error:
+              "Could not load World Board data. Check the database migrations before retrying.",
+          },
+          { status: 500 },
+        );
       }
 
       const cleanRels: ExistingRelationship[] = (rawRels ?? [])
@@ -241,7 +240,7 @@ export async function POST(request: NextRequest) {
         existingEntities ?? [],
         openThreads ?? [],
         cleanRels,
-        priorSummaries
+        priorSummaries,
       );
       const prompt = buildExtractionPrompt(chunk, summary);
 
@@ -249,10 +248,10 @@ export async function POST(request: NextRequest) {
       try {
         rawResponse = await geminiGenerate(
           prompt,
-          `You are ${coauthorName}, a supportive and perceptive fiction co-author. Output valid JSON only.`,
+          "You are Alex, an expert fiction co-author and manuscript consistency engine. Output valid JSON only.",
           8192,
           true,
-          WORLDBOARD_MODEL
+          WORLDBOARD_MODEL,
         );
       } catch (err) {
         await recordCreditFailure(
@@ -260,9 +259,12 @@ export async function POST(request: NextRequest) {
           "worldboard_reextract",
           CREDITS_PER_CHUNK,
           "ai_generation",
-          err
+          err,
         );
-        console.error(`[reextract] AI failed on chapter "${chapter.title}" offset ${wordOffset}:`, err);
+        console.error(
+          `[reextract] AI failed on chapter "${chapter.title}" offset ${wordOffset}:`,
+          err,
+        );
         chapterFailure = `AI extraction failed for chapter "${chapter.title}".`;
         break;
       }
@@ -275,9 +277,12 @@ export async function POST(request: NextRequest) {
           CREDITS_PER_CHUNK,
           "validation",
           undefined,
-          "invalid_response"
+          "invalid_response",
         );
-        chapterFailure = `The AI returned an invalid extraction for chapter "${chapter.title}".`;
+        console.error(
+          `[reextract] Parse failed on chapter "${chapter.title}" offset ${wordOffset}`,
+        );
+        chapterFailure = `The AI returned an invalid extraction for chapter "${chapter.title}". Please try again.`;
         break;
       }
 
@@ -290,7 +295,7 @@ export async function POST(request: NextRequest) {
           extracted,
           existingEntities ?? [],
           supabase,
-          openThreads ?? []
+          openThreads ?? [],
         );
 
         if (hasWorldBoardChanges(mergeResult.changes)) {
@@ -303,31 +308,29 @@ export async function POST(request: NextRequest) {
               changes: mergeResult.changes,
             });
           if (historyError) {
-            console.warn("[reextract] Could not save update history:", historyError.message);
+            console.warn(
+              "[reextract] Could not save update history:",
+              historyError.message,
+            );
           }
         }
 
-        // Collect continuity issues into the list
-        if (extracted.continuity_issues && extracted.continuity_issues.length > 0) {
-          for (const item of extracted.continuity_issues) {
-            gatheredContinuityIssues.push({
-              chapterNumber: chapterNum,
-              character: item.character,
-              issue: item.issue,
-              conversational_hook: extracted.coauthor_continuity_note ?? undefined,
-            });
-          }
-        } else if (extracted.coauthor_continuity_note) {
-          gatheredContinuityIssues.push({
-            chapterNumber: chapterNum,
-            character: "Continuity",
-            issue: extracted.coauthor_continuity_note,
-            conversational_hook: extracted.coauthor_continuity_note,
-          });
+        // Collect note to send as one single message at the end
+        if (extracted.coauthor_continuity_note) {
+          collectedNotes.push(extracted.coauthor_continuity_note);
         }
       } catch (err) {
-        await recordCreditFailure(user.id, "worldboard_reextract", CREDITS_PER_CHUNK, "persistence", err);
-        console.error(`[reextract] Database merge failed on "${chapter.title}" offset ${wordOffset}:`, err);
+        await recordCreditFailure(
+          user.id,
+          "worldboard_reextract",
+          CREDITS_PER_CHUNK,
+          "persistence",
+          err,
+        );
+        console.error(
+          `[reextract] Database merge failed on chapter "${chapter.title}" offset ${wordOffset}:`,
+          err,
+        );
         chapterFailure = `Could not save extracted data for chapter "${chapter.title}".`;
         break;
       }
@@ -337,71 +340,72 @@ export async function POST(request: NextRequest) {
         mergeResult.changes.updatedEntities.length;
       totalRelationships += mergeResult.changes.addedRelationships.length;
       const completedWords = Math.min(words.length, wordOffset + CHUNK_SIZE);
-
       const { error: progressError } = await supabase
         .from("chapters")
         .update({ last_extracted_word: completedWords })
         .eq("id", chapter.id);
-
       if (progressError) {
-        await recordCreditFailure(user.id, "worldboard_reextract", CREDITS_PER_CHUNK, "persistence", progressError);
-        return Response.json({ error: "Extracted data was saved, but progress could not be saved." }, { status: 500 });
+        await recordCreditFailure(
+          user.id,
+          "worldboard_reextract",
+          CREDITS_PER_CHUNK,
+          "persistence",
+          progressError,
+        );
+        return Response.json(
+          {
+            error:
+              "Extracted data was saved, but extraction progress could not be saved.",
+          },
+          { status: 500 },
+        );
       }
-
-      await commitRateLimit(user.id, createServiceClient(), CREDITS_PER_CHUNK, projectId, "worldboard_reextract");
+      await commitRateLimit(
+        user.id,
+        createServiceClient(),
+        CREDITS_PER_CHUNK,
+        projectId,
+        "worldboard_reextract",
+      );
       wordOffset = completedWords;
     }
 
     if (chapterFailure) {
-      return Response.json({
-        ok: false,
-        error: chapterFailure,
-        chaptersProcessed,
-        totalEntities,
-        totalRelationships,
-      }, { status: 502 });
+      return Response.json(
+        {
+          ok: false,
+          error: chapterFailure,
+          chaptersProcessed,
+          totalEntities,
+          totalRelationships,
+        },
+        { status: 502 },
+      );
     }
 
     chaptersProcessed++;
   }
 
-  // ── Dispatch: Send 1 conversational opener, queue the rest ──────────────────
-  if (gatheredContinuityIssues.length > 0) {
-    const [firstIssue, ...queuedIssues] = gatheredContinuityIssues;
+  // ── Send ONE single consolidated message to the co-author chat ─────────────
+  if (collectedNotes.length > 0) {
+    const uniqueNotes = Array.from(new Set(collectedNotes));
+    const finalMessage = uniqueNotes.join("\n\n---\n\n");
 
-    const openingMessage =
-      firstIssue.conversational_hook ||
-      `Hey, I noticed a potential continuity snag in Chapter ${firstIssue.chapterNumber}: ${firstIssue.issue}. Did you want to look at that or keep it as is?`;
-
-    // 1. Send the primary observation bubble
     const { error: coauthorError } = await supabase
       .from("coauthor_messages")
       .insert({
         project_id: projectId,
         role: "assistant",
-        content: openingMessage,
+        content: finalMessage,
         message_type: "observation",
       });
 
     if (coauthorError) {
-      console.warn("[reextract] Could not save primary coauthor message:", coauthorError.message);
+      console.warn(
+        "[reextract] Could not save coauthor continuity note:",
+        coauthorError.message,
+      );
     }
-
-    // 2. Persist remaining issues into the project queue
-    const updatedMetadata = {
-      ...projectMetadata,
-      pending_continuity_queue: queuedIssues,
-    };
-
-    await supabase
-      .from("projects")
-      .update({ metadata: updatedMetadata })
-      .eq("id", projectId);
-  } else {
-    // If no issues were found, clear any old pending queue
-    const updatedMetadata = { ...projectMetadata };
-    delete updatedMetadata.pending_continuity_queue;
-    await supabase.from("projects").update({ metadata: updatedMetadata }).eq("id", projectId);
   }
 
   return Response.json({
