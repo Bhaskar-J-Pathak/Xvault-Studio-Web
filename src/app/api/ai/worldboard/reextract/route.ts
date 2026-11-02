@@ -153,19 +153,9 @@ export async function POST(request: NextRequest) {
   const { block, remaining } = rateLimitResult;
   if (block) return block;
 
-  // ── Reset progress watermark so re-extract / demos always start from word 0 ──
-  if (chapterId) {
-    await supabase.from("chapters").update({ last_extracted_word: 0 }).eq("id", chapterId);
-  } else {
-    await supabase.from("chapters").update({ last_extracted_word: 0 }).eq("project_id", projectId);
-  }
-
   let chaptersProcessed = 0;
   let totalEntities = 0;
   let totalRelationships = 0;
-
-  // Collect notes across all chunks to combine into one single co-author message
-  const collectedNotes: string[] = [];
 
   // Process each chapter sequentially
   for (const chapter of chapters) {
@@ -315,9 +305,23 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Collect note to send as one single message at the end
+        // Send Alex's natural continuity critique directly into chat
         if (extracted.coauthor_continuity_note) {
-          collectedNotes.push(extracted.coauthor_continuity_note);
+          const { error: coauthorError } = await supabase
+            .from("coauthor_messages")
+            .insert({
+              project_id: projectId,
+              role: "assistant",
+              content: extracted.coauthor_continuity_note,
+              message_type: "observation",
+            });
+
+          if (coauthorError) {
+            console.warn(
+              "[reextract] Could not save coauthor continuity note:",
+              coauthorError.message,
+            );
+          }
         }
       } catch (err) {
         await recordCreditFailure(
@@ -384,28 +388,6 @@ export async function POST(request: NextRequest) {
     }
 
     chaptersProcessed++;
-  }
-
-  // ── Send ONE single consolidated message to the co-author chat ─────────────
-  if (collectedNotes.length > 0) {
-    const uniqueNotes = Array.from(new Set(collectedNotes));
-    const finalMessage = uniqueNotes.join("\n\n---\n\n");
-
-    const { error: coauthorError } = await supabase
-      .from("coauthor_messages")
-      .insert({
-        project_id: projectId,
-        role: "assistant",
-        content: finalMessage,
-        message_type: "observation",
-      });
-
-    if (coauthorError) {
-      console.warn(
-        "[reextract] Could not save coauthor continuity note:",
-        coauthorError.message,
-      );
-    }
   }
 
   return Response.json({
