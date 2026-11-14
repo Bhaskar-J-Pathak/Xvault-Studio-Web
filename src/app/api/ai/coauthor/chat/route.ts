@@ -117,8 +117,8 @@ export async function POST(request: NextRequest) {
     if (isLikelyGlobalChange(message.trim())) {
     const ackReply = `On it — scanning the manuscript for every instance. Give me a moment, I'll show you exactly what I'll change before touching anything.`;
 
-    await saveCoauthorMessages(supabase, projectId, message.trim(), ackReply, "chat").catch(
-      (e) => console.error("[coauthor/chat] Save failed:", e)
+    const savedIds = await saveCoauthorMessages(supabase, projectId, message.trim(), ackReply, "chat").catch(
+      (e) => { console.error("[coauthor/chat] Save failed:", e); return undefined; }
     );
 
     return Response.json({
@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
       reply: ackReply,
       messageType: "global_change",
       instruction: message.trim(),
+      ...savedIds,
     });
   }
 
@@ -141,8 +142,8 @@ Place the cursor where the prose belongs and click Write in the editor header in
 
 What were you thinking for this scene? Tell me the idea and I can help you shape it before you write it.`;
 
-    await saveCoauthorMessages(supabase, projectId, message.trim(), redirectReply, "prose_redirect").catch(
-      (e) => console.error("[coauthor/chat] Save failed:", e)
+    const savedIds = await saveCoauthorMessages(supabase, projectId, message.trim(), redirectReply, "prose_redirect").catch(
+      (e) => { console.error("[coauthor/chat] Save failed:", e); return undefined; }
     );
 
     return Response.json({
@@ -150,6 +151,7 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
       reply: redirectReply,
       messageType: "prose_redirect",
       remaining,
+      ...savedIds,
     });
   }
 
@@ -208,9 +210,9 @@ What were you thinking for this scene? Tell me the idea and I can help you shape
       ? "nudge"
       : "chat";
 
-  await saveCoauthorMessages(supabase, projectId, message.trim(), reply, messageType).catch(
-    (e) => console.error("[coauthor/chat] Save failed:", e)
+  const savedIds = await saveCoauthorMessages(supabase, projectId, message.trim(), reply, messageType).catch(
+    (e) => { console.error("[coauthor/chat] Save failed:", e); return undefined; }
   );
 
-  return Response.json({ ok: true, reply, messageType, remaining });
+  return Response.json({ ok: true, reply, messageType, remaining, ...savedIds });
 }

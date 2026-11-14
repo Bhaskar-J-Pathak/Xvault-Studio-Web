@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/auth";
 import { geminiGenerate } from "@/lib/ai";
 import { assembleCoauthorContext } from "@/lib/coauthor-context";
-import { saveCoauthorMessages } from "@/lib/coauthor-context";
+import { postProactiveMessage, runContinuityCheckIn } from "@/lib/coauthor-continuity";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -51,6 +51,29 @@ export async function POST(request: NextRequest) {
       .maybeSingle(),
   ]);
   if (!project) return Response.json({ observation: null, messageType: null });
+
+  // Continuity issues come first. If the co-author knows about issues it has not raised
+  // yet, or raised in a message that was later deleted, it brings them up now. It has
+  // its own cooldown and does not wait for the writer to reply first.
+  if (coauthor) {
+    const checkIn = await runContinuityCheckIn(
+      supabase,
+      projectId,
+      coauthor.name ?? "Alex",
+      coauthor.personality ?? null,
+    ).catch((err) => {
+      console.error("[coauthor/observe] Continuity check-in failed:", err);
+      return null;
+    });
+    if (checkIn) {
+      return Response.json({
+        observation: checkIn.content,
+        messageType: checkIn.messageType,
+        id: checkIn.id,
+        created_at: checkIn.created_at,
+      });
+    }
+  }
 
   // Block if the last message in the conversation is already from the assistant.
   // The co-author should not pile on until the user has said something back.
@@ -152,13 +175,10 @@ If there IS a specific problem, describe the exact conflicting details and where
       ? "nudge"
       : "observation";
 
-  // Save observation as assistant-only message
-  await supabase.from("coauthor_messages").insert({
-    project_id: projectId,
-    role: "assistant",
-    content: raw,
-    message_type: messageType,
-  });
+  // Save atomically: if another proactive message landed while the model was thinking,
+  // stay quiet instead of stacking a second one.
+  const saved = await postProactiveMessage(supabase, projectId, raw, messageType);
+  if (!saved) return Response.json({ observation: null, messageType: null });
 
-  return Response.json({ observation: raw, messageType });
+  return Response.json({ observation: raw, messageType, id: saved.id, created_at: saved.created_at });
 }

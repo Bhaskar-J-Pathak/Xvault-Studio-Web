@@ -9,7 +9,7 @@
 
 import { NextRequest } from "next/server";
 import { createServerSupabaseClient, createServiceClient } from "@/lib/auth";
-import { geminiGenerate, WORLDBOARD_MODEL } from "@/lib/ai";
+import { geminiGenerate, WORLDBOARD_LIVE_MODEL } from "@/lib/ai";
 import {
   buildEntitySummary,
   buildExtractionPrompt,
@@ -19,6 +19,7 @@ import {
   type WorldBoardMergeResult,
 } from "@/lib/extraction";
 import { checkRateLimit, commitRateLimit, recordCreditFailure } from "@/lib/rate-limit";
+import { recordContinuityNote } from "@/lib/coauthor-continuity";
 import { CREDITS } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       "You are a JSON extraction API for fiction manuscript analysis. Output valid JSON only.",
       8192,
       true,
-      WORLDBOARD_MODEL
+      WORLDBOARD_LIVE_MODEL
     );
   } catch (err) {
     await recordCreditFailure(user.id, "worldboard_extraction", CREDITS.worldboardPerChunk, "ai_generation", err);
@@ -127,6 +128,12 @@ export async function POST(request: NextRequest) {
     await recordCreditFailure(user.id, "worldboard_extraction", CREDITS.worldboardPerChunk, "persistence", err);
     console.error("[worldboard] Failed to save extraction:", err);
     return Response.json({ error: "Could not save extracted World Board data" }, { status: 500 });
+  }
+
+  // Remember any continuity critique. The co-author panel raises it after this
+  // request finishes (one check-in message, never one message per chunk).
+  if (extracted.coauthor_continuity_note) {
+    await recordContinuityNote(supabase, projectId, chapterId, extracted.coauthor_continuity_note);
   }
 
   // Record only meaningful changes. Re-reading an unchanged fact does not create noise.

@@ -235,6 +235,7 @@ DIALOGUE AWARENESS — when giving feedback on dialogue or when the writer asks 
 
 /**
  * Saves a message pair to coauthor_messages, keeping only the last 50 per project.
+ * Returns the saved row ids so the client can delete these exact messages later.
  */
 export async function saveCoauthorMessages(
   supabase: SupabaseClient,
@@ -242,12 +243,12 @@ export async function saveCoauthorMessages(
   userContent: string,
   assistantContent: string,
   messageType: string = "chat"
-) {
+): Promise<{ userMessageId?: string; assistantMessageId?: string }> {
   const now = Date.now();
-  await supabase.from("coauthor_messages").insert([
+  const { data: saved } = await supabase.from("coauthor_messages").insert([
     { project_id: projectId, role: "user",      content: userContent,      message_type: "chat",        created_at: new Date(now - 500).toISOString() },
     { project_id: projectId, role: "assistant", content: assistantContent, message_type: messageType,   created_at: new Date(now).toISOString() },
-  ]);
+  ]).select("id, role");
 
   // Trim to last 50 messages
   const { data: oldest } = await supabase
@@ -260,4 +261,10 @@ export async function saveCoauthorMessages(
     const toDelete = oldest.slice(0, oldest.length - 50).map((r) => r.id);
     await supabase.from("coauthor_messages").delete().in("id", toDelete);
   }
+
+  return {
+    userMessageId: saved?.find((row) => row.role === "user")?.id,
+    assistantMessageId: saved?.find((row) => row.role === "assistant")?.id,
+  };
 }
+

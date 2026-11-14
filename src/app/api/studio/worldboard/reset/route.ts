@@ -89,6 +89,13 @@ export async function POST(request: NextRequest) {
       .eq("project_id", projectId)
       .eq("introduced_chapter_id", chapterId);
 
+    // Forget co-author continuity notes for this chapter (no-op before migration 0046)
+    await supabase
+      .from("coauthor_continuity_notes")
+      .delete()
+      .eq("project_id", projectId)
+      .eq("chapter_id", chapterId);
+
     // Reset extraction watermark for this chapter only
     await supabase
       .from("chapters")
@@ -98,6 +105,7 @@ export async function POST(request: NextRequest) {
   } else {
     // ── Full project reset ─────────────────────────────────────────────────────
     await supabase.from("inconsistency_flags").delete().eq("project_id", projectId);
+    await supabase.from("coauthor_continuity_notes").delete().eq("project_id", projectId);
     await supabase.from("relationships").delete().eq("project_id", projectId);
     await supabase.from("entities").delete().eq("project_id", projectId);
     await supabase.from("plot_threads").delete().eq("project_id", projectId);

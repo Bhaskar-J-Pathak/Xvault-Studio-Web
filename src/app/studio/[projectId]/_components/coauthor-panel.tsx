@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Send, ChevronRight, Settings, Loader2, Trash2, Wand2, X } from "lucide-react";
+import { Send, ChevronRight, Settings, Loader2, Trash2, Wand2, X, Check } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import type { DbCoauthor, DbCoauthorMessage, CoauthorMessageType } from "@/types/database";
 import GlobalChangePreview from "./global-change-preview";
@@ -18,6 +18,14 @@ export interface CoauthorMessage {
   pending?: boolean;
 }
 
+/** A proactive message from the co-author (observation or continuity check-in). */
+export interface PendingObservation {
+  id?: string;            // real DB id when the server saved it
+  content: string;
+  messageType?: CoauthorMessageType;
+  created_at?: string;
+}
+
 interface Props {
   projectId: string;
   coauthor: DbCoauthor;
@@ -27,8 +35,10 @@ interface Props {
   slim: boolean;                // controlled by parent — true = collapsed
   onSlimChange: (slim: boolean) => void;
   // Called by parent's proactive observer
-  pendingObservation: string | null;
+  pendingObservation: PendingObservation | null;
   onObservationConsumed: () => void;
+  // Called when the co-author raises continuity issues on its own (parent may expand the panel)
+  onProactiveMessage?: () => void;
   // Called after a global change is applied, so the editor can reload content
   onGlobalChangeDone?: () => void;
   // Called after any credit-consuming AI call with the updated remaining count
@@ -62,6 +72,7 @@ export default function CoauthorPanel({
   onSlimChange,
   pendingObservation,
   onObservationConsumed,
+  onProactiveMessage,
   onGlobalChangeDone,
   onCreditUpdate,
   onMessageSent,
@@ -82,7 +93,65 @@ export default function CoauthorPanel({
   const [globalChangePlan, setGlobalChangePlan] = useState<ChangePlan | null>(null);
   const [globalChangeLoading, setGlobalChangeLoading] = useState(false);
 
-  // Load recent message history on mount
+  // Append a co-author message unless it is already in the list (same DB id).
+  const appendAssistantMessage = useCallback((msg: CoauthorMessage) => {
+    setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+  }, []);
+
+  // ── Continuity check-in ─────────────────────────────────────────────────────
+  // The co-author remembers continuity issues on the server. It raises the ones not
+  // currently visible in the chat (including ones whose message was deleted) as a
+  // single message. Single-flight: only one request runs at a time.
+  const checkInInFlight = useRef(false);
+  const messagesRef = useRef<CoauthorMessage[]>([]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  const onProactiveRef = useRef(onProactiveMessage);
+  useEffect(() => { onProactiveRef.current = onProactiveMessage; }, [onProactiveMessage]);
+  const runContinuityCheckIn = useCallback(async () => {
+    if (checkInInFlight.current) return;
+    // Wait for the writer: never ask while our last proactive message is unanswered.
+    const last = messagesRef.current[messagesRef.current.length - 1];
+    if (last?.role === "assistant" && ["observation", "nudge", "continuity", "continuity_resolved"].includes(last.message_type)) return;
+    checkInInFlight.current = true;
+    try {
+      const res = await fetch("/api/ai/coauthor/continuity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      });
+      if (!res.ok) return;
+      const data = await res.json() as { message?: { id: string; content: string; messageType: CoauthorMessageType; created_at?: string } | null };
+      if (!data.message) return;
+      appendAssistantMessage({
+        id: data.message.id,
+        role: "assistant",
+        content: data.message.content,
+        message_type: data.message.messageType,
+        created_at: data.message.created_at,
+      });
+      onProactiveRef.current?.();
+    } catch {
+      // Proactive and best-effort: never surface an error for this.
+    } finally {
+      checkInInFlight.current = false;
+    }
+  }, [projectId, appendAssistantMessage]);
+
+  // After each World Board extraction, give the co-author a chance to speak up.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onUpdated = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { void runContinuityCheckIn(); }, 2000);
+    };
+    window.addEventListener("worldboard-updated", onUpdated);
+    return () => {
+      window.removeEventListener("worldboard-updated", onUpdated);
+      if (timer) clearTimeout(timer);
+    };
+  }, [runContinuityCheckIn]);
+
+  // Load recent message history on mount, then check in about continuity.
   useEffect(() => {
     const controller = new AbortController();
     async function loadHistory() {
@@ -118,9 +187,11 @@ export default function CoauthorPanel({
         if (err instanceof Error && err.name === "AbortError") return;
       }
     }
-    loadHistory();
+    loadHistory().then(() => {
+      if (!controller.signal.aborted) void runContinuityCheckIn();
+    });
     return () => controller.abort(new DOMException("unmounted", "AbortError"));
-  }, [projectId]);
+  }, [projectId, runContinuityCheckIn]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -130,16 +201,16 @@ export default function CoauthorPanel({
   // Consume pending proactive observations from parent
   useEffect(() => {
     if (!pendingObservation) return;
-    const obs: CoauthorMessage = {
-      id: crypto.randomUUID(),
+    appendAssistantMessage({
+      id: pendingObservation.id ?? crypto.randomUUID(),
       role: "assistant",
-      content: pendingObservation,
-      message_type: "observation",
-    };
-    setMessages((prev) => [...prev, obs]);
+      content: pendingObservation.content,
+      message_type: pendingObservation.messageType ?? "observation",
+      created_at: pendingObservation.created_at,
+    });
     onObservationConsumed();
     onSlimChange(false); // expand when co-author speaks up
-  }, [pendingObservation, onObservationConsumed]);
+  }, [pendingObservation, onObservationConsumed, appendAssistantMessage]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -183,7 +254,7 @@ export default function CoauthorPanel({
           }),
         });
 
-        let data: { reply?: string; error?: string; reason?: string; messageType?: string; instruction?: string; remaining?: number } = {};
+        let data: { reply?: string; error?: string; reason?: string; messageType?: string; instruction?: string; remaining?: number; userMessageId?: string; assistantMessageId?: string } = {};
         try {
           data = await res.json();
         } catch {
@@ -219,9 +290,14 @@ export default function CoauthorPanel({
         const reply = data.reply ?? "Something went wrong. Try again.";
         const msgType = (data.messageType ?? "chat") as CoauthorMessageType;
 
+        // Swap the temporary client ids for the saved DB ids so delete works right away.
         setMessages((prev) =>
           prev.map((m) =>
-            m.pending ? { ...m, content: reply, message_type: msgType, pending: false } : m
+            m.pending
+              ? { ...m, id: data.assistantMessageId ?? m.id, content: reply, message_type: msgType, pending: false }
+              : m.id === userMsg.id && data.userMessageId
+              ? { ...m, id: data.userMessageId }
+              : m
           )
         );
         onResponseReceived?.();
@@ -292,6 +368,17 @@ export default function CoauthorPanel({
     setMessages((prev) => prev.filter((m) => m.id !== id));
     await fetch(`/api/coauthor/messages?projectId=${projectId}&id=${id}`, { method: "DELETE" });
   }, [projectId]);
+
+  // Writer says the continuity issues in this message are handled. They stop coming back.
+  const resolveContinuity = useCallback(async (id: string) => {
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, message_type: "continuity_resolved" } : m)));
+    ph?.capture("feature_used", { feature: "coauthor_continuity_resolved" });
+    await fetch("/api/coauthor/continuity/resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, messageId: id }),
+    }).catch(() => {});
+  }, [projectId, ph]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -438,7 +525,8 @@ export default function CoauthorPanel({
           const showDivider =
             idx === 0 &&
             msg.role === "assistant" &&
-            (msg.message_type === "observation" || msg.message_type === "nudge");
+            (msg.message_type === "observation" || msg.message_type === "nudge" ||
+              msg.message_type === "continuity" || msg.message_type === "continuity_resolved");
           return (
             <div key={msg.id}>
               {showDivider && (
@@ -452,6 +540,7 @@ export default function CoauthorPanel({
                 msg={msg}
                 coauthorName={coauthor.name}
                 onDelete={deleteMessage}
+                onResolve={resolveContinuity}
               />
             </div>
           );
@@ -552,10 +641,12 @@ function MessageBubble({
   msg,
   coauthorName,
   onDelete,
+  onResolve,
 }: {
   msg: CoauthorMessage;
   coauthorName: string;
   onDelete: (id: string) => void;
+  onResolve: (id: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -582,7 +673,8 @@ function MessageBubble({
     );
   }
 
-  const isObservation   = msg.message_type === "observation" || msg.message_type === "nudge";
+  const isContinuity    = msg.message_type === "continuity" || msg.message_type === "continuity_resolved";
+  const isObservation   = msg.message_type === "observation" || msg.message_type === "nudge" || isContinuity;
   const isCelebration   = msg.message_type === "celebration";
   const isProseRedirect = msg.message_type === "prose_redirect";
 
@@ -621,6 +713,24 @@ function MessageBubble({
             msg.content
           )}
         </div>
+
+        {/* Continuity notes come back until handled. This closes them for good. */}
+        {msg.message_type === "continuity" && !msg.pending && (
+          <button
+            onClick={() => onResolve(msg.id)}
+            className="flex items-center gap-1 px-2 py-1 rounded-full border border-blue-200 text-[10px] font-medium text-blue-700 hover:bg-blue-50 transition-colors w-fit"
+            title="I've fixed this or it's intentional. Stop reminding me."
+          >
+            <Check size={11} />
+            Handled, don&apos;t remind me
+          </button>
+        )}
+        {msg.message_type === "continuity_resolved" && !msg.pending && (
+          <span className="flex items-center gap-1 text-[10px] text-neutral-400 w-fit">
+            <Check size={11} />
+            Handled
+          </span>
+        )}
 
         {/* Direct the writer to the manuscript-safe prose workflow. */}
         {isProseRedirect && !msg.pending && (

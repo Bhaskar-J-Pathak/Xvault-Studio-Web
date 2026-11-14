@@ -7,6 +7,7 @@
  * - Each extraction chunk counts against the user's AI credit allowance.
  */
 
+import { randomUUID } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -598,27 +599,51 @@ export async function mergeExtractionIntoGraph(
   };
 
   // ── Entities ────────────────────────────────────────────────
+  // Name resolution stays sequential (in memory) so later entities can match earlier
+  // ones. Database writes are collected and sent together, instead of two or three
+  // round trips per entity in sequence.
+  const dupeLookups = new Map<string, PromiseLike<{ data: { id: string; name: string; attributes: unknown } | null; error: { message: string } | null }>>();
+  for (const e of result.entities) {
+    const key = e.name.toLowerCase();
+    if (!lookupId(e.name, nameEntries) && !dupeLookups.has(key)) {
+      dupeLookups.set(
+        key,
+        client
+          .from("entities")
+          .select("id, name, attributes")
+          .eq("project_id", projectId)
+          .ilike("name", e.name)
+          .maybeSingle(),
+      );
+    }
+  }
+  const dupeResults = new Map(
+    await Promise.all(
+      [...dupeLookups].map(async ([key, lookup]) => [key, await lookup] as const),
+    ),
+  );
+
+  const entityWrites: PromiseLike<{ error: { message: string } | null }>[] = [];
+  const newEntityRows: Record<string, unknown>[] = [];
+
   for (const e of result.entities) {
     let existId = lookupId(e.name, nameEntries);
     let existingEntity = existingEntities.find((entity) => entity.id === existId);
 
     if (!existId) {
-      const { data: dbDupe, error: dupeError } = await client
-        .from("entities")
-        .select("id, name, attributes")
-        .eq("project_id", projectId)
-        .ilike("name", e.name)
-        .maybeSingle();
-      throwIfError(dupeError, "Could not check for duplicate entity");
-
-      if (dbDupe) {
-        existId = dbDupe.id;
-        existingEntity = {
-          id: dbDupe.id,
-          name: dbDupe.name,
-          type: e.type,
-          attributes: (dbDupe.attributes as Record<string, unknown>) ?? {},
-        };
+      const dupe = dupeResults.get(e.name.toLowerCase());
+      if (dupe) {
+        throwIfError(dupe.error, "Could not check for duplicate entity");
+        const dbDupe = dupe.data;
+        if (dbDupe) {
+          existId = dbDupe.id;
+          existingEntity = {
+            id: dbDupe.id,
+            name: dbDupe.name,
+            type: e.type,
+            attributes: (dbDupe.attributes as Record<string, unknown>) ?? {},
+          };
+        }
       }
     }
 
@@ -683,19 +708,23 @@ export async function mergeExtractionIntoGraph(
             ];
       });
 
+      // merge_entity_attributes is a single atomic UPDATE (attributes || p_attributes),
+      // so running it at the same time as other writes is safe.
       if (Object.keys(safeAttributes).length > 0) {
-        const { error } = await client.rpc("merge_entity_attributes", {
-          p_entity_id: existId,
-          p_attributes: safeAttributes,
-        });
-        throwIfError(error, "Could not update entity attributes");
+        entityWrites.push(
+          client.rpc("merge_entity_attributes", {
+            p_entity_id: existId,
+            p_attributes: safeAttributes,
+          }),
+        );
       }
 
-      const { error } = await client
-        .from("entities")
-        .update({ last_seen_word: chapterNumber, confidence: e.confidence })
-        .eq("id", existId);
-      throwIfError(error, "Could not update entity");
+      entityWrites.push(
+        client
+          .from("entities")
+          .update({ last_seen_word: chapterNumber, confidence: e.confidence })
+          .eq("id", existId),
+      );
 
       if (attributeChanges.length > 0) {
         changes.updatedEntities.push({
@@ -713,41 +742,51 @@ export async function mergeExtractionIntoGraph(
         y: origin.y + Math.floor(i / ZONE_COLS) * ZONE_ROW_GAP,
       };
 
-      const { data: inserted, error: insertError } = await client
-        .from("entities")
-        .insert({
-          project_id: projectId,
-          name: e.name,
-          type: e.type,
-          attributes: e.attributes,
-          confidence: e.confidence,
-          position: pos,
-          first_seen_chapter_id: chapterId,
-          last_seen_word: chapterNumber,
-        })
-        .select("id")
-        .single();
-      throwIfError(insertError, `Could not create entity "${e.name}"`);
-
-      if (!inserted) throw new Error(`Could not create entity "${e.name}"`);
+      // Generate the id here so relationships and flags can reference the new entity
+      // before the batched insert finishes.
+      const newId = randomUUID();
+      newEntityRows.push({
+        id: newId,
+        project_id: projectId,
+        name: e.name,
+        type: e.type,
+        attributes: e.attributes,
+        confidence: e.confidence,
+        position: pos,
+        first_seen_chapter_id: chapterId,
+        last_seen_word: chapterNumber,
+      });
       changes.addedEntities.push({
-        id: inserted.id,
+        id: newId,
         name: e.name,
         type: e.type,
         attributes: e.attributes,
       });
-      nameEntries.push({ name: e.name, id: inserted.id });
+      nameEntries.push({ name: e.name, id: newId });
       const aliases = String(e.attributes?.aliases ?? "")
         .split(",")
         .map((value) => value.trim())
         .filter(Boolean);
       for (const alias of aliases) {
-        nameEntries.push({ name: alias, id: inserted.id });
+        nameEntries.push({ name: alias, id: newId });
       }
     }
   }
 
+  // New entities first: later updates in this batch may target them (e.g. an alias).
+  // The updates are built lazily above and only run when awaited, so they run after this.
+  if (newEntityRows.length > 0) {
+    const { error } = await client.from("entities").insert(newEntityRows);
+    throwIfError(error, "Could not create entities");
+  }
+  for (const { error } of await Promise.all(entityWrites)) {
+    throwIfError(error, "Could not save entities");
+  }
+
   // ── Relationships ────────────────────────────────────────────
+  // One lookup for every candidate pair and one batched insert.
+  const relationshipCandidates: Array<{ sourceId: string; targetId: string; source: string; target: string; label: string }> = [];
+  const candidatePairs = new Set<string>();
   for (const rel of result.relationships) {
     const sourceId = lookupId(rel.source, nameEntries);
     const targetId = lookupId(rel.target, nameEntries);
@@ -755,37 +794,47 @@ export async function mergeExtractionIntoGraph(
     if (!sourceId || !targetId || sourceId === targetId || !isPersistentRelationshipLabel(label)) {
       continue;
     }
+    const pair = `${sourceId}:${targetId}`;
+    if (candidatePairs.has(pair)) continue;
+    candidatePairs.add(pair);
+    relationshipCandidates.push({ sourceId, targetId, source: rel.source, target: rel.target, label });
+  }
 
-    const { data: existing, error: relationshipLookupError } = await client
+  if (relationshipCandidates.length > 0) {
+    const { data: existingRelationships, error: relationshipLookupError } = await client
       .from("relationships")
-      .select("id")
+      .select("source_id, target_id")
       .eq("project_id", projectId)
-      .eq("source_id", sourceId)
-      .eq("target_id", targetId)
-      .maybeSingle();
+      .in("source_id", [...new Set(relationshipCandidates.map((r) => r.sourceId))]);
     throwIfError(relationshipLookupError, "Could not check for duplicate relationship");
 
-    if (!existing) {
-      const { error } = await client.from("relationships").insert({
-        project_id: projectId,
-        source_id: sourceId,
-        target_id: targetId,
-        label,
-      });
-      throwIfError(error, `Could not create relationship "${label}"`);
-      changes.addedRelationships.push({
-        sourceId,
-        targetId,
-        source: rel.source,
-        target: rel.target,
-        label,
-      });
+    const existingPairs = new Set(
+      (existingRelationships ?? []).map((r: { source_id: string; target_id: string }) => `${r.source_id}:${r.target_id}`),
+    );
+    const newRelationships = relationshipCandidates.filter(
+      (r) => !existingPairs.has(`${r.sourceId}:${r.targetId}`),
+    );
+
+    if (newRelationships.length > 0) {
+      const { error } = await client.from("relationships").insert(
+        newRelationships.map((r) => ({
+          project_id: projectId,
+          source_id: r.sourceId,
+          target_id: r.targetId,
+          label: r.label,
+        })),
+      );
+      throwIfError(error, "Could not create relationships");
+      changes.addedRelationships.push(...newRelationships);
     }
   }
 
   // ── Plot threads ─────────────────────────────────────────────
+  // Matching stays sequential (it depends on earlier matches). Writes are batched.
   const knownThreads = [...existingThreads];
   const insertedThreadDescriptions: string[] = [];
+  const threadUpdates = new Map<string, string>(); // thread id -> final status
+  const threadInserts: Record<string, unknown>[] = [];
   for (const thread of result.threads) {
     const requestedIndex = Number(thread.existing_thread_index);
     const indexedMatch =
@@ -802,16 +851,7 @@ export async function mergeExtractionIntoGraph(
     if (matchIndex >= 0) {
       const matched = knownThreads[matchIndex];
       const previousStatus = matched.status;
-      const { error } = await client
-        .from("plot_threads")
-        .update({
-          last_seen_chapter_id: chapterId,
-          last_seen_chapter_number: chapterNumber,
-          status: thread.status,
-        })
-        .eq("id", matched.id)
-        .eq("project_id", projectId);
-      throwIfError(error, "Could not update plot thread");
+      threadUpdates.set(matched.id, thread.status);
       matched.status = thread.status;
       matched.last_seen_chapter_number = chapterNumber;
       if (previousStatus !== thread.status) {
@@ -830,7 +870,7 @@ export async function mergeExtractionIntoGraph(
       ) {
         continue;
       }
-      const { error } = await client.from("plot_threads").insert({
+      threadInserts.push({
         project_id: projectId,
         description: thread.description,
         introduced_chapter_id: chapterId,
@@ -839,7 +879,6 @@ export async function mergeExtractionIntoGraph(
         last_seen_chapter_number: chapterNumber,
         status: thread.status,
       });
-      throwIfError(error, "Could not create plot thread");
       insertedThreadDescriptions.push(thread.description);
       changes.addedThreads.push({
         description: thread.description,
@@ -848,50 +887,84 @@ export async function mergeExtractionIntoGraph(
     }
   }
 
-  // ── Inconsistencies ──────────────────────────────────────────
-  const flagsCreated: ExtractedInconsistency[] = [];
-
-  for (const inc of result.inconsistencies) {
-    if (
-      isSameFact(inc.established, inc.found) ||
-      isCompatibleExpansion(inc.attribute, inc.established, inc.found)
-    ) {
-      continue;
-    }
-
-    let entityId = lookupId(inc.entity, nameEntries);
-    if (!entityId) {
-      const { data: dbEntity } = await client
-        .from("entities")
-        .select("id")
-        .eq("project_id", projectId)
-        .ilike("name", `%${inc.entity.trim()}%`)
-        .maybeSingle();
-      if (dbEntity) entityId = dbEntity.id;
-    }
-
-    changes.inconsistencies.push(inc);
-
-    if (entityId) {
-      const { data: flag, error } = await client
-        .from("inconsistency_flags")
-        .insert({
-          project_id: projectId,
-          entity_id: entityId,
-          entity_name: inc.entity,
-          attribute: inc.attribute,
-          established_value: inc.established,
-          found_value: inc.found,
-          context_quote: inc.quote,
-          chapter_id: chapterId,
-          status: "pending",
+  const threadWrites: PromiseLike<{ error: { message: string } | null }>[] = [...threadUpdates].map(
+    ([threadId, status]) =>
+      client
+        .from("plot_threads")
+        .update({
+          last_seen_chapter_id: chapterId,
+          last_seen_chapter_number: chapterNumber,
+          status,
         })
-        .select("id")
-        .maybeSingle();
+        .eq("id", threadId)
+        .eq("project_id", projectId),
+  );
+  if (threadInserts.length > 0) {
+    threadWrites.push(client.from("plot_threads").insert(threadInserts));
+  }
+  for (const { error } of await Promise.all(threadWrites)) {
+    throwIfError(error, "Could not save plot threads");
+  }
 
-      if (!error && flag) {
-        flagsCreated.push({ ...inc, id: flag.id });
+  // ── Inconsistencies ──────────────────────────────────────────
+  const flagCandidates = result.inconsistencies.filter(
+    (inc) =>
+      !isSameFact(inc.established, inc.found) &&
+      !isCompatibleExpansion(inc.attribute, inc.established, inc.found),
+  );
+
+  const resolvedFlags = await Promise.all(
+    flagCandidates.map(async (inc) => {
+      let entityId = lookupId(inc.entity, nameEntries);
+      if (!entityId) {
+        const { data: dbEntity } = await client
+          .from("entities")
+          .select("id")
+          .eq("project_id", projectId)
+          .ilike("name", `%${inc.entity.trim()}%`)
+          .maybeSingle();
+        if (dbEntity) entityId = dbEntity.id;
       }
+      return { inc, entityId };
+    }),
+  );
+
+  changes.inconsistencies.push(...flagCandidates);
+
+  const flagRows = resolvedFlags
+    .filter((f): f is { inc: ExtractedInconsistency; entityId: string } => Boolean(f.entityId))
+    .map(({ inc, entityId }) => ({
+      inc,
+      row: {
+        id: randomUUID(),
+        project_id: projectId,
+        entity_id: entityId,
+        entity_name: inc.entity,
+        attribute: inc.attribute,
+        established_value: inc.established,
+        found_value: inc.found,
+        context_quote: inc.quote,
+        chapter_id: chapterId,
+        status: "pending",
+      },
+    }));
+
+  const flagsCreated: ExtractedInconsistency[] = [];
+  if (flagRows.length > 0) {
+    const { error: batchError } = await client
+      .from("inconsistency_flags")
+      .insert(flagRows.map((f) => f.row));
+    if (!batchError) {
+      flagsCreated.push(...flagRows.map((f) => ({ ...f.inc, id: f.row.id })));
+    } else {
+      // Fall back to one insert per flag so one bad row does not drop the rest.
+      const individual = await Promise.all(
+        flagRows.map(async (f): Promise<ExtractedInconsistency | null> => {
+          const { error } = await client.from("inconsistency_flags").insert(f.row);
+          return error ? null : { ...f.inc, id: f.row.id };
+        }),
+      );
+      flagsCreated.push(...individual.filter((f): f is ExtractedInconsistency => f !== null));
     }
   }
 

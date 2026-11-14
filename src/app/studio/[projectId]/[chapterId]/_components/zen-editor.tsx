@@ -34,7 +34,7 @@ type ContinuityFlagNotice = { id: string; entity: string; attribute: string; est
 import { createClient } from "@/lib/supabase";
 import { Check, ChevronDown, Coins, Crown, GripHorizontal, Loader2, Wand2, X, PenLine, Settings, MoreHorizontal, Share2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
-import CoauthorPanel from "@/app/studio/[projectId]/_components/coauthor-panel";
+import CoauthorPanel, { type PendingObservation } from "@/app/studio/[projectId]/_components/coauthor-panel";
 import CoauthorSetup from "@/app/studio/[projectId]/_components/coauthor-setup";
 import GlobalChangePreview from "@/app/studio/[projectId]/_components/global-change-preview";
 import type { ChangePlan } from "@/app/api/ai/coauthor/global-change/route";
@@ -271,7 +271,7 @@ interface CoAuthorPluginProps {
   chapterId:            string;
   coauthor:             DbCoauthor | null;
   onRecentTextChange:   (text: string) => void;
-  onObservation:        (obs: string) => void;
+  onObservation:        (obs: PendingObservation) => void;
   onWrite:              (context: CursorContext) => void;
   ghostContext:         CursorContext | null;
   ghostSuggestion:      string | null;
@@ -509,8 +509,15 @@ function CoAuthorPlugin({
                 wordCountDelta: burst,
               }),
             });
-            const data = await res.json() as { observation?: string | null };
-            if (data.observation) onObservationRef.current(data.observation);
+            const data = await res.json() as { observation?: string | null; messageType?: string | null; id?: string; created_at?: string };
+            if (data.observation) {
+              onObservationRef.current({
+                id: data.id,
+                content: data.observation,
+                messageType: (data.messageType ?? "observation") as PendingObservation["messageType"],
+                created_at: data.created_at,
+              });
+            }
           } catch {
             // silently ignore observe errors
           } finally {
@@ -734,7 +741,7 @@ export default function ZenEditor({
   );
   const userClosedPanel = useRef(false);
   const [showCoauthorSetup,  setShowCoauthorSetup]  = useState(false);
-  const [pendingObservation, setPendingObservation] = useState<string | null>(null);
+  const [pendingObservation, setPendingObservation] = useState<PendingObservation | null>(null);
   const [recentText,         setRecentText]         = useState("");
   const [chatResponseReceived, setChatResponseReceived] = useState(false);
   const [editorFocused,        setEditorFocused]        = useState(false);
@@ -1628,6 +1635,13 @@ export default function ZenEditor({
             }}
             pendingObservation={pendingObservation}
             onObservationConsumed={() => setPendingObservation(null)}
+            onProactiveMessage={() => {
+              // Open the panel on desktop when the co-author raises continuity issues,
+              // unless the writer closed it this session. Never pop the mobile sheet.
+              if (!userClosedPanel.current && window.matchMedia("(min-width: 768px)").matches) {
+                setCoauthorSlim(false);
+              }
+            }}
             onGlobalChangeDone={handleGlobalChangeDone}
             onCreditUpdate={handleCreditUpdate}
             onMessageSent={() => {}}

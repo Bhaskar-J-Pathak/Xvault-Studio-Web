@@ -37,6 +37,10 @@ function withFictionContext(systemPrompt?: string) {
 // Server-only model switches. Defaults preserve current production behaviour,
 // while deployment settings can migrate models without another code release.
 export const WORLDBOARD_MODEL = process.env.WORLDBOARD_MODEL?.trim() || "gemini-2.5-pro";
+// Model for the background extraction that runs while the writer types. Defaults to
+// WORLDBOARD_MODEL. Point it at a Flash model to make live updates much faster, and keep
+// the Pro model for full re-extractions.
+export const WORLDBOARD_LIVE_MODEL = process.env.WORLDBOARD_LIVE_MODEL?.trim() || WORLDBOARD_MODEL;
 
 // Module-level singleton — reused across warm Vercel invocations.
 let _auth: GoogleAuth | null = null;

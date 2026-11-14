@@ -214,7 +214,7 @@ export interface StoryChunkMatch {
   similarity: number;
 }
 
-export type CoauthorMessageType = "chat" | "observation" | "celebration" | "nudge" | "ghost_accepted" | "prose_redirect";
+export type CoauthorMessageType = "chat" | "observation" | "celebration" | "nudge" | "ghost_accepted" | "prose_redirect" | "continuity" | "continuity_resolved";
 
 export interface DbCoauthor {
   id: string;

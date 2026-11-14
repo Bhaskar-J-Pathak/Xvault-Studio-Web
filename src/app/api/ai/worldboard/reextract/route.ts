@@ -31,6 +31,7 @@ import {
   commitRateLimit,
   recordCreditFailure,
 } from "@/lib/rate-limit";
+import { recordContinuityNote, supersedeChapterNotes } from "@/lib/coauthor-continuity";
 
 const CHUNK_SIZE = 5000; // words per extraction pass
 
@@ -165,6 +166,9 @@ export async function POST(request: NextRequest) {
     const words = text.trim().split(/\s+/);
     const chapterNum = (chapter.position ?? 0) + 1;
     let wordOffset = 0;
+
+    // A full re-read of this chapter replaces its earlier continuity notes.
+    await supersedeChapterNotes(supabase, projectId, chapter.id);
 
     let chapterFailure: string | null = null;
     while (wordOffset < words.length) {
@@ -305,23 +309,16 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Send Alex's natural continuity critique directly into chat
+        // Save the continuity critique to the co-author's memory. The co-author raises
+        // it in the chat later as one combined check-in message, and raises it again
+        // if that message is deleted while the issue is still open.
         if (extracted.coauthor_continuity_note) {
-          const { error: coauthorError } = await supabase
-            .from("coauthor_messages")
-            .insert({
-              project_id: projectId,
-              role: "assistant",
-              content: extracted.coauthor_continuity_note,
-              message_type: "observation",
-            });
-
-          if (coauthorError) {
-            console.warn(
-              "[reextract] Could not save coauthor continuity note:",
-              coauthorError.message,
-            );
-          }
+          await recordContinuityNote(
+            supabase,
+            projectId,
+            chapter.id,
+            extracted.coauthor_continuity_note,
+          );
         }
       } catch (err) {
         await recordCreditFailure(
